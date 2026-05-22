@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClassMana 跨裝置聯網對戰系統 (魔王主宰版)</title>
+    <title>ClassMana 跨裝置聯網對戰系統 (魔王主宰動態版)</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
@@ -242,7 +242,6 @@
             loadLocalProgressByRoom();
         }
 
-        // 【功能：儲存資料隨房間改變】
         function loadLocalProgressByRoom() {
             const roomNum = document.getElementById('room-id').value.trim();
             if (!roomNum) return;
@@ -286,7 +285,6 @@
                 const isTeacherOnline = !!activePlayers['teacher_boss'];
                 const hasTeacherSaved = !!bossSave;
 
-                // 【核心規則：只有魔王登入後，才可以登入房間（在線或存檔皆可視為開房）】
                 if (job !== '魔王(老師)' && !isTeacherOnline && !hasTeacherSaved) {
                     alert(`❌ 拒絕進入房間！房間 ${currentRoom} 目前尚未由魔王老師開啟，學生無法登入。請等待老師先創建房間。`);
                     return;
@@ -308,7 +306,6 @@
                     database.ref(`rooms/${currentRoom}/boss_save`).set({ hp: initialData.hp, en: 200, ap: 99 });
                     startFirebaseSync(initialData);
                 } else {
-                    // 根據房間變更儲存與讀取鍵名
                     let savedId = localStorage.getItem(`classmana_uuid_room_${currentRoom}`);
                     let savedHp = localStorage.getItem(`classmana_hp_room_${currentRoom}`);
                     let savedEn = localStorage.getItem(`classmana_en_room_${currentRoom}`);
@@ -326,7 +323,7 @@
                         id: myId, name: name, job: job,
                         hp: (savedHp && parseInt(savedHp) > 0) ? parseInt(savedHp) : config.hp,
                         en: savedEn ? parseInt(savedEn) : 0,
-                        ap: savedAp ? parseInt(savedAp) : 0 // 預設 0 AP
+                        ap: savedAp ? parseInt(savedAp) : 0 
                     };
                     startFirebaseSync(initialData);
                 }
@@ -340,12 +337,13 @@
 
             const myRef = database.ref(`rooms/${currentRoom}/players/${myId}`);
             myRef.set(initialData);
+            
+            // 【核心修正：斷線時觸發自動移除】不論是魔王還是學生，關閉網頁/中斷連線時，直接將其從在線名單 players 中移除，達成自動登出效果
             myRef.onDisconnect().remove(); 
 
             database.ref(`rooms/${currentRoom}/players`).on('value', (snapshot) => {
                 allPlayersData = snapshot.val() || {};
                 
-                // 檢查自己是否被老師剔除出房間
                 if (myId !== 'teacher_boss' && !allPlayersData[myId]) {
                     alert('❌ 您已被魔王老師退出當前遊戲房間！');
                     location.reload();
@@ -388,7 +386,7 @@
             sendGlobalLog(`🚀【${initialData.name}】(${initialData.job}) 已成功登入。`);
         }
 
-        // === 👥 渲染玩家卡片 (整合點擊方塊選目標與魔王直接管理) ===
+        // === 👥 渲染玩家卡片 ===
         function renderAllPlayers(offlineBossData) {
             const container = document.getElementById('players-container');
             container.innerHTML = '';
@@ -396,6 +394,7 @@
             let playersArray = Object.values(allPlayersData);
             const isAmIBoss = (myId === 'teacher_boss');
 
+            // 【關閉網頁後，魔王會從名單自動登出，並在此切換為保留離線掛機外框】
             if (offlineBossData && !allPlayersData['teacher_boss']) {
                 playersArray.push({
                     id: 'teacher_boss', name: '魔王(老師)', job: '魔王(老師)',
@@ -416,21 +415,18 @@
                 card.className = `card ${player.id === myId ? 'is-me' : ''} ${isBoss ? 'is-boss' : ''}`;
                 if (isDead) card.style.opacity = '0.4';
 
-                // 【功能：所有角色可以按其他角色的方塊以換目標】
                 card.onclick = (e) => {
-                    // 如果點到的是內建控制按鈕則不觸發切換目標
                     if (e.target.tagName === 'BUTTON') return;
                     selectTargetFromBlock(player.id);
                 };
 
                 let bossStatusTag = player.job;
                 if (isBoss && player.isOffline) {
-                    bossStatusTag = `👑 魔王 (中途離線掛機中)`;
+                    bossStatusTag = `👑 魔王 (已關閉網頁/離線)`;
                     card.style.borderStyle = 'dashed';
                 }
 
                 let quickControlsHtml = '';
-                // 【功能：魔王介面中，可以點按學生名字增減AP、亦可隨時將學生退出遊戲】
                 if (isAmIBoss && !isBoss) {
                     quickControlsHtml = `
                         <div class="boss-quick-controls">
@@ -464,7 +460,6 @@
             });
         }
 
-        // 【功能：點擊方塊卡片快速換目標變更函數】
         function selectTargetFromBlock(targetId) {
             const dropdown = document.getElementById('target-dropdown');
             const targetOption = dropdown.querySelector(`option[value="${targetId}"]`);
@@ -493,11 +488,9 @@
                 const btn = document.createElement('button');
                 btn.className = `btn ${skill.enCost > 0 ? 'btn-ult' : ''}`;
                 
-                // 魔王完全免除冷卻與限制，學生點數不足時「不直接 disabled」，改由點擊事件觸發「全域戰況通報」
                 const isSkillCharge = (skill.type === 'charge');
                 const hasEnoughEN = isBoss ? true : (me.en >= skill.enCost);
                 
-                // 如果是需要消耗 AP 的招式且 EN 不足，或者角色已死亡，才給予禁用
                 if (!hasEnoughEN || me.hp <= 0) btn.disabled = true;
 
                 const apText = isBoss ? '0' : skill.apCost;
@@ -512,10 +505,8 @@
                     <div class="skill-desc">${skill.desc}</div>
                 `;
                 
-                // 點擊事件封裝，用於檢查 0 AP 情形
                 btn.onclick = () => {
                     const latestMe = allPlayersData[myId];
-                    // 【功能：任何學生於零AP情況下點擊任何招式，均會於戰況日誌中彈出】
                     if (!isBoss && !isSkillCharge && skill.apCost > 0 && latestMe.ap <= 0) {
                         sendGlobalLog(`⚠️【${latestMe.name}】在 0 AP 的極限情況下試圖點擊招式 [${skill.name}]，宣告行動失敗！`);
                         return;
@@ -539,7 +530,6 @@
 
             const isAmIBoss = (myId === 'teacher_boss');
 
-            // 【功能：魔王可以選擇全體同學作攻擊目標】
             if (isAmIBoss) {
                 const optAll = document.createElement('option');
                 optAll.value = "all_students";
@@ -554,7 +544,7 @@
 
             let hasTargets = false;
             targets.forEach(p => {
-                if (p.id === myId) return; // 排除自己
+                if (p.id === myId) return; 
 
                 const isRealBoss = p.id === 'teacher_boss';
                 if (p.hp > 0 || isRealBoss) {
@@ -592,16 +582,14 @@
 
             database.ref(`rooms/${currentRoom}`).once('value', (roomSnap) => {
                 const roomData = roomSnap.val() || {};
-                const activePlayers = roomData.val ? roomData.val().players : roomData.players || {};
+                const activePlayers = roomData.players || {};
                 const bossSave = roomData.boss_save || {};
 
-                // 處理「單體目標」或「全體同學」的技能運算邏輯
                 let targetList = [];
 
                 if (skill.type === 'charge') {
-                    // 蓄力不需目標
+                    // 蓄力
                 } else if (targetId === 'all_students') {
-                    // 全體目標篩選
                     Object.values(activePlayers).forEach(p => {
                         if (p.job !== '魔王(老師)' && p.hp > 0) {
                             targetList.push(p);
@@ -667,12 +655,10 @@
                         if (target.hp <= 0) detailedLogs.push(`💀【${target.name}】已空血陣亡倒地！`);
                     });
 
-                    // 串接主體日誌
                     const targetSummary = targetId === 'all_students' ? '🔥 全體生存同學' : `【${targetList[0].name}】`;
                     logText = `🔮【${me.name}】對 ${targetSummary} 釋放了威力招式 [${skill.name}]：(${detailedLogs.join('，')})`;
                 }
 
-                // 同步至雲端
                 database.ref(`rooms/${currentRoom}/players/${me.id}`).set(me);
                 
                 targetList.forEach(t => {
