@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClassMana 跨裝置聯網對戰系統 (全裝置安全相容版)</title>
+    <title>ClassMana 跨裝置聯網對戰系統 (GitHub 雲端安全版)</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
@@ -229,7 +229,7 @@
             databaseURL: "https://classwar-91a0a-default-rtdb.asia-southeast1.firebasedatabase.app/" 
         };
         firebase.initializeApp(firebaseConfig);
-        const database = database.database();
+        const database = firebase.database();
 
         // === 🎲 遊戲數值基礎配置 ===
         const CLASS_CONFIGS = {
@@ -300,43 +300,6 @@
         let myId = null; 
         let allPlayersData = {};
         let bossAoeCount = 0;
-        let lastCheatTime = 0; 
-
-        // === 🛡️ iPad 防作弊監控核心（已修復延遲加載，防範首頁卡死） ===
-        function startCheatMonitor() {
-            function executeCheatPunishment(violationType) {
-                if (!currentRoom || !myId || myId === 'teacher_boss') return;
-
-                const now = Date.now();
-                if (now - lastCheatTime < 3000) return; 
-
-                const me = allPlayersData[myId];
-                if (me && me.hp > 0) {
-                    lastCheatTime = now;
-                    me.hp = Math.max(0, me.hp - 15); 
-                    database.ref(`rooms/${currentRoom}/players/${myId}`).set(me);
-                    sendGlobalLog(`[🔴警告] 偵測到學生【${me.name}】試圖${violationType}！系統發動落雷懲罰扣除 15 HP！`);
-                }
-            }
-
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    executeCheatPunishment('切換分頁或關閉/縮小網頁');
-                }
-            });
-
-            window.addEventListener('blur', () => {
-                executeCheatPunishment('轉換視窗或啟用 iPad 雙重視窗/子母畫面');
-            });
-        }
-
-        window.addEventListener('beforeunload', (e) => {
-            if (currentRoom && myId) {
-                e.preventDefault();
-                e.returnValue = '遊戲正在進行中，確定要離線嗎？';
-                return e.returnValue;
-            }
-        });
 
         function connectToRoom() {
             const roomNum = document.getElementById('room-id').value.trim();
@@ -347,7 +310,7 @@
 
             currentRoom = roomNum;
 
-            // 完全雲端拉取安全比對（已修復殘留變數錯誤）
+            // 👑 拋棄全部本地硬編碼比對，改為百分之百走 Firebase 雲端安全密碼對照表
             database.ref(`secret_auth/${inputId}`).once('value', (authSnap) => {
                 let validPassword = authSnap.val();
 
@@ -376,7 +339,7 @@
                     });
                 }
             }).catch(err => {
-                alert('網路連線異常，無法連接雲端驗證庫：' + err.message);
+                alert('網路同步異常，無法連接雲端驗證庫：' + err.message);
             });
         }
 
@@ -460,9 +423,6 @@
                 logBox.scrollTop = logBox.scrollHeight;
             });
 
-            // 登入成功後，iPad 防作弊監聽器正式啟動
-            startCheatMonitor();
-
             sendGlobalLog(`🚀【${sessionData.name}】(Lv.${sessionData.level} ${sessionData.job}) 已登入聯網戰場！`);
         }
 
@@ -475,6 +435,7 @@
             document.getElementById('boss-modal').style.display = 'none';
         }
 
+        // 👑 老師隔離控制台渲染（包含在分頁內微調學生動態 AP 功能）
         function loadGlobalUsersMonitor() {
             const tbody = document.getElementById('monitor-tbody');
             tbody.innerHTML = `<tr><td colspan="6" style="color:#888; text-align:center;">正在調閱安全雲端伺服器資料庫...</td></tr>`;
@@ -571,6 +532,7 @@
             }
         }
 
+        // === 👥 渲染戰場玩家卡片 ===
         function renderAllPlayers() {
             const container = document.getElementById('players-container');
             container.innerHTML = '';
@@ -635,6 +597,7 @@
             });
         }
 
+        // 當下拉選單或點擊卡片改變目標時，動態更新黃色高亮框與魔王加減 AP 的面板
         function syncTargetCardEffects() {
             const dropdown = document.getElementById('target-dropdown');
             const targetId = dropdown.value;
@@ -643,6 +606,7 @@
             const selectedCard = document.getElementById(`player-card-${targetId}`);
             if (selectedCard) selectedCard.classList.add('is-targeted');
 
+            // 👑 魔王特權：點選特定角色方塊後彈出 AP 快捷控制面板
             const quickPanel = document.getElementById('boss-quick-ap-panel');
             if (myId === 'teacher_boss' && targetId && targetId !== 'teacher_boss') {
                 quickPanel.style.display = 'block';
