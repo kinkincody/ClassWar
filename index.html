@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClassMana 跨裝置聯網對戰系統 (秩序維護至尊版)</title>
+    <title>ClassMana 跨裝置聯網對戰系統 (GitHub 雲端安全版)</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
@@ -106,7 +106,7 @@
         .input-sm { width: 55px; padding: 4px; background: #333; border: 1px solid #555; color: white; border-radius: 4px; text-align: center; font-weight: bold; }
         .input-pwd { width: 90px; padding: 4px; background: #333; border: 1px solid #555; color: #2ecc71; border-radius: 4px; font-family: monospace; }
         
-        /* 新增：魔王專屬快捷 AP 微調按鈕樣式 */
+        /* 魔王專屬快捷 AP 微調按鈕樣式 */
         .boss-quick-ap-box { display: none; background: #1e272e; border: 1px solid #f1c40f; border-radius: 8px; padding: 10px; margin-bottom: 15px; }
         .ap-btn-group { display: flex; gap: 8px; margin-top: 5px; }
         .ap-mini-btn { padding: 4px 10px; font-size: 11px; font-weight: bold; border-radius: 4px; border: none; cursor: pointer; color: white; }
@@ -150,7 +150,7 @@
         <h3 style="color:#f1c40f; margin-bottom:5px;">😈 尊貴的魔王老師管理後台 (ID: Teacher)</h3>
         <p style="font-size: 12px; color: #ddd; margin-bottom: 10px;">
             您的等級：<b style="color:#f1c40f;">9999</b>，初始血量：<b style="color:#ff4d4d;">99999</b>。
-            <span style="color:#2ecc71; font-weight:bold;">[狀態：AP與技能無限制、無消耗、自帶弒神大招]</span>
+            <span style="color:#2ecc71; font-weight:bold;">[狀態：AP與技能無限制、無消耗、自帶弒神大招、GitHub防竊密碼模式已啟用]</span>
         </p>
         
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -301,7 +301,7 @@
         let allPlayersData = {};
         let bossAoeCount = 0;
 
-        // === 🛡_ 網頁分頁切換與離開監察功能 ===
+        // === 🛡️ 網頁分頁切換與離開監察功能 ===
         document.addEventListener('visibilitychange', () => {
             if (document.hidden && currentRoom && myId && myId !== 'teacher_boss') {
                 const me = allPlayersData[myId];
@@ -330,24 +330,26 @@
 
             currentRoom = roomNum;
 
+            // 👑 狀況 A：如果是老師本人登入
             if (inputId === 'Teacher') {
                 if (inputPwd !== '123654789') {
                     return alert('❌ 老師密碼錯誤！無法開啟魔王權限。');
                 }
                 myId = 'teacher_boss';
-                database.ref('secret_auth').set(INITIAL_AC_DATA);
                 proceedLogin(inputId, '魔王(老師)');
                 return;
             }
 
+            // 👥 狀況 B：如果是學生登入，完全依賴線上驗證
             database.ref(`secret_auth/${inputId}`).once('value', (authSnap) => {
                 let validPassword = authSnap.val();
-                if (!validPassword && INITIAL_AC_DATA[inputId]) {
-                    validPassword = INITIAL_AC_DATA[inputId];
+
+                if (!validPassword) {
+                    return alert('❌ 登入失敗：雲端帳戶資料庫尚未建置，請先讓 Teacher 登入一次以初始化！');
                 }
 
-                if (!validPassword || validPassword !== inputPwd) {
-                    return alert('❌ 登入失敗：ID 不存在或驗證密碼錯誤！');
+                if (validPassword !== inputPwd) {
+                    return alert('❌ 登入失敗：密碼錯誤！');
                 }
 
                 database.ref(`rooms/${currentRoom}/players/teacher_boss`).once('value', (bossSnap) => {
@@ -360,13 +362,7 @@
                     }
                 });
             }).catch(err => {
-                if (INITIAL_AC_DATA[inputId] && INITIAL_AC_DATA[inputId] === inputPwd) {
-                    myId = 'student_' + inputId;
-                    const studentJob = document.getElementById('player-job').value;
-                    proceedLogin(inputId, studentJob);
-                } else {
-                    alert('網路同步異常，且密碼不匹配，請重新嘗試。');
-                }
+                alert('網路同步異常，無法讀取雲端驗證庫：' + err.message);
             });
         }
 
@@ -462,7 +458,7 @@
             document.getElementById('boss-modal').style.display = 'none';
         }
 
-        // 👑 老師隔離控制台渲染（同步加入動態 AP 微調功能）
+        // 👑 老師隔離控制台渲染（包含在分頁內微調學生動態 AP 功能）
         function loadGlobalUsersMonitor() {
             const tbody = document.getElementById('monitor-tbody');
             tbody.innerHTML = `<tr><td colspan="6" style="color:#888; text-align:center;">正在調閱安全雲端伺服器資料庫...</td></tr>`;
@@ -475,11 +471,10 @@
                     tbody.innerHTML = '';
 
                     Object.keys(auths).forEach(userId => {
-                        if (userId === 'Teacher') return; // 表格中排除魔王自己
+                        if (userId === 'Teacher') return; 
                         const pwd = auths[userId];
                         const progress = users[userId] || { level: 1, exp: 0, job: '未初始化' };
                         
-                        // 讀取當前房間內活耀學生的動態 AP，若未上線則預設顯示 3
                         const sid = 'student_' + userId;
                         const currentRoomAP = allPlayersData[sid] ? allPlayersData[sid].ap : 3;
 
@@ -509,7 +504,6 @@
             });
         }
 
-        // 新增：在至尊控制台表格內直接加減學員 AP
         function bossTableAdjustAP(studentId, amount) {
             const sid = 'student_' + studentId;
             if (!allPlayersData[sid]) {
@@ -635,7 +629,7 @@
             const selectedCard = document.getElementById(`player-card-${targetId}`);
             if (selectedCard) selectedCard.classList.add('is-targeted');
 
-            // 👑 新增核心：如果是魔王帳密在線，且選取的目標卡片是學生，就直接將「AP快捷控制盒」彈射顯示出來
+            // 👑 魔王特權：點選特定角色方塊後彈出 AP 快捷控制面板
             const quickPanel = document.getElementById('boss-quick-ap-panel');
             if (myId === 'teacher_boss' && targetId && targetId !== 'teacher_boss') {
                 quickPanel.style.display = 'block';
@@ -644,10 +638,9 @@
             }
         }
 
-        // 新增：魔王點擊方塊後，直接從主面板快捷加減特定角色 AP 的處理函數
         function bossQuickAdjustAP(amount) {
             const dropdown = document.getElementById('target-dropdown');
-            const targetId = dropdown.value; // 這會拿到 'student_1A01'
+            const targetId = dropdown.value; 
             if (!targetId || targetId === 'teacher_boss') return;
 
             const currentAP = allPlayersData[targetId].ap || 0;
