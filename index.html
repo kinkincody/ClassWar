@@ -229,7 +229,7 @@
             databaseURL: "https://classwar-91a0a-default-rtdb.asia-southeast1.firebasedatabase.app/" 
         };
         firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+        const database = database.database();
 
         // === 🎲 遊戲數值基礎配置 ===
         const CLASS_CONFIGS = {
@@ -300,6 +300,46 @@
         let myId = null; 
         let allPlayersData = {};
         let bossAoeCount = 0;
+        let lastCheatTime = 0; // 防作弊冷卻計時器
+
+        // === 🛡️ 核心新增：多維度防作弊監控系統 (切換分頁/轉換視窗/iPad雙視窗失焦監控) ===
+        function executeCheatPunishment(violationType) {
+            // 👑 豁免機制：若未初始化完成，或使用者是魔王老師(Teacher)本尊，絕對不予處罰與提示
+            if (!currentRoom || !myId || myId === 'teacher_boss') return;
+
+            const now = Date.now();
+            if (now - lastCheatTime < 3000) return; // 3秒冷卻保護，避免 iPad 事件重複並發導致爆血
+
+            const me = allPlayersData[myId];
+            if (me && me.hp > 0) {
+                lastCheatTime = now;
+                // 扣減 15 HP 懲罰
+                me.hp = Math.max(0, me.hp - 15);
+                database.ref(`rooms/${currentRoom}/players/${myId}`).set(me);
+                // 寫入包含 [🔴警告] 的全場戰況日誌 (渲染時會自動套用 log-alert-red 紅字效果)
+                sendGlobalLog(`[🔴警告] 偵測到學生【${me.name}】試圖${violationType}！系統發動落雷懲罰扣除 15 HP！`);
+            }
+        }
+
+        // 監控維度 1：切換網頁標籤分頁、將瀏覽器縮小或滑到背景
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                executeCheatPunishment('切換分頁或關閉/縮小網頁');
+            }
+        });
+
+        // 監控維度 2：使用 iPad 雙重視窗（Split View / Slide Over）、切換 App、點擊外部導致網頁失焦
+        window.addEventListener('blur', () => {
+            executeCheatPunishment('轉換視窗或啟用 iPad 雙重視窗/子母畫面');
+        });
+
+        window.addEventListener('beforeunload', (e) => {
+            if (currentRoom && myId) {
+                e.preventDefault();
+                e.returnValue = '遊戲正在進行中，確定要離線嗎？';
+                return e.returnValue;
+            }
+        });
 
         function connectToRoom() {
             const roomNum = document.getElementById('room-id').value.trim();
@@ -310,7 +350,6 @@
 
             currentRoom = roomNum;
 
-            // 👑 拋棄全部本地硬編碼比對，改為百分之百走 Firebase 雲端安全密碼對照表
             database.ref(`secret_auth/${inputId}`).once('value', (authSnap) => {
                 let validPassword = authSnap.val();
 
@@ -339,7 +378,7 @@
                     });
                 }
             }).catch(err => {
-                alert('網路同步異常，無法連接雲端驗證庫：' + err.message);
+                alert('網路連線異常，無法連接雲端驗證庫：' + err.message);
             });
         }
 
@@ -435,7 +474,6 @@
             document.getElementById('boss-modal').style.display = 'none';
         }
 
-        // 👑 老師隔離控制台渲染（包含在分頁內微調學生動態 AP 功能）
         function loadGlobalUsersMonitor() {
             const tbody = document.getElementById('monitor-tbody');
             tbody.innerHTML = `<tr><td colspan="6" style="color:#888; text-align:center;">正在調閱安全雲端伺服器資料庫...</td></tr>`;
@@ -532,7 +570,6 @@
             }
         }
 
-        // === 👥 渲染戰場玩家卡片 ===
         function renderAllPlayers() {
             const container = document.getElementById('players-container');
             container.innerHTML = '';
@@ -597,7 +634,6 @@
             });
         }
 
-        // 當下拉選單或點擊卡片改變目標時，動態更新黃色高亮框與魔王加減 AP 的面板
         function syncTargetCardEffects() {
             const dropdown = document.getElementById('target-dropdown');
             const targetId = dropdown.value;
@@ -606,7 +642,6 @@
             const selectedCard = document.getElementById(`player-card-${targetId}`);
             if (selectedCard) selectedCard.classList.add('is-targeted');
 
-            // 👑 魔王特權：點選特定角色方塊後彈出 AP 快捷控制面板
             const quickPanel = document.getElementById('boss-quick-ap-panel');
             if (myId === 'teacher_boss' && targetId && targetId !== 'teacher_boss') {
                 quickPanel.style.display = 'block';
