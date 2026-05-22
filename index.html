@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClassMana 跨裝置聯網對戰系統 (資料保留登出版)</title>
+    <title>ClassMana 跨裝置聯網對戰系統 (本機儲存離開版)</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
@@ -74,17 +74,6 @@
         }
         .btn:active { transform: scale(0.98); }
         .btn:disabled { background: #151515; color: #555; border-color: #222; cursor: not-allowed; }
-        
-        /* 學生 AP 0 時將招式變黑變灰樣式 */
-        .btn.ap-zero-locked {
-            background: #151515 !important;
-            color: #555 !important;
-            border-color: #222 !important;
-            filter: grayscale(1);
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-        
         .btn-ult { background: linear-gradient(135deg, #8e44ad, #c0392b); border: 1px solid #f1c40f; }
         .target-select { width: 100%; padding: 8px; background: #333; color: white; border-radius: 8px; margin-bottom: 15px; }
 
@@ -152,7 +141,7 @@
             <div class="control-panel">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h2 class="section-title" style="margin-bottom: 0;">🎮 我的 iPad 行動面板</h2>
-                    <button id="logout-btn" class="btn" onclick="disconnectFromRoom(false)" style="background: #c0392b; border-color: #e74c3c; padding: 5px 12px; font-size: 11px; display: none;">🚪 登出此房間</button>
+                    <button id="logout-btn" class="btn" onclick="disconnectFromRoom(false)" style="background: #c0392b; border-color: #e74c3c; padding: 5px 12px; font-size: 11px; display: none;">🚪 離開並登出房間</button>
                 </div>
                 <p style="font-size: 12px; margin-bottom: 10px; color: #aaa;">
                     當前身分：<span id="my-status-display" style="color:var(--primary); font-weight:bold;">未連線</span>
@@ -190,7 +179,7 @@
         const SKILL_DATABASE = {
             '通用': [
                 { name: '普通攻擊', apCost: 1, enCost: 0, type: 'atk_p', value: 1 },
-                { name: '儲存 EN',  apCost: 0, enCost: 0, type: 'charge', value: 30 }
+                { name: '儲存 EN',  apCost: 1, enCost: 0, type: 'charge', value: 30 }
             ],
             '戰士': [
                 { name: '英勇嘲諷', apCost: 2, enCost: 0, type: 'log_only', value: 0 },
@@ -244,6 +233,17 @@
             document.getElementById('pwd-group').style.display = (job === '魔王(老師)') ? 'block' : 'none';
         }
 
+        // 讀取/寫入本機儀器快取的方法 (用於離開房間後保存資料)
+        function getLocalSave(name, job) {
+            const key = `classmana_save_${name}_${job}`;
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : null;
+        }
+        function saveToLocal(name, job, data) {
+            const key = `classmana_save_${name}_${job}`;
+            localStorage.setItem(key, JSON.stringify(data));
+        }
+
         // === 🚀 多裝置同步配對連線 ===
         function connectToRoom() {
             const roomNum = document.getElementById('room-id').value.trim();
@@ -260,6 +260,9 @@
             currentRoom = roomNum;
             const uniqueToken = Math.floor(Math.random() * 1000000).toString();
 
+            // 檢查本機儀器是否有該設備上一次玩這個角色的歷史紀錄
+            const localSave = getLocalSave(name, job);
+
             if (job === '魔王(老師)') {
                 myId = 'teacher_boss';
                 myInstanceToken = uniqueToken;
@@ -267,18 +270,19 @@
                 database.ref(`rooms/${currentRoom}/players/teacher_boss`).once('value', (snapshot) => {
                     if (snapshot.exists()) {
                         const oldBoss = snapshot.val();
-                        sendGlobalLog(`⚡【系統廣播】新魔王老師【${name}】強勢登入！原本的魔王老師【${oldBoss.name}】被強制剔除，但保留其歷史作戰數據！`);
+                        sendGlobalLog(`⚡【系統廣播】新魔王老師【${name}】登入！原本的魔王老師【${oldBoss.name}】被強制剔除離開房間！`);
                         
-                        // 僅發送 kick 通知給舊魔王網頁端，但不刪除資料，隨後用新資料覆蓋其控制權
+                        // 1. 先將舊魔王的網頁標記 kick，逼其斷開
                         database.ref(`rooms/${currentRoom}/players/teacher_boss/kick`).set(true).then(() => {
                             const config = CLASS_CONFIGS[job];
+                            // 2. 決定初始數值：若本機儀器有紀錄則沿用，無則用全新預設
                             const initialData = {
                                 id: myId,
                                 name: name,
                                 job: job,
-                                hp: oldBoss.hp !== undefined ? oldBoss.hp : config.hp, // 保留原魔王殘餘血量，若想回滿可改為 config.hp
-                                en: oldBoss.en !== undefined ? oldBoss.en : 0,
-                                ap: oldBoss.ap !== undefined ? oldBoss.ap : 5,
+                                hp: localSave ? localSave.hp : config.hp,
+                                en: localSave ? localSave.en : 0,
+                                ap: localSave ? localSave.ap : 5,
                                 instanceToken: myInstanceToken
                             };
                             startFirebaseSync(initialData);
@@ -289,35 +293,33 @@
                             id: myId,
                             name: name,
                             job: job,
-                            hp: config.hp,
-                            en: 0,
-                            ap: 5,
+                            hp: localSave ? localSave.hp : config.hp,
+                            en: localSave ? localSave.en : 0,
+                            ap: localSave ? localSave.ap : 5,
                             instanceToken: myInstanceToken
                         };
                         startFirebaseSync(initialData);
                     }
                 });
             } else {
-                myId = 'student_' + uniqueToken.substring(0, 4);
-                
-                // 檢查是否已有該學生歷史資料，有則讀取續玩，無則初始化，達成關網網頁不丟失數據
-                database.ref(`rooms/${currentRoom}/players/${myId}`).once('value', (snapshot) => {
-                    if (snapshot.exists()) {
-                        const savedData = snapshot.val();
-                        startFirebaseSync(savedData);
-                    } else {
-                        const config = CLASS_CONFIGS[job];
-                        const initialData = {
-                            id: myId,
-                            name: name,
-                            job: job,
-                            hp: config.hp,
-                            en: 0,
-                            ap: 3
-                        };
-                        startFirebaseSync(initialData);
-                    }
-                });
+                // 學生部分：以本機辨識碼做後綴
+                let studentKey = localStorage.getItem(`classmana_id_${name}_${job}`);
+                if (!studentKey) {
+                    studentKey = uniqueToken.substring(0, 4);
+                    localStorage.setItem(`classmana_id_${name}_${job}`, studentKey);
+                }
+                myId = 'student_' + studentKey;
+
+                const config = CLASS_CONFIGS[job];
+                const initialData = {
+                    id: myId,
+                    name: name,
+                    job: job,
+                    hp: localSave ? localSave.hp : config.hp,
+                    en: localSave ? localSave.en : 0,
+                    ap: localSave ? localSave.ap : 3
+                };
+                startFirebaseSync(initialData);
             }
         }
 
@@ -330,7 +332,8 @@
             const myRef = database.ref(`rooms/${currentRoom}/players/${myId}`);
             myRef.set(initialData);
             
-            // 核心需求：關閉網頁/斷線後「繼續儲存」資料，故此處故意不加入 onDisconnect().remove() 抹除資料機制
+            // 當異常關閉網頁/斷線時自動從房間清除角色
+            myRef.onDisconnect().remove();
 
             database.ref(`rooms/${currentRoom}/players`).on('value', (snapshot) => {
                 allPlayersData = snapshot.val() || {};
@@ -341,7 +344,12 @@
                         if (currentServerBoss.kick === true || (currentServerBoss.instanceToken && currentServerBoss.instanceToken !== myInstanceToken)) {
                             database.ref(`rooms/${currentRoom}/players`).off();
                             database.ref(`rooms/${currentRoom}/logs`).off();
-                            alert(`⚠️ 您已被另一位從其他裝置登入的魔王老師強制登出房間（您的戰場數值已安全保留在列表中）！`);
+                            
+                            // 被強制踢除時，也將自己最後的數據寫回本機快取以利下次沿用
+                            const meBeforeKick = allPlayersData[myId];
+                            if(meBeforeKick) saveToLocal(meBeforeKick.name, meBeforeKick.job, { hp: meBeforeKick.hp, en: meBeforeKick.en, ap: meBeforeKick.ap });
+                            
+                            alert(`⚠️ 您已被另一位從其他裝置登入的魔王老師強制登出！已為您在儀器中儲存歷史戰鬥數值。`);
                             disconnectFromRoom(true); 
                             return;
                         }
@@ -366,10 +374,10 @@
                 logBox.scrollTop = logBox.scrollHeight;
             });
 
-            sendGlobalLog(`🚀【${initialData.name}】(${initialData.job}) 已同步登入/返回戰場！`);
+            sendGlobalLog(`🚀【${initialData.name}】(${initialData.job}) 已進入房間開啟同步！`);
         }
 
-        // === 🚪 實體手動或強制登出功能 (核心需求：只登出網頁房間，絕不移除雲端數據) ===
+        // === 🚪 離開房間與登出功能 (核心調整：先存進 localStorage，再從 Firebase 徹底移除角色) ===
         function disconnectFromRoom(isForced = false) {
             if (!currentRoom || !myId) return;
             
@@ -378,14 +386,25 @@
                 return;
             }
 
-            if (confirm("確定要登出當前對戰房間嗎？（您的數值將會繼續儲存於房間列表中供大家檢視）")) {
-                const name = allPlayersData[myId] ? allPlayersData[myId].name : "未知角色";
-                sendGlobalLog(`🚪【${name}】已手動離線登出房間（資料繼續保留在雲端）。`);
-                
-                // 關閉資料庫監聽，直接刷新網頁回到登入介面，不調用任何 .remove()
-                database.ref(`rooms/${currentRoom}/players`).off();
-                database.ref(`rooms/${currentRoom}/logs`).off();
-                location.reload();
+            if (confirm("確定要離開房間嗎？（您的角色會從列表中消失，且數值會儲存在此設備中，方便下次登入沿用）")) {
+                const me = allPlayersData[myId];
+                if (me) {
+                    // 1. 將資料儲存在本機儀器
+                    saveToLocal(me.name, me.job, {
+                        hp: me.hp,
+                        en: me.en,
+                        ap: me.ap
+                    });
+                    sendGlobalLog(`🚪【${me.name}】已主動登出並離開房間（角色已移出戰場）。`);
+                }
+
+                // 2. 從 Firebase 雲端徹底移除該角色，讓其他人看不見也選不到
+                database.ref(`rooms/${currentRoom}/players/${myId}`).remove().then(() => {
+                    // 3. 解除所有監聽並刷新網頁回到登入配對畫面
+                    database.ref(`rooms/${currentRoom}/players`).off();
+                    database.ref(`rooms/${currentRoom}/logs`).off();
+                    location.reload(); 
+                });
             }
         }
 
@@ -395,6 +414,9 @@
             container.innerHTML = '';
 
             Object.values(allPlayersData).forEach(player => {
+                // 防呆：若該節點帶有已被踢除標記，在前端不予渲染
+                if (player.kick === true) return;
+
                 const config = CLASS_CONFIGS[player.job];
                 const isDead = player.hp <= 0;
                 const hpPercent = Math.max(0, (player.hp / config.hp) * 100);
@@ -429,43 +451,26 @@
         // === 🎮 控制面板與點數檢查 ===
         function updateControlPanel() {
             const me = allPlayersData[myId];
-            if (!me) return;
+            if (!me || me.kick === true) return;
 
             document.getElementById('my-status-display').innerText = `${me.name} (${me.job})`;
             const skillsContainer = document.getElementById('skills-container');
             skillsContainer.innerHTML = '';
 
-            const isBoss = me.job === '魔王(老師)';
             const totalSkills = [...SKILL_DATABASE['通用'], ...SKILL_DATABASE[me.job]];
             
             totalSkills.forEach(skill => {
                 const btn = document.createElement('button');
                 btn.className = `btn ${skill.enCost > 0 ? 'btn-ult' : ''}`;
                 
-                if (me.hp <= 0) btn.disabled = true;
+                const hasEnoughAP = me.ap >= skill.apCost;
+                const hasEnoughEN = me.en >= skill.enCost;
+                if (!hasEnoughAP || !hasEnoughEN || me.hp <= 0) btn.disabled = true;
 
-                if (!isBoss && me.ap <= 0) {
-                    btn.classList.add('ap-zero-locked');
-                } else {
-                    if (me.en < skill.enCost) btn.disabled = true;
-                }
-
-                btn.innerHTML = `<span>${skill.name}</span><span style="font-size:9px;color:#aaa;">AP:${skill.apCost} | EN:${skill.enCost}</span>`;
-                
+                btn.innerHTML = `<span>${skill.name}</span><span style="font-size:9px;color:#aaa;">AP:${skill.apCost}</span>`;
                 btn.onclick = () => {
                     const currentMe = allPlayersData[myId];
-                    if (currentMe.hp <= 0) return;
-
-                    if (!isBoss && currentMe.ap <= 0) {
-                        sendGlobalLog(`⚠️【${currentMe.name}】在 0 AP 的極限情況下試圖點擊招式 [${skill.name}]，宣告行動失敗！`);
-                        return;
-                    }
-
-                    if (currentMe.ap < skill.apCost || currentMe.en < skill.enCost) {
-                        alert("❌ 點數或能量不足，無法施放技能！");
-                        return;
-                    }
-                    
+                    if (!currentMe || currentMe.hp <= 0) return;
                     executeBattleAction(currentMe, skill);
                 };
                 skillsContainer.appendChild(btn);
@@ -478,7 +483,7 @@
             dropdown.innerHTML = '';
 
             Object.values(allPlayersData).forEach(p => {
-                if (p.hp > 0) {
+                if (p.hp > 0 && p.kick !== true) {
                     const opt = document.createElement('option');
                     opt.value = p.id;
                     opt.innerText = `${p.id === myId ? '【自己】' : ''}${p.name} (${p.job}) - HP:${p.hp}`;
@@ -504,7 +509,7 @@
 
             if (skill.type === 'charge') {
                 me.en = Math.min(myConfig.en, me.en + skill.value);
-                logText = `⚡【${me.name}】使用了 [${skill.name}]，將自身 EN 提升了 ${skill.value} 點（此招式不增減 AP）。`;
+                logText = `⚡【${me.name}】使用了 [${skill.name}]，將 EN 提升了 ${skill.value} 點。`;
             } else {
                 if (skill.type === 'atk_p') {
                     let dmg = Math.max(1, (myConfig.patk + skill.value) - targetConfig.def);
@@ -552,7 +557,7 @@
         // === 👑 魔王老師專屬控制函數 ===
         function bossDistributeAP() {
             Object.values(allPlayersData).forEach(p => {
-                if (p.hp > 0 && p.job !== '魔王(老師)') {
+                if (p.hp > 0 && p.job !== '魔王(老師)' && p.kick !== true) {
                     database.ref(`rooms/${currentRoom}/players/${p.id}/ap`).set(p.ap + 2);
                 }
             });
@@ -562,16 +567,16 @@
         }
 
         function bossResetRoom() {
-            if(confirm("確定要重置整個房間，將所有學生血量與點數洗牌回滿嗎？")) {
+            if(confirm("確定要重置整個房間，將所有學生血量與點數洗牌回滿嗎？(同時會清除本機的舊存檔) ")) {
+                // 清除本機所有關聯存檔
+                localStorage.clear();
+                
                 Object.values(allPlayersData).forEach(p => {
+                    if (p.kick === true) return;
                     const config = CLASS_CONFIGS[p.job];
                     p.hp = config.hp;
                     p.en = 0;
                     p.ap = (p.job === '魔王(老師)') ? 5 : 3;
-                    
-                    // 如果被踢除的標記還存在，一併在此重置清除
-                    if (p.kick) delete p.kick;
-                    
                     database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
                 });
                 database.ref(`rooms/${currentRoom}/logs`).remove();
