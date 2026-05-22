@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClassMana 跨裝置聯網對戰系統 (嚴格校正版)</title>
+    <title>ClassMana 跨裝置聯網對戰系統 (無魔王禁登版)</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
@@ -74,7 +74,7 @@
         }
         .btn:active { transform: scale(0.98); }
         
-        /* 🎨 核心調整：當技能變暗/不可按時的特殊灰階樣式 */
+        /* 當技能變暗/不可按時的特殊灰階樣式 */
         .btn:disabled { 
             background: #151515; 
             color: #444; 
@@ -261,9 +261,9 @@
                 id: myId,
                 name: name,
                 job: job,
-                hp: config.hp, // 魔王此時正式套用 99999
-                en: (job === '魔王(老師)') ? 9999 : 0, // 魔王初始極大 EN
-                ap: (job === '魔王(老師)') ? 9999 : 3  // 魔王初始極大 AP (無限)
+                hp: config.hp, 
+                en: (job === '魔王(老師)') ? 9999 : 0, 
+                ap: (job === '魔王(老師)') ? 9999 : 3  
             };
 
             if (job === '魔王(老師)') {
@@ -276,7 +276,14 @@
                     }
                 });
             } else {
-                startFirebaseSync(initialData);
+                // 🛑 核心優化：沒有魔王玩家時，學生絕對不可以登入房間
+                database.ref(`rooms/${currentRoom}/players/teacher_boss`).once('value', (snapshot) => {
+                    if (!snapshot.exists() || snapshot.val().hp <= 0) {
+                        alert('❌ 該房間目前沒有魔王(老師)在線！無法登入，請等待老師開啟房間。');
+                    } else {
+                        startFirebaseSync(initialData);
+                    }
+                });
             }
         }
 
@@ -291,12 +298,22 @@
 
             database.ref(`rooms/${currentRoom}/players`).on('value', (snapshot) => {
                 allPlayersData = snapshot.val() || {};
+                
+                // 🛑 如果在戰鬥中，魔王玩家突然消失/中斷，強制將所有登入的角色登出
+                if (myId !== 'teacher_boss' && !allPlayersData.hasOwnProperty('teacher_boss')) {
+                    database.ref(`rooms/${currentRoom}/players`).off();
+                    database.ref(`rooms/${currentRoom}/logs`).off();
+                    alert('⚠️ 魔王老師已離開或房間關閉，所有人已被安全登出。');
+                    location.reload();
+                    return;
+                }
+
                 renderAllPlayers();
                 updateControlPanel();
                 populateTargets();
             });
 
-            // 監聽戰鬥日誌 (新增高亮紅字過濾)
+            // 監聽戰鬥日誌 
             database.ref(`rooms/${currentRoom}/logs`).limitToLast(12).on('value', (snapshot) => {
                 const logs = snapshot.val() || {};
                 const logBox = document.getElementById('log-box');
@@ -305,7 +322,6 @@
                     const entry = document.createElement('div');
                     entry.className = 'log-entry';
                     
-                    // 只要日誌包含特定標籤，直接變為紅色顯示
                     if (l.includes('[🔴警告]') || l.includes('離開了遊戲頁面') || l.includes('點數不足')) {
                         entry.className += ' log-alert-red';
                     }
@@ -322,7 +338,7 @@
             initPageVisibilityDetection(initialData.name);
         }
 
-        // === 📢 新增功能：角色離開頁面偵測機制 ===
+        // === 📢 角色離開頁面偵測機制 ===
         function initPageVisibilityDetection(playerName) {
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'hidden') {
@@ -395,7 +411,6 @@
                     const hasEnoughAP = me.ap >= skill.apCost;
                     const hasEnoughEN = me.en >= skill.enCost;
                     
-                    // 核心需求：當點數 AP 為 0 或不足時，招式變暗不可選 (disabled)
                     if (me.ap <= 0 || !hasEnoughAP || !hasEnoughEN || me.hp <= 0) {
                         btn.disabled = true;
                     }
@@ -406,7 +421,6 @@
                     const currentMe = allPlayersData[myId];
                     if (!currentMe || currentMe.hp <= 0) return;
                     
-                    // 核心需求：萬一在此刻強行按下了技能，直接彈出紅色日誌
                     if (!isBoss && currentMe.ap <= 0) {
                         sendGlobalLog(`[🔴警告] 學生【${currentMe.name}】目前 AP 點數不足 (AP:0)，強行按下 [${skill.name}] 被系統拒絕！`);
                         return;
@@ -442,14 +456,14 @@
 
             const isBoss = me.job === '魔王(老師)';
 
-            // 🚫 核心優化：絕對不允許角色攻擊自己
+            // 🚫 絕對不允許角色攻擊自己
             const attackTypes = ['atk_p', 'atk_m', 'ult_berserk', 'debuff_ap'];
             if (target && target.id === me.id && attackTypes.includes(skill.type)) {
                 alert('🚫 錯誤：不可以選擇自己作為攻擊或扣除 AP 的目標！');
                 return;
             }
 
-        // 扣除點數 (魔王無限，不扣除點數)
+            // 扣除點數 (魔王無限)
             if (!isBoss) {
                 if (me.ap < skill.apCost) {
                     sendGlobalLog(`[🔴警告] 學生【${me.name}】點數不足，無法施放 [${skill.name}]！`);
@@ -536,3 +550,5 @@
     </script>
 </body>
 </html>
+
+        
