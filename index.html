@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClassMana 跨裝置聯網對戰系統 (GitHub 雲端安全版)</title>
+    <title>ClassMana 跨裝置聯網對戰系統 (全裝置安全相容版)</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
@@ -302,32 +302,29 @@
         let bossAoeCount = 0;
         let lastCheatTime = 0; 
 
-        // === 🛡️ iPad 防作弊監控核心（修復：延遲到登入成功後再行執行綁定） ===
+        // === 🛡️ iPad 防作弊監控核心（已修復延遲加載，防範首頁卡死） ===
         function startCheatMonitor() {
             function executeCheatPunishment(violationType) {
-                // 👑 豁免機制：魔王老師(Teacher)絕對不予處罰
                 if (!currentRoom || !myId || myId === 'teacher_boss') return;
 
                 const now = Date.now();
-                if (now - lastCheatTime < 3000) return; // 3秒冷卻保護
+                if (now - lastCheatTime < 3000) return; 
 
                 const me = allPlayersData[myId];
                 if (me && me.hp > 0) {
                     lastCheatTime = now;
-                    me.hp = Math.max(0, me.hp - 15); // 扣 15 HP
+                    me.hp = Math.max(0, me.hp - 15); 
                     database.ref(`rooms/${currentRoom}/players/${myId}`).set(me);
                     sendGlobalLog(`[🔴警告] 偵測到學生【${me.name}】試圖${violationType}！系統發動落雷懲罰扣除 15 HP！`);
                 }
             }
 
-            // 監聽 1：切換分頁
             document.addEventListener('visibilitychange', () => {
                 if (document.hidden) {
                     executeCheatPunishment('切換分頁或關閉/縮小網頁');
                 }
             });
 
-            // 監聽 2：iPad 雙視窗失焦或切換 App
             window.addEventListener('blur', () => {
                 executeCheatPunishment('轉換視窗或啟用 iPad 雙重視窗/子母畫面');
             });
@@ -350,7 +347,7 @@
 
             currentRoom = roomNum;
 
-            // 完全雲端拉取比對
+            // 完全雲端拉取安全比對（已修復殘留變數錯誤）
             database.ref(`secret_auth/${inputId}`).once('value', (authSnap) => {
                 let validPassword = authSnap.val();
 
@@ -463,7 +460,7 @@
                 logBox.scrollTop = logBox.scrollHeight;
             });
 
-            // 💡 登入成功後，iPad 監聽器正式啟動，絕對不再卡死首頁
+            // 登入成功後，iPad 防作弊監聽器正式啟動
             startCheatMonitor();
 
             sendGlobalLog(`🚀【${sessionData.name}】(Lv.${sessionData.level} ${sessionData.job}) 已登入聯網戰場！`);
@@ -866,7 +863,7 @@
                     database.ref(`rooms/${currentRoom}/players/${p.id}/ap`).set(p.ap + 2);
                 }
             });
-            sendGlobalLog suicideRef(`📢 老師按下控制台：「發放全體同學 +2 AP！」`);
+            sendGlobalLog(`📢 老師按下控制台：「發放全體同學 +2 AP！」`);
         }
 
         function bossResetRoom() {
