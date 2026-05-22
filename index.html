@@ -392,4 +392,147 @@
                     if (me.hp <= 0) btn.disabled = true;
                     btn.innerHTML = `<span>${skill.name}</span><span style="font-size:9px;color:#f1c40f;">AP: 0 (∞)</span>`;
                 } else {
-                    const hasEnoughAP = me.ap >= 
+                    const hasEnoughAP = me.ap >= skill.apCost;
+                    const hasEnoughEN = me.en >= skill.enCost;
+                    
+                    // 核心需求：當點數 AP 為 0 或不足時，招式變暗不可選 (disabled)
+                    if (me.ap <= 0 || !hasEnoughAP || !hasEnoughEN || me.hp <= 0) {
+                        btn.disabled = true;
+                    }
+                    btn.innerHTML = `<span>${skill.name}</span><span style="font-size:9px;color:#aaa;">AP:${skill.apCost}</span>`;
+                }
+
+                btn.onclick = () => {
+                    const currentMe = allPlayersData[myId];
+                    if (!currentMe || currentMe.hp <= 0) return;
+                    
+                    // 核心需求：萬一在此刻強行按下了技能，直接彈出紅色日誌
+                    if (!isBoss && currentMe.ap <= 0) {
+                        sendGlobalLog(`[🔴警告] 學生【${currentMe.name}】目前 AP 點數不足 (AP:0)，強行按下 [${skill.name}] 被系統拒絕！`);
+                        return;
+                    }
+                    executeBattleAction(currentMe, skill);
+                };
+                skillsContainer.appendChild(btn);
+            });
+        }
+
+        function populateTargets() {
+            const dropdown = document.getElementById('target-dropdown');
+            const currentSel = dropdown.value;
+            dropdown.innerHTML = '';
+
+            Object.values(allPlayersData).forEach(p => {
+                if (p.hp > 0) {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.innerText = `${p.id === myId ? '【自己】' : ''}${p.name} (${p.job}) - HP:${p.hp}`;
+                    dropdown.appendChild(opt);
+                }
+            });
+            if (currentSel) dropdown.value = currentSel;
+        }
+
+        // === ⚔️ 跨終端戰鬥結算 ===
+        function executeBattleAction(me, skill) {
+            const targetId = document.getElementById('target-dropdown').value;
+            const target = allPlayersData[targetId];
+
+            if (!target && skill.type !== 'charge') return alert('請選擇一個目標！');
+
+            const isBoss = me.job === '魔王(老師)';
+
+            // 🚫 核心優化：絕對不允許角色攻擊自己
+            const attackTypes = ['atk_p', 'atk_m', 'ult_berserk', 'debuff_ap'];
+            if (target && target.id === me.id && attackTypes.includes(skill.type)) {
+                alert('🚫 錯誤：不可以選擇自己作為攻擊或扣除 AP 的目標！');
+                return;
+            }
+
+        // 扣除點數 (魔王無限，不扣除點數)
+            if (!isBoss) {
+                if (me.ap < skill.apCost) {
+                    sendGlobalLog(`[🔴警告] 學生【${me.name}】點數不足，無法施放 [${skill.name}]！`);
+                    return;
+                }
+                me.ap -= skill.apCost;
+                me.en -= skill.enCost;
+            }
+
+            let logText = '';
+            const myConfig = CLASS_CONFIGS[me.job];
+            const targetConfig = target ? CLASS_CONFIGS[target.job] : null;
+
+            if (skill.type === 'charge') {
+                if (!isBoss) me.en = Math.min(myConfig.en, me.en + skill.value);
+                logText = `⚡【${me.name}】使用了 [${skill.name}]，將 EN 提升了 ${skill.value} 點。`;
+            } else {
+                if (skill.type === 'atk_p') {
+                    let dmg = Math.max(1, (myConfig.patk + skill.value) - targetConfig.def);
+                    target.hp = Math.max(0, target.hp - dmg);
+                    if (target.job !== '魔王(老師)') target.en = Math.min(targetConfig.en, target.en + 10);
+                    logText = `⚔️【${me.name}】對【${target.name}】施展 [${skill.name}]，重創其 ${dmg} 點物理血量！`;
+                } else if (skill.type === 'atk_m') {
+                    let dmg = Math.max(1, (myConfig.matk + skill.value) - Math.floor(targetConfig.def * 0.5));
+                    target.hp = Math.max(0, target.hp - dmg);
+                    if (target.job !== '魔王(老師)') target.en = Math.min(targetConfig.en, target.en + 15);
+                    logText = `🔮【${me.name}】對【${target.name}】降下 [${skill.name}]，轟出 ${dmg} 點法術傷害！`;
+                } else if (skill.type === 'heal') {
+                    target.hp = Math.min(targetConfig.hp, target.hp + skill.value);
+                    logText = `💚【${me.name}】對【${target.name}】使用了 [${skill.name}]，使其回復 ${skill.value} 點 HP！`;
+                } else if (skill.type === 'debuff_ap') {
+                    if (target.job !== '魔王(老師)') target.ap = Math.max(0, target.ap - skill.value);
+                    logText = `🚫【${me.name}】對【${target.name}】使出 [${skill.name}]，無情扣除其 ${skill.value} 點 AP！`;
+                } else if (skill.type === 'boss_heal') {
+                    me.hp = Math.min(myConfig.hp, me.hp + skill.value);
+                    target.ap += 2;
+                    logText = `👑 魔王老師使出 [${skill.name}]！老師大補血 ${skill.value}，並賞賜目標同學 2 AP！`;
+                } else if (skill.type === 'ult_berserk') {
+                    let dmg = Math.max(1, (myConfig.patk + skill.value) - targetConfig.def);
+                    target.hp = Math.max(0, target.hp - dmg);
+                    me.hp = Math.min(myConfig.hp, me.hp + Math.floor(dmg * 0.5));
+                    logText = `🔥【${me.name}】開啟 [諸神黃昏] 劈向【${target.name}】造成 ${dmg} 傷害並瘋狂吸血！`;
+                } else if (skill.type === 'log_only') {
+                    logText = `✨【${me.name}】對【${target.name}】施展了狀態技 [${skill.name}]！`;
+                }
+
+                if (target.hp <= 0) logText += ` 💀【${target.name}】已陣亡倒地！`;
+            }
+
+            database.ref(`rooms/${currentRoom}/players/${me.id}`).set(me);
+            if (target && target.id !== me.id) {
+                database.ref(`rooms/${currentRoom}/players/${target.id}`).set(target);
+            }
+            sendGlobalLog(logText);
+        }
+
+        function sendGlobalLog(text) {
+            database.ref(`rooms/${currentRoom}/logs`).push(`[${new Date().toLocaleTimeString()}] ${text}`);
+        }
+
+        // === 👑 魔王老師專屬控制函數 ===
+        function bossDistributeAP() {
+            Object.values(allPlayersData).forEach(p => {
+                if (p.hp > 0 && p.job !== '魔王(老師)') {
+                    database.ref(`rooms/${currentRoom}/players/${p.id}/ap`).set(p.ap + 2);
+                }
+            });
+            sendGlobalLog(`📢 老師按下了管理面板：「發放全體認真聽講的同學 +2 AP！魔王不需要為自己補充點數，因為魔王點數無限！」`);
+        }
+
+        function bossResetRoom() {
+            if(confirm("確定要重置整個房間，將所有學生血量與點數洗牌回滿嗎？")) {
+                Object.values(allPlayersData).forEach(p => {
+                    const config = CLASS_CONFIGS[p.job];
+                    p.hp = config.hp;
+                    p.en = (p.job === '魔王(老師)') ? 9999 : 0;
+                    p.ap = (p.job === '魔王(老師)') ? 9999 : 3;
+                    database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
+                });
+                database.ref(`rooms/${currentRoom}/logs`).remove();
+                sendGlobalLog(`🔄 魔王老師重置了整個戰場，新一輪的課堂對抗開始！`);
+            }
+        }
+    </script>
+</body>
+</html>
