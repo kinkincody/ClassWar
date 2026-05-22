@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClassMana 跨裝置聯網對戰系統 (魔王主宰動態版)</title>
+    <title>ClassMana 跨裝置聯網對戰系統 (權限核心校正版)</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
@@ -187,49 +187,50 @@
             '魔王(老師)': { hp: 5000, en: 200, def: 60, patk: 120, matk: 120, colorClass: 'bg-boss' }
         };
 
+        // 重新校正確認能力配置（只有魔王能發派AP，學生儲存EN不再自己加AP，大招皆明確消耗EN與AP）
         const SKILL_DATABASE = {
             '通用': [
-                { name: '普通攻擊', apCost: 1, enCost: 0, type: 'atk_p', value: 0, desc: '發動基礎攻擊。造成「基礎物攻」減去「目標物防」的物理傷害。' },
-                { name: '儲存 EN',  apCost: 0, enCost: 0, type: 'charge', value: 30, desc: '凝聚能量。不消耗AP，使自身 EN+30，並額外獲得 1 點 AP。' }
+                { name: '普通攻擊', apCost: 1, enCost: 0, type: 'atk_p', value: 0, desc: '發動基礎物理攻擊。消耗 1 AP。' },
+                { name: '儲存 EN',  apCost: 0, enCost: 0, type: 'charge', value: 30, desc: '凝聚能量。免消耗點數，使自身 EN+30（不加AP）。' }
             ],
             '戰士': [
-                { name: '英勇嘲諷', apCost: 2, enCost: 0, type: 'log_only', value: 0, desc: '大聲挑釁目標。在戰報留下嘲諷紀錄，吸引敵方注意。' },
-                { name: '盾牌猛擊', apCost: 2, enCost: 0, type: 'atk_p', value: 20, desc: '用巨盾砸向目標。追加 20 點威力的物理傷害。' },
-                { name: '戰意高昂', apCost: 2, enCost: 0, type: 'heal', value: 40, desc: '重燃鬥志。為所選目標回復 40 點生命值(HP)。' },
-                { name: '守護誓言', apCost: 2, enCost: 0, type: 'log_only', value: 0, desc: '立下誓言保護隊友。於戰報中宣告守護特定目標。' },
-                { name: '破甲擊',   apCost: 3, enCost: 0, type: 'atk_p', value: 45, desc: '強力破壞防線。追加 45 點高額威力的物理傷害。' },
-                { name: '不落要塞', apCost: 3, enCost: 80, type: 'heal', value: 100, desc: '化身不落城牆。消耗 80 EN，為選定目標大補 100 點 HP。' }
+                { name: '英勇嘲諷', apCost: 2, enCost: 0, type: 'log_only', value: 0, desc: '大聲挑釁目標。消耗 2 AP。' },
+                { name: '盾牌猛擊', apCost: 2, enCost: 0, type: 'atk_p', value: 20, desc: '追加 20 點威力的物理盾擊。消耗 2 AP。' },
+                { name: '戰意高昂', apCost: 2, enCost: 0, type: 'heal', value: 40, desc: '回復指定目標 40 點生命值。消耗 2 AP。' },
+                { name: '守護誓言', apCost: 2, enCost: 0, type: 'log_only', value: 0, desc: '宣告守護特定目標。消耗 2 AP。' },
+                { name: '破甲擊',   apCost: 3, enCost: 0, type: 'atk_p', value: 45, desc: '追加 45 點高額物理傷害。消耗 3 AP。' },
+                { name: '不落要塞', apCost: 3, enCost: 80, type: 'heal', value: 100, desc: '神聖城牆。同時消耗 3 AP 與 80 EN，為目標治癒 100 HP。' }
             ],
             '法師': [
-                { name: '奧術飛彈', apCost: 2, enCost: 0, type: 'atk_m', value: 25, desc: '射出魔法飛彈。造成「基礎魔攻+25」減去「目標半數物防」的法術傷害。' },
-                { name: '冰凍術',   apCost: 2, enCost: 0, type: 'log_only', value: 0, desc: '對目標施加寒冰凍結。在日誌中記錄控場行為。' },
-                { name: '時光回溯', apCost: 2, enCost: 0, type: 'heal', value: 35, desc: '扭轉時間。為指定的友方目標回復 35 點生命值(HP)。' },
-                { name: '魔力抽取', apCost: 2, enCost: 0, type: 'log_only', value: 0, desc: '嘗試抽取目標魔力。於日誌中宣告抽取法術能量。' },
-                { name: '傳送術',   apCost: 2, enCost: 0, type: 'log_only', value: 0, desc: '施展空間傳送。變換自身或隊友的戰略位置。' },
-                { name: '末日審判', apCost: 3, enCost: 100, type: 'atk_m', value: 85, desc: '終極奧義。消耗 100 EN，追加高達 85 點威力的滅世法術傷害。' }
+                { name: '奧術飛彈', apCost: 2, enCost: 0, type: 'atk_m', value: 25, desc: '追加 25 點法術傷害。消耗 2 AP。' },
+                { name: '冰凍術',   apCost: 2, enCost: 0, type: 'log_only', value: 0, desc: '對目標施加寒冰凍結紀錄。消耗 2 AP。' },
+                { name: '時光回溯', apCost: 2, enCost: 0, type: 'heal', value: 35, desc: '扭轉時光，為目標回復 35 HP。消耗 2 AP。' },
+                { name: '魔力抽取', apCost: 2, enCost: 0, type: 'log_only', value: 0, desc: '宣告抽取法術能量。消耗 2 AP。' },
+                { name: '傳送術',   apCost: 2, enCost: 0, type: 'log_only', value: 0, desc: '變換戰略位置。消耗 2 AP。' },
+                { name: '末日審判', apCost: 3, enCost: 100, type: 'atk_m', value: 85, desc: '終極奧義。同時消耗 3 AP 與 100 EN，追加 85 點滅世魔傷。' }
             ],
             '狂戰士': [
-                { name: '嗜血狂暴', apCost: 2, enCost: 0, type: 'atk_p', value: 30, desc: '瘋狂砍擊。追加 30 點威力的致命物理傷害。' },
-                { name: '橫掃千軍', apCost: 2, enCost: 0, type: 'atk_p', value: 15, desc: '大範圍揮砍。追加 15 點威力的物理傷害。' },
-                { name: '不死意志', apCost: 2, enCost: 0, type: 'heal', value: 20, desc: '憑意志咬牙苦撐。為指定的目標目標回復 20 點 HP。' },
-                { name: '恐嚇咆哮', apCost: 2, enCost: 0, type: 'log_only', value: 0, desc: '發出震耳咆哮。於日誌中恐嚇目標降低其戰意。' },
-                { name: '碎骨擊',   apCost: 3, enCost: 0, type: 'atk_p', value: 50, desc: '粉碎目標骨骼。追加高達 50 點威力的重型物理傷害。' },
-                { name: '諸神黃昏', apCost: 3, enCost: 90, type: 'ult_berserk', value: 70, desc: '禁忌大招。消耗 90 EN，追加 70 點傷害並將造成傷害的 50% 轉化為自身 HP。' }
+                { name: '嗜血狂暴', apCost: 2, enCost: 0, type: 'atk_p', value: 30, desc: '瘋狂砍擊追加 30 物理傷害。消耗 2 AP。' },
+                { name: '橫掃千軍', apCost: 2, enCost: 0, type: 'atk_p', value: 15, desc: '大範圍揮砍追加 15 物理傷害。消耗 2 AP。' },
+                { name: '不死意志', apCost: 2, enCost: 0, type: 'heal', value: 20, desc: '咬牙苦撐為指定目標回復 20 HP。消耗 2 AP。' },
+                { name: '恐嚇咆哮', apCost: 2, enCost: 0, type: 'log_only', value: 0, desc: '發出震耳咆哮降低敵方戰意。消耗 2 AP。' },
+                { name: '碎骨擊',   apCost: 3, enCost: 0, type: 'atk_p', value: 50, desc: '追加高達 50 點威力的重型物理傷害。消耗 3 AP。' },
+                { name: '諸神黃昏', apCost: 3, enCost: 90, type: 'ult_berserk', value: 70, desc: '同時消耗 3 AP 與 90 EN，追加 70 傷害並吸血 50%。' }
             ],
             '弓手': [
-                { name: '二連矢',   apCost: 2, enCost: 0, type: 'atk_p', value: 25, desc: '快速連射兩箭。追加 25 點威力的物理傷害。' },
-                { name: '毒箭',     apCost: 2, enCost: 0, type: 'atk_p', value: 10, desc: '射出帶毒箭矢。追加 10 點物理傷害，並留下中毒紀錄。' },
-                { name: '自然治癒', apCost: 2, enCost: 0, type: 'heal', value: 30, desc: '借助自然微光。為所選目標回復 30 點生命值(HP)。' },
-                { name: '鷹眼專注', apCost: 2, enCost: 0, type: 'log_only', value: 0, desc: '凝神注視目標。於戰報宣告鎖定敵方致命弱點。' },
-                { name: '絆馬索',   apCost: 2, enCost: 0, type: 'debuff_ap', value: 1, desc: '拋出鎖鏈絆倒敵方。無情直接「扣除目標 1 點 AP」。' },
-                { name: '流星箭雨', apCost: 3, enCost: 80, type: 'atk_p', value: 45, desc: '消耗 80 EN，朝天空射出箭雨，對目標追加 45 點物理傷害。' }
+                { name: '二連矢',   apCost: 2, enCost: 0, type: 'atk_p', value: 25, desc: '快速連射追加 25 物理傷害。消耗 2 AP。' },
+                { name: '毒箭',     apCost: 2, enCost: 0, type: 'atk_p', value: 10, desc: '射出帶毒箭矢追加 10 物理傷害。消耗 2 AP。' },
+                { name: '自然治癒', apCost: 2, enCost: 0, type: 'heal', value: 30, desc: '借助自然微光為目標回復 30 HP。消耗 2 AP。' },
+                { name: '鷹眼專注', apCost: 2, enCost: 0, type: 'log_only', value: 0, desc: '凝神注視，宣告鎖定敵方弱點。消耗 2 AP。' },
+                { name: '絆馬索',   apCost: 2, enCost: 0, type: 'debuff_ap', value: 1, desc: '拋出鎖鏈，扣除目標 1 點 AP。消耗 2 AP。' },
+                { name: '流星箭雨', apCost: 3, enCost: 80, type: 'atk_p', value: 45, desc: '同時消耗 3 AP 與 80 EN，朝天空射出大範圍箭雨。' }
             ],
             '魔王(老師)': [
-                { name: '點名突擊', apCost: 0, enCost: 0, type: 'atk_p', value: 80, desc: '【魔王特權：免消耗】突擊點名！對選定目標或全體同學追加 80 點物理傷害。' },
-                { name: '隨堂小測驗', apCost: 0, enCost: 0, type: 'atk_m', value: 60, desc: '【魔王特權：免消耗】降下課堂測驗。對選定目標或全體同學追加 60 點法術傷害。' },
-                { name: '沒收 iPad',  apCost: 0, enCost: 0, type: 'debuff_ap', value: 3, desc: '【魔王特權：免消耗】強制沒收載具！扣除選定目標或全體同學 3 點 AP。' },
-                { name: '讚美之光', apCost: 0, enCost: 0, type: 'boss_heal', value: 300, desc: '【魔王特權：免消耗】高聲讚美。魔王治癒自己 300 HP，並賞賜目標同學 2 AP (若選全體則全體加)。' },
-                { name: '期末考降臨', apCost: 0, enCost: 0, type: 'atk_m', value: 200, desc: '【魔王特權：免消耗】終極試煉！對選定目標或全體同學追加高達 200 點法術傷害。' }
+                { name: '點名突擊', apCost: 0, enCost: 0, type: 'atk_p', value: 80, desc: '【魔王特權：免消耗】突擊點名！追加 80 點物理傷害。' },
+                { name: '隨堂小測驗', apCost: 0, enCost: 0, type: 'atk_m', value: 60, desc: '【魔王特權：免消耗】降下測驗。追加 60 點法術傷害。' },
+                { name: '沒收 iPad',  apCost: 0, enCost: 0, type: 'debuff_ap', value: 3, desc: '【魔王特權：免消耗】強制沒收！扣除目標 3 點 AP。' },
+                { name: '讚美之光', apCost: 0, enCost: 0, type: 'boss_heal', value: 300, desc: '【魔王特權：免消耗】魔王回血 300，並派發給目標 2 AP。' },
+                { name: '期末考降臨', apCost: 0, enCost: 0, type: 'atk_m', value: 200, desc: '【魔王特權：免消耗】終極考驗！追加高達 200 點法術傷害。' }
             ]
         };
 
@@ -338,7 +339,7 @@
             const myRef = database.ref(`rooms/${currentRoom}/players/${myId}`);
             myRef.set(initialData);
             
-            // 【核心修正：斷線時觸發自動移除】不論是魔王還是學生，關閉網頁/中斷連線時，直接將其從在線名單 players 中移除，達成自動登出效果
+            // 斷線自動移除在線名單，關閉網頁即自動登出
             myRef.onDisconnect().remove(); 
 
             database.ref(`rooms/${currentRoom}/players`).on('value', (snapshot) => {
@@ -394,7 +395,6 @@
             let playersArray = Object.values(allPlayersData);
             const isAmIBoss = (myId === 'teacher_boss');
 
-            // 【關閉網頁後，魔王會從名單自動登出，並在此切換為保留離線掛機外框】
             if (offlineBossData && !allPlayersData['teacher_boss']) {
                 playersArray.push({
                     id: 'teacher_boss', name: '魔王(老師)', job: '魔王(老師)',
@@ -415,6 +415,7 @@
                 card.className = `card ${player.id === myId ? 'is-me' : ''} ${isBoss ? 'is-boss' : ''}`;
                 if (isDead) card.style.opacity = '0.4';
 
+                // 點擊方塊區塊切換目標
                 card.onclick = (e) => {
                     if (e.target.tagName === 'BUTTON') return;
                     selectTargetFromBlock(player.id);
@@ -488,10 +489,8 @@
                 const btn = document.createElement('button');
                 btn.className = `btn ${skill.enCost > 0 ? 'btn-ult' : ''}`;
                 
-                const isSkillCharge = (skill.type === 'charge');
-                const hasEnoughEN = isBoss ? true : (me.en >= skill.enCost);
-                
-                if (!hasEnoughEN || me.hp <= 0) btn.disabled = true;
+                // 如果角色已死亡，給予禁用
+                if (me.hp <= 0) btn.disabled = true;
 
                 const apText = isBoss ? '0' : skill.apCost;
                 const enText = isBoss ? '0' : skill.enCost;
@@ -507,13 +506,24 @@
                 
                 btn.onclick = () => {
                     const latestMe = allPlayersData[myId];
-                    if (!isBoss && !isSkillCharge && skill.apCost > 0 && latestMe.ap <= 0) {
-                        sendGlobalLog(`⚠️【${latestMe.name}】在 0 AP 的極限情況下試圖點擊招式 [${skill.name}]，宣告行動失敗！`);
-                        return;
-                    }
-                    if (!isBoss && latestMe.ap < skill.apCost) {
-                        alert("AP點數仍然不足，無法成功施放該技能！");
-                        return;
+                    if (latestMe.hp <= 0) return;
+
+                    // 【核心確認防呆：應該要消耗 AP 及 EN 使用技能，並對0 AP進行極限攔截公告】
+                    if (!isBoss) {
+                        // 1. 先確認 0 AP 的點擊日誌彈出需求
+                        if (skill.apCost > 0 && latestMe.ap <= 0) {
+                            sendGlobalLog(`⚠️【${latestMe.name}】在 0 AP 的極限情況下試圖點擊招式 [${skill.name}]，宣告行動失敗！`);
+                            return;
+                        }
+                        // 2. 正常點數不夠的常規阻擋
+                        if (latestMe.ap < skill.apCost) {
+                            sendGlobalLog(`❌【${latestMe.name}】試圖使用 [${skill.name}]，但因 AP 點數不足（需要 ${skill.apCost}），宣告失敗！`);
+                            return;
+                        }
+                        if (latestMe.en < skill.enCost) {
+                            sendGlobalLog(`❌【${latestMe.name}】試圖使用 [${skill.name}]，但因 EN 能量不足（需要 ${skill.enCost}），宣告失敗！`);
+                            return;
+                        }
                     }
                     executeBattleAction(latestMe, skill);
                 };
@@ -542,7 +552,6 @@
                 targets.push({ id: 'teacher_boss', name: '魔王(老師)[掛機中]', job: '魔王(老師)', hp: 1 }); 
             }
 
-            let hasTargets = false;
             targets.forEach(p => {
                 if (p.id === myId) return; 
 
@@ -550,7 +559,6 @@
                 if (p.hp > 0 || isRealBoss) {
                     if (isRealBoss && !allPlayersData['teacher_boss']) {
                         dropdown.innerHTML += `<option value="teacher_boss">👑 魔王(老師) [離線保留槽]</option>`;
-                        hasTargets = true;
                         return;
                     }
 
@@ -558,7 +566,6 @@
                     opt.value = p.id;
                     opt.innerText = `${p.name} (${p.job}) - HP:${p.hp}`;
                     dropdown.appendChild(opt);
-                    hasTargets = true;
                 }
             });
             
@@ -572,6 +579,7 @@
             
             const isBoss = me.job === '魔王(老師)';
             
+            // 【核心校正：點擊時嚴格扣除技能對應之 AP 與 EN】
             if (!isBoss) {
                 me.ap -= skill.apCost;
                 me.en -= skill.enCost;
@@ -613,11 +621,11 @@
                 }
 
                 if (skill.type === 'charge') {
+                    // 【校正確認：只有魔王能發派AP，學生蓄力只加 30 EN，不准自加 AP】
                     if (!isBoss) {
                         me.en = Math.min(myConfig.en, me.en + 30);
-                        me.ap += 1;
                     }
-                    logText = `⚡【${me.name}】使用了 [${skill.name}]，將 EN 提升了 30 點，並蓄力產生了 1 點 AP！`;
+                    logText = `⚡【${me.name}】使用了 [${skill.name}]，專注凝聚使自身 EN 提升了 30 點！`;
                 } else {
                     let detailedLogs = [];
                     targetList.forEach(target => {
@@ -640,8 +648,9 @@
                             target.ap = Math.max(0, target.ap - skill.value);
                             detailedLogs.push(`【${target.name}】被強制扣除 ${skill.value} AP`);
                         } else if (skill.type === 'boss_heal') {
+                            // 魔王專屬：讚美之光
                             me.hp = Math.min(myConfig.hp, me.hp + 300);
-                            target.ap += 2;
+                            target.ap += 2; // 【符合只有魔王能發派AP之規則】
                             detailedLogs.push(`【${target.name}】獲賜 2 AP`);
                         } else if (skill.type === 'ult_berserk') {
                             let dmg = Math.max(1, (myConfig.patk + skill.value) - targetConfig.def);
@@ -656,7 +665,7 @@
                     });
 
                     const targetSummary = targetId === 'all_students' ? '🔥 全體生存同學' : `【${targetList[0].name}】`;
-                    logText = `🔮【${me.name}】對 ${targetSummary} 釋放了威力招式 [${skill.name}]：(${detailedLogs.join('，')})`;
+                    logText = `🔮【${me.name}】對 ${targetSummary} 釋放了招式 [${skill.name}]：(${detailedLogs.join('，')})`;
                 }
 
                 database.ref(`rooms/${currentRoom}/players/${me.id}`).set(me);
