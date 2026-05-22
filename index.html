@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClassMana 跨裝置聯網對戰系統 (秩序維護至尊安全版)</title>
+    <title>ClassMana 跨裝置聯網對戰系統 (GitHub 雲端安全版)</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
@@ -115,7 +115,7 @@
 <body>
 
     <header>
-        <h1>ClassMana 跨裝置多人在線對戰系統 <span id="room-display" class="room-badge">未連線房間</span></h1>
+        <h1>ClassMana 跨裝置聯網對戰系統 <span id="room-display" class="room-badge">未連線房間</span></h1>
     </header>
 
     <div class="login-panel" id="login-panel">
@@ -150,11 +150,11 @@
         <h3 style="color:#f1c40f; margin-bottom:5px;">😈 尊貴的魔王老師管理後台 (ID: Teacher)</h3>
         <p style="font-size: 12px; color: #ddd; margin-bottom: 10px;">
             您的等級：<b style="color:#f1c40f;">9999</b>，初始血量：<b style="color:#ff4d4d;">99999</b>。
-            <span style="color:#2ecc71; font-weight:bold;">[狀態：AP與技能無限制、無消耗、自帶弒神大招、GitHub防解密安全性模式已啟用]</span>
+            <span style="color:#2ecc71; font-weight:bold;">[狀態：AP與技能無限制、無消耗、自帶弒神大招、防作弊分心網絡已啟用]</span>
         </p>
         
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="btn" onclick="bossDistributeAP()" style="background: #e67e22; border-color: #d35400; padding: 8px 15px;">📢 發放全體生存同學 +2 AP</button>
+            <button class="btn" onclick="bossDistributeAP()" style="background: #e67e22; border-color: #d35400; padding: 8px 15px;">📢 發放全體同學 +2 AP</button>
             <button class="btn" onclick="bossResetRoom()" style="background: #c0392b; border-color: #95a5a6; padding: 8px 15px;">🔄 重置此房間所有數據</button>
             <button class="btn" onclick="openBossModal()" style="background: #2980b9; border-color: #3498db; padding: 8px 20px; color: #fff; box-shadow: 0 0 10px rgba(52,152,219,0.5);">🔑 開啟雲端至尊控制台 (帳密/等級)</button>
         </div>
@@ -240,82 +240,51 @@
             '魔王(老師)': { hp: 99999, en: 9999, def: 500, patk: 200, matk: 200, colorClass: 'bg-boss' }
         };
 
-        // 🔒 安全升級：原始密碼全部轉化為不可逆的 SHA-256 表格，徹底避免源碼洩露密碼
-        const HASHED_AC_DATA = {
-            "Teacher": "42e8677bb0b2aa9c0efeb0270a649ef96a60d84347712f5a0723145417df87f3",
-            "1A01": "2d9ef96f13b5bf95a498072049d52086e331b26da7be9539316bbcf6306c4b22",
-            "1A02": "f6236b3346d0dfbd6511413661eb1bbda6c76db363cc59fe3224b59b19df43b7",
-            "1A03": "a34e06385cfcf441e8c7849d4791ea837c784ad9a50ef47889ef542cfb4bba02",
-            "1A04": "e2f12ba777cd398328bfb0e37cb805a968600d1702f3066cd64d50ebfc4b9df1",
-            "1A05": "81f6bb61dbbf2e6b6005741697aeebe56b02538cb39d2c5108398c253fa28972",
-            "1A06": "81216d00166299f2dbda9fcf60046cd26284a1a3641b088e5b4ee3f721e902b9",
-            "1A07": "3da563ef60a6e3427ec50fa6874ca98f5b84fa302cc3efcae5bb1a257c706ee9",
-            "1A08": "3a7bf8fa5ff3e5bfa49d6046cd31ea8ee2cc9e5f5da89efc15baeedbf25ce2ba",
-            "1A09": "9ef368fa2c00aee2cbf500fa6ecd32ea2ecc8e3f5da81efc12baeedbf15ce1ba",
-            "1A10": "c138g531ebd0bfda6511413661eb1bbda6c76db363cc59fe3224b59b19df4c22",
-            "1A11": "e88r55ke3f3bc6e3427ec50fa6874ca98f5b84fa302cc3efcae5bb1a257c7011a",
-            "1A12": "9g65wodz2d9ef96f13b5bf95a498072049d52086e331b26da7be9539316bbcf6",
-            "1A13": "clzsacqc5f3bc6e3427ec50fa6874ca98f5b84fa302cc3efcae5bb1a257c7088b",
-            "1A14": "mh11yhvh42e8677bb0b2aa9c0efeb0270a649ef96a60d84347712f5a07231454",
-            "1A15": "8ttbypqt3a7bf8fa5ff3e5bfa49d6046cd31ea8ee2cc9e5f5da89efc15baeedbf",
-            "1A16": "uta4vrlq81216d00166299f2dbda9fcf60046cd26284a1a3641b088e5b4ee3f7",
-            "1A17": "ur7eq052a34e06385cfcf441e8c7849d4791ea837c784ad9a50ef47889ef542c",
-            "1A18": "nkhlhktzf6236b3346d0dfbd6511413661eb1bbda6c76db363cc59fe3224b59b",
-            "1A19": "8kcoxf9q81f6bb61dbbf2e6b6005741697aeebe56b02538cb39d2c5108398c25",
-            "1A20": "e00734de6da7be9539316bbcf6306c4b222d9ef96f13b5bf95a498072049d52",
-            "1A21": "98joa4inf6236b3346d0dfbd6511413661eb1bbda6c76db363cc59fe3224b59b",
-            "1A22": "8lds981ta34e06385cfcf441e8c7849d4791ea837c784ad9a50ef47889ef542c",
-            "1A23": "x49kndv3e2f12ba777cd398328bfb0e37cb805a968600d1702f3066cd64d50eb",
-            "1A24": "6namufcf81f6bb61dbbf2e6b6005741697aeebe56b02538cb39d2c5108398c25",
-            "1A25": "a65ab9gk81216d00166299f2dbda9fcf60046cd26284a1a3641b088e5b4ee3f7",
-            "1A26": "0piga2ap3da563ef60a6e3427ec50fa6874ca98f5b84fa302cc3efcae5bb1a257",
-            "1A27": "x32mw2zo3a7bf8fa5ff3e5bfa49d6046cd31ea8ee2cc9e5f5da89efc15baeedbf",
-            "1A28": "4qg97cwu9ef368fa2c00aee2cbf500fa6ecd32ea2ecc8e3f5da81efc12baeedb",
-            "1A29": "uzx17klyc138g531ebd0bfda6511413661eb1bbda6c76db363cc59fe3224b59b",
-            "1A30": "05e0uo8fe88r55ke3f3bc6e3427ec50fa6874ca98f5b84fa302cc3efcae5bb1a",
-            "1A31": "nekupd8w9g65wodz2d9ef96f13b5bf95a498072049d52086e331b26da7be953",
-            "1A32": "ezrqwxfbclzsacqc5f3bc6e3427ec50fa6874ca98f5b84fa302cc3efcae5bb1",
-            "5C34": "d3hx6ernmh11yhvh42e8677bb0b2aa9c0efeb0270a649ef96a60d84347712f5a",
-            "5C35": "p8azd42c8ttbypqt3a7bf8fa5ff3e5bfa49d6046cd31ea8ee2cc9e5f5da89ef",
-            "6A01": "06kf38suuta4vrlq81216d00166299f2dbda9fcf60046cd26284a1a3641b088",
-            "6A02": "3dbnmen1ur7eq052a34e06385cfcf441e8c7849d4791ea837c784ad9a50ef47",
-            "6A03": "wwhzph2xnkhlhktzf6236b3346d0dfbd6511413661eb1bbda6c76db363cc59f",
-            "6A04": "or1y8fii8kcoxf9q81f6bb61dbbf2e6b6005741697aeebe56b02538cb39d2c5",
-            "6A05": "xteqdpg1e00734de6da7be9539316bbcf6306c4b222d9ef96f13b5bf95a49807",
-            "6A06": "mwopbnnq98joa4inf6236b3346d0dfbd6511413661eb1bbda6c76db363cc59f",
-            "6A07": "mhrfdohh8lds981ta34e06385cfcf441e8c7849d4791ea837c784ad9a50ef47",
-            "6A08": "ez8thet3x49kndv3e2f12ba777cd398328bfb0e37cb805a968600d1702f3066c",
-            "6A09": "rl3p5jgb6namufcf81f6bb61dbbf2e6b6005741697aeebe56b02538cb39d2c5",
-            "6A10": "5w9fe1vla65ab9gk81216d00166299f2dbda9fcf60046cd26284a1a3641b088",
-            "6A11": "lq0i9y5o0piga2ap3da563ef60a6e3427ec50fa6874ca98f5b84fa302cc3efcae",
-            "6A12": "6704913vx32mw2zo3a7bf8fa5ff3e5bfa49d6046cd31ea8ee2cc9e5f5da89efc",
-            "6A13": "dkqgftk04qg97cwu9ef368fa2c00aee2cbf500fa6ecd32ea2ecc8e3f5da81efc",
-            "6A14": "z0otm0zkuzx17klyc138g531ebd0bfda6511413661eb1bbda6c76db363cc59f",
-            "6A15": "p1lbpd2h05e0uo8fe88r55ke3f3bc6e3427ec50fa6874ca98f5b84fa302cc3ef",
-            "6A16": "txrwtqcgnekupd8w9g65wodz2d9ef96f13b5bf95a498072049d52086e331b26",
-            "6A17": "n6hz18n8ezrqwxfbclzsacqc5f3bc6e3427ec50fa6874ca98f5b84fa302cc3e",
-            "6A18": "2fcf78qxd3hx6ernmh11yhvh42e8677bb0b2aa9c0efeb0270a649ef96a60d84",
-            "6A19": "tzgi0jmvp8azd42c8ttbypqt3a7bf8fa5ff3e5bfa49d6046cd31ea8ee2cc9e",
-            "6A20": "hepf7nw906kf38suuta4vrlq81216d00166299f2dbda9fcf60046cd26284a1a",
-            "6A21": "hu6qkz3r3dbnmen1ur7eq052a34e06385cfcf441e8c7849d4791ea837c784ad",
-            "6A22": "t2pqdw0iwwhzph2xnkhlhktzf6236b3346d0dfbd6511413661eb1bbda6c76db",
-            "6A23": "ed3rcljzor1y8fii8kcoxf9q81f6bb61dbbf2e6b6005741697aeebe56b0253",
-            "6A24": "jo8u5l7rxteqdpg1e00734de6da7be9539316bbcf6306c4b222d9ef96f13b5b",
-            "6A25": "gwr14rhnmwopbnnq98joa4inf6236b3346d0dfbd6511413661eb1bbda6c76db",
-            "6A26": "fv3kd0c4mhrfdohh8lds981ta34e06385cfcf441e8c7849d4791ea837c784ad",
-            "6A27": "w315s77mez8thet3x49kndv3e2f12ba777cd398328bfb0e37cb805a968600d",
-            "6A28": "esmc1523rl3p5jgb6namufcf81f6bb61dbbf2e6b6005741697aeebe56b0253",
-            "6A29": "kr5tzr8s5w9fe1vla65ab9gk81216d00166299f2dbda9fcf60046cd26284a1",
-            "6A30": "0qk6yadclq0i9y5o0piga2ap3da563ef60a6e3427ec50fa6874ca98f5b84fa"
-        };
+        let currentRoom = null;
+        let myId = null; 
+        let allPlayersData = {};
+        let bossAoeCount = 0;
+        let lastCheatTime = 0; // 防作弊落雷判定冷卻計時器
 
-        // 🛠️ 輔助小工具：將輸入轉換為不可逆雜湊值，保障資料安全
-        async function sha256(message) {
-            const msgBuffer = new TextEncoder().encode(message);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        // === 🛡️ 核心新增：多維度防作弊監察功能（僅在成功登入戰場後啟用） ===
+        function startCheatMonitor() {
+            function executeCheatPunishment(violationType) {
+                // 👑 豁免特權：魔王老師(Teacher)擁有主宰身分，絕對跳過判定與懲罰
+                if (!currentRoom || !myId || myId === 'teacher_boss') return;
+
+                const now = Date.now();
+                if (now - lastCheatTime < 3000) return; // 3秒冷卻保護
+
+                const me = allPlayersData[myId];
+                if (me && me.hp > 0) {
+                    lastCheatTime = now;
+                    me.hp = Math.max(0, me.hp - 15); // 扣減 15 HP 的懲罰
+                    database.ref(`rooms/${currentRoom}/players/${myId}`).set(me);
+                    // 寫入包含 [🔴警告] 的全場日誌，下方日誌渲染機制會自動將此行轉為粗體紅字
+                    sendGlobalLog(`[🔴警告] 偵測到學生【${me.name}】試圖${violationType}！系統發動落雷懲罰扣除 15 HP！`);
+                }
+            }
+
+            // 監看維度 1：切換網頁標籤頁面、縮小或將瀏覽器退到背景運行
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    executeCheatPunishment('切換頁面或關閉/縮小網頁');
+                }
+            });
+
+            // 監看維度 2：開啟 iPad 雙重視窗（Split View / Slide Over）、滑出別的 App 或點擊網頁外部導致失焦
+            window.addEventListener('blur', () => {
+                executeCheatPunishment('轉換視窗或啟用 iPad 雙重視窗/子母畫面');
+            });
         }
+
+        window.addEventListener('beforeunload', (e) => {
+            if (currentRoom && myId) {
+                e.preventDefault();
+                e.returnValue = '遊戲正在進行中，確定要離線嗎？';
+                return e.returnValue;
+            }
+        });
 
         function getScaledStats(job, level) {
             if (job === '魔王(老師)') {
@@ -373,54 +342,7 @@
             ]
         };
 
-        let currentRoom = null;
-        let myId = null; 
-        let allPlayersData = {};
-        let bossAoeCount = 0;
-        let lastCheatTime = 0; // 防作弊落雷計時器
-
-        // === 🛡️ 核心：多維度全面防作弊監察網絡 (切換分頁/離開網頁/iPad雙視窗失焦監控) ===
-        function startCheatMonitor() {
-            function executeCheatPunishment(violationType) {
-                // 👑 豁免機制：若身分是魔王老師(Teacher)，擁有絕對豁免權，不予處罰
-                if (!currentRoom || !myId || myId === 'teacher_boss') return;
-
-                const now = Date.now();
-                if (now - lastCheatTime < 3000) return; // 3秒冷卻保護機制
-
-                const me = allPlayersData[myId];
-                if (me && me.hp > 0) {
-                    lastCheatTime = now;
-                    me.hp = Math.max(0, me.hp - 15); // 強制扣除 15 HP 懲罰
-                    database.ref(`rooms/${currentRoom}/players/${myId}`).set(me);
-                    // 寫入包含 [🔴警告] 的全場戰況日誌 (日誌渲染邏輯中已自動包含變紅字設定)
-                    sendGlobalLog(`[🔴警告] 偵測到學生【${me.name}】試圖${violationType}！系統發動落雷懲罰扣除 15 HP！`);
-                }
-            }
-
-            // 監聽 1：切換標籤分頁、縮小瀏覽器
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    executeCheatPunishment('切換分頁或關閉/縮小網頁');
-                }
-            });
-
-            // 監聽 2：使用 iPad 雙重視窗（Split View / Slide Over）、轉換 App、點擊外部導致失焦
-            window.addEventListener('blur', () => {
-                executeCheatPunishment('轉換視窗或啟用 iPad 雙重視窗/子母畫面');
-            });
-        }
-
-        window.addEventListener('beforeunload', (e) => {
-            if (currentRoom && myId) {
-                e.preventDefault();
-                e.returnValue = '遊戲正在進行中，確定要離線嗎？';
-                return e.returnValue;
-            }
-        });
-
-        // === 📡 完美兼容所有設備的連線驗證核心 ===
-        async function connectToRoom() {
+        function connectToRoom() {
             const roomNum = document.getElementById('room-id').value.trim();
             const inputId = document.getElementById('player-id').value.trim();
             const inputPwd = document.getElementById('player-pwd').value.trim();
@@ -429,34 +351,32 @@
 
             currentRoom = roomNum;
 
-            // 計算輸入密碼的雜湊值，與安全對照表進行本地匹配（保證 iPad 與流動設備秒速登入放行）
-            const inputHashed = await sha256(inputPwd);
-            let isVerified = false;
+            database.ref(`secret_auth/${inputId}`).once('value', (authSnap) => {
+                let validPassword = authSnap.val();
 
-            if (HASHED_AC_DATA[inputId] && HASHED_AC_DATA[inputId] === inputHashed) {
-                isVerified = true;
-            }
+                if (!validPassword || validPassword !== inputPwd) {
+                    return alert('❌ 登入失敗：ID 不存在或驗證密碼錯誤！');
+                }
 
-            if (!isVerified) {
-                return alert('❌ 登入失敗：ID 不存在或驗證密碼錯誤！');
-            }
-
-            const isBoss = (inputId === 'Teacher');
-
-            if (isBoss) {
-                myId = 'teacher_boss';
-                proceedLogin(inputId, '魔王(老師)');
-            } else {
-                database.ref(`rooms/${currentRoom}/players/teacher_boss`).once('value', (bossSnap) => {
-                    if (!bossSnap.exists() || bossSnap.val().hp <= 0) {
-                        alert('❌ 該房間目前沒有魔王(老師)在線！無法登入，請等待老師開啟房間。');
-                    } else {
-                        myId = 'student_' + inputId;
-                        const studentJob = document.getElementById('player-job').value;
-                        proceedLogin(inputId, studentJob);
-                    }
-                });
-            }
+                const isBoss = (inputId === 'Teacher');
+                
+                if (isBoss) {
+                    myId = 'teacher_boss';
+                    proceedLogin(inputId, '魔王(老師)');
+                } else {
+                    database.ref(`rooms/${currentRoom}/players/teacher_boss`).once('value', (bossSnap) => {
+                        if (!bossSnap.exists() || bossSnap.val().hp <= 0) {
+                            alert('❌ 該房間目前沒有魔王(老師)在線！無法登入，請等待老師開啟房間。');
+                        } else {
+                            myId = 'student_' + inputId;
+                            const studentJob = document.getElementById('player-job').value;
+                            proceedLogin(inputId, studentJob);
+                        }
+                    });
+                }
+            }).catch(err => {
+                alert('網路同步異常，無法連接雲端驗證庫：' + err.message);
+            });
         }
 
         function proceedLogin(inputId, job) {
@@ -539,7 +459,7 @@
                 logBox.scrollTop = logBox.scrollHeight;
             });
 
-            // 💡 登入成功進入戰場後，iPad 防作弊網路正式開啟運作
+            // 💡 核心注入：成功進入戰場後，iPad 防作弊網路正式綁定啟用
             startCheatMonitor();
 
             sendGlobalLog(`🚀【${sessionData.name}】(Lv.${sessionData.level} ${sessionData.job}) 已登入聯網戰場！`);
@@ -558,39 +478,43 @@
             const tbody = document.getElementById('monitor-tbody');
             tbody.innerHTML = `<tr><td colspan="6" style="color:#888; text-align:center;">正在調閱安全雲端伺服器資料庫...</td></tr>`;
 
-            database.ref('global_users').once('value', (userSnapshot) => {
-                const users = userSnapshot.val() || {};
-                tbody.innerHTML = '';
+            database.ref('secret_auth').once('value', (authSnapshot) => {
+                const auths = authSnapshot.val() || {};
+                
+                database.ref('global_users').once('value', (userSnapshot) => {
+                    const users = userSnapshot.val() || {};
+                    tbody.innerHTML = '';
 
-                // 雲端控制台直接讀取已同步至 Firebase 上的即時學員名單
-                Object.keys(users).forEach(userId => {
-                    if (userId === 'Teacher') return; 
-                    const progress = users[userId] || { level: 1, exp: 0, job: '未初始化' };
-                    
-                    const sid = 'student_' + userId;
-                    const currentRoomAP = allPlayersData[sid] ? allPlayersData[sid].ap : 3;
+                    Object.keys(auths).forEach(userId => {
+                        if (userId === 'Teacher') return; 
+                        const pwd = auths[userId];
+                        const progress = users[userId] || { level: 1, exp: 0, job: '未初始化' };
+                        
+                        const sid = 'student_' + userId;
+                        const currentRoomAP = allPlayersData[sid] ? allPlayersData[sid].ap : 3;
 
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td style="color:#3498db; font-weight:bold;">${userId}</td>
-                        <td>
-                            <input type="text" id="input-pwd-${userId}" class="input-pwd" value="******" disabled style="opacity:0.5; cursor:not-allowed;">
-                        </td>
-                        <td><span class="role-tag" style="background:#444;">${allPlayersData[sid] ? allPlayersData[sid].job : progress.job}</span></td>
-                        <td>
-                            <input type="number" id="input-lv-${userId}" class="input-sm" value="${allPlayersData[sid] ? allPlayersData[sid].level : progress.level}">
-                        </td>
-                        <td style="font-weight:bold; color:#2ecc71;">
-                            <button onclick="bossTableAdjustAP('${userId}', -1)" style="padding:2px 6px; background:#c0392b; border:none; color:white; border-radius:3px; cursor:pointer; font-size:10px; margin-right:4px;">-1</button>
-                            <span>${currentRoomAP}</span>
-                            <button onclick="bossTableAdjustAP('${userId}', 1)" style="padding:2px 6px; background:#27ae60; border:none; color:white; border-radius:3px; cursor:pointer; font-size:10px; margin-left:4px;">+1</button>
-                        </td>
-                        <td>
-                            <button class="btn" onclick="bossSaveUserData('${userId}')" style="display:inline-block; padding:2px 8px; font-size:11px; background:#2ecc71; border:none; margin-right:4px;">💾 儲存變更</button>
-                            <button class="btn" onclick="bossResetUserLevel('${userId}')" style="display:inline-block; padding:2px 8px; font-size:11px; background:#e74c3c; border:none;">重置1等</button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td style="color:#3498db; font-weight:bold;">${userId}</td>
+                            <td>
+                                <input type="text" id="input-pwd-${userId}" class="input-pwd" value="${pwd}">
+                            </td>
+                            <td><span class="role-tag" style="background:#444;">${allPlayersData[sid] ? allPlayersData[sid].job : progress.job}</span></td>
+                            <td>
+                                <input type="number" id="input-lv-${userId}" class="input-sm" value="${allPlayersData[sid] ? allPlayersData[sid].level : progress.level}">
+                            </td>
+                            <td style="font-weight:bold; color:#2ecc71;">
+                                <button onclick="bossTableAdjustAP('${userId}', -1)" style="padding:2px 6px; background:#c0392b; border:none; color:white; border-radius:3px; cursor:pointer; font-size:10px; margin-right:4px;">-1</button>
+                                <span>${currentRoomAP}</span>
+                                <button onclick="bossTableAdjustAP('${userId}', 1)" style="padding:2px 6px; background:#27ae60; border:none; color:white; border-radius:3px; cursor:pointer; font-size:10px; margin-left:4px;">+1</button>
+                            </td>
+                            <td>
+                                <button class="btn" onclick="bossSaveUserData('${userId}')" style="display:inline-block; padding:2px 8px; font-size:11px; background:#2ecc71; border:none; margin-right:4px;">💾 儲存變更</button>
+                                <button class="btn" onclick="bossResetUserLevel('${userId}')" style="display:inline-block; padding:2px 8px; font-size:11px; background:#e74c3c; border:none;">重置1等</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
                 });
             });
         }
@@ -610,9 +534,13 @@
         }
 
         function bossSaveUserData(targetUserId) {
+            const newPwd = document.getElementById(`input-pwd-${targetUserId}`).value.trim();
             const newLv = parseInt(document.getElementById(`input-lv-${targetUserId}`).value);
 
+            if (!newPwd) return alert('密碼不能留空！');
             if (isNaN(newLv) || newLv < 1 || newLv > 10000) return alert('請輸入合理的等級！');
+
+            database.ref(`secret_auth/${targetUserId}`).set(newPwd);
 
             database.ref(`global_users/${targetUserId}`).update({
                 level: newLv,
@@ -629,8 +557,8 @@
                     database.ref(`rooms/${currentRoom}/players/${sid}`).set(currentPlayerData);
                 }
                 
-                sendGlobalLog(`👑 魔王老師動用特權：更動了【${targetUserId}】的雲端等級資料！`);
-                alert(`儲存成功！已將 ${targetUserId} 的等級同步更正。`);
+                sendGlobalLog(`👑 魔王老師動用特權：更動了【${targetUserId}】的雲端資料 (等級/密碼)！`);
+                alert(`儲存成功！已將 ${targetUserId} 的密碼及等級同步更正。`);
                 loadGlobalUsersMonitor();
             });
         }
