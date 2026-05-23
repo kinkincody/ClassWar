@@ -212,8 +212,7 @@
                     <span style="font-size: 11px; color: #f1c40f; font-weight: bold;">⚡ 魔王特權：個別學員即時操控控管</span>
                     <div class="ap-btn-group">
                         <button class="ap-mini-btn" style="background:#e74c3c;" onclick="bossQuickAdjustAP(-1)">-1 AP</button>
-                        <button class="ap-mini-btn" style="background:#2ecc71;" onclick="bossQuickAdjustAP(1)">+1 AP</button>
-                        <button class="ap-mini-btn" style="background:#3498db;" onclick="bossQuickAdjustAP(2)">+2 AP</button>
+                        <button class="ap-mini-btn" style="background:#2ecc71;" onclick="bossQuickAdjustAP(1)">+1 AP</button> <button class="ap-mini-btn" style="background:#3498db;" onclick="bossQuickAdjustAP(2)">+2 AP</button>
                         <button class="ap-mini-btn" style="background:#c0392b; border:1px solid #fff;" onclick="bossForceLogoutUser()">❌ 強制該角色登出戰場</button>
                     </div>
                 </div>
@@ -259,7 +258,7 @@
             };
         }
 
-        // 📜 新增技能基礎文字與效果數據對照表 (用途說明與基礎公式)
+        // 📜 新增技能基礎文字與效果數據對照表
         const SKILL_DATABASE = {
             '通用': [
                 { name: '普通攻擊', apCost: 1, enCost: 0, type: 'atk_p', value: 5, desc: '最基礎的肉搏打擊。造成 (基礎物攻 + 5) 點物理傷害。' },
@@ -302,7 +301,7 @@
         };
 
         let currentRoom = null;
-        let myId = null; 
+        let myId = null;
         let allPlayersData = {};
         let bossAoeCount = 0;
 
@@ -311,29 +310,30 @@
             const inputId = document.getElementById('player-id').value.trim();
             const inputPwd = document.getElementById('player-pwd').value.trim();
 
-            if (!roomNum || !inputId || !inputPwd) { return alert('請完整填寫房間號碼、登入ID與密碼！'); }
+            if (!roomNum || !inputId || !inputPwd) {
+                return alert('請完整填寫房間號碼、登入ID與密碼！');
+            }
 
             currentRoom = roomNum;
 
             database.ref(`secret_auth/${inputId}`).once('value', (authSnap) => {
                 let validPassword = authSnap.val();
-
                 if (!validPassword) {
                     return alert('❌ 登入失敗：雲端帳戶資料庫中查無此 ID，請確認是否輸入正確。');
                 }
-
                 if (validPassword !== inputPwd) {
                     return alert('❌ 登入失敗：驗證密碼不匹配！');
                 }
 
                 const isBoss = (inputId === 'Teacher');
-                
                 if (isBoss) {
                     myId = 'teacher_boss';
                     proceedLogin(inputId, '魔王(老師)');
                 } else {
+                    // 🛡️ 強化學生登入限制：嚴格檢查魔王節點是否存在，且 online 必須為 true
                     database.ref(`rooms/${currentRoom}/players/teacher_boss`).once('value', (bossSnap) => {
-                        if (!bossSnap.exists() || bossSnap.val().hp <= 0) {
+                        const bossData = bossSnap.val();
+                        if (!bossSnap.exists() || !bossData || bossData.online === false || bossData.hp <= 0) {
                             alert('❌ 該房間目前沒有魔王(老師)在線！無法登入，請等待老師開啟房間。');
                         } else {
                             myId = 'student_' + inputId;
@@ -350,29 +350,21 @@
         function proceedLogin(inputId, job) {
             database.ref(`global_users/${inputId}`).once('value', (snapshot) => {
                 let userData = snapshot.val();
-                
                 if (!userData) {
-                    userData = {
-                        level: (inputId === 'Teacher') ? 9999 : 1,
-                        exp: 0,
-                        job: job,
-                        hp: null, 
-                        en: 0,
-                        ap: 3
-                    };
+                    userData = { level: (inputId === 'Teacher') ? 9999 : 1, exp: 0, job: job, hp: null, en: 0, ap: 3 };
                 }
 
-                if (inputId === 'Teacher') { 
-                    userData.level = 9999; 
+                if (inputId === 'Teacher') {
+                    userData.level = 9999;
                     userData.job = '魔王(老師)';
                     userData.hp = 99999;
                     userData.en = 9999;
                     userData.ap = 99999;
-                    bossAoeCount = 0; 
+                    bossAoeCount = 0;
                 }
 
                 const scaledStats = getScaledStats(userData.job, userData.level);
-                
+
                 const sessionData = {
                     id: myId,
                     userId: inputId,
@@ -384,58 +376,57 @@
                     en: (userData.en !== undefined && userData.en !== null) ? userData.en : 0,
                     ap: (userData.ap !== undefined && userData.ap !== null) ? userData.ap : 3,
                     online: true,
-                    forceLogout: false // 初始化強制登出訊號
+                    forceLogout: false
                 };
 
-                if (inputId !== 'Teacher') {
-                    saveToGlobalUser(inputId, sessionData);
+                // 核心功能：設定斷線監聽器 (OnDisconnect)
+                const myPlayerRef = database.ref(`rooms/${currentRoom}/players/${myId}`);
+                
+                if (inputId === 'Teacher') {
+                    // 👑 如果是老師關閉網頁或中斷連線，直接將老師節點從房間中刪除（不留屍體與離線狀態）
+                    myPlayerRef.onDisconnect().remove();
+                } else {
+                    // 🛡️ 如果是學生斷線，則正常標記為離線
+                    myPlayerRef.onDisconnect().update({ online: false });
                 }
 
-                startFirebaseSync(sessionData);
+                myPlayerRef.set(sessionData).then(() => {
+                    document.getElementById('login-panel').style.display = 'none';
+                    document.getElementById('room-display').innerText = `房間: ${currentRoom}`;
+                    document.getElementById('my-status-display').innerText = `${sessionData.name} (${sessionData.job})`;
+                    
+                    if(inputId === 'Teacher') {
+                        document.getElementById('boss-panel').style.display = 'block';
+                    }
+                    
+                    initRealtimeSync();
+                });
             });
         }
 
-        function startFirebaseSync(sessionData) {
-            document.getElementById('login-panel').style.display = 'none';
-            document.getElementById('room-display').innerText = `房間：${currentRoom}`;
-            
-            if(sessionData.job === '魔王(老師)') {
-                document.getElementById('boss-panel').style.display = 'block';
-            }
-
-            const myRef = database.ref(`rooms/${currentRoom}/players/${myId}`);
-            myRef.set(sessionData);
-            
-            myRef.onDisconnect().update({ online: false });
-
-            // 📢 監聽自身資料變動，用來捕捉老師發送的強制登出指令
-            myRef.on('value', (snap) => {
-                const currentMeData = snap.val();
-                if (currentMeData && currentMeData.forceLogout === true) {
-                    myRef.off();
-                    database.ref(`rooms/${currentRoom}/players/${myId}`).remove(); // 從當前房間徹底抽離
-                    alert('🚨【系統通知】你已被魔王(老師)移出並登出目前的對戰房間！');
-                    location.reload(); // 重新整理網頁，彈回登入畫面
-                }
-            });
-
+        function initRealtimeSync() {
             database.ref(`rooms/${currentRoom}/players`).on('value', (snapshot) => {
                 allPlayersData = snapshot.val() || {};
                 
-                if (myId !== 'teacher_boss' && !allPlayersData.hasOwnProperty('teacher_boss')) {
-                    database.ref(`rooms/${currentRoom}/players`).off();
-                    database.ref(`rooms/${currentRoom}/logs`).off();
-                    alert('⚠️ 魔王老師已離開，所有人已被安全登出。');
+                if (myId && (!allPlayersData[myId] || allPlayersData[myId].forceLogout)) {
+                    alert("🛑 您已被系統或老師移出戰場房間！");
                     location.reload();
                     return;
                 }
 
-                renderAllPlayers();
-                updateControlPanel();
+                // 🛡️ 如果學生在線期間，發現老師節點徹底不見了或被移除了，強制彈出並同步重新整理網頁
+                if (myId !== 'teacher_boss' && !allPlayersData['teacher_boss']) {
+                    alert("📢 老師已關閉網頁或登出房間，戰場已關閉！");
+                    location.reload();
+                    return;
+                }
+
+                renderPlayers();
                 populateTargets();
+                renderSkills();
             });
 
-            database.ref(`rooms/${currentRoom}/logs`).limitToLast(12).on('value', (snapshot) => {
+            database.ref(`rooms/${currentRoom}/logs`).limitToLast(30).on('value', (snapshot) => {
                 const logs = snapshot.val() || {};
                 const logBox = document.getElementById('log-box');
                 logBox.innerHTML = '';
@@ -451,8 +442,10 @@
                 logBox.scrollTop = logBox.scrollHeight;
             });
 
-            sendGlobalLog(`🚀【${sessionData.name}】(Lv.${sessionData.level} ${sessionData.job}) 已成功載入存檔並登入聯網戰場！`);
-            
+            const currentMe = allPlayersData[myId];
+            if (currentMe) {
+                sendGlobalLog(`🚀【${currentMe.name}】(Lv.${currentMe.level} ${currentMe.job}) 已成功載入存檔並登入聯網戰場！`);
+            }
             initVisibilityMonitor();
         }
 
@@ -470,7 +463,6 @@
 
         function initVisibilityMonitor() {
             if (myId === 'teacher_boss') return;
-
             document.addEventListener('visibilitychange', () => {
                 if (document.hidden) {
                     database.ref(`rooms/${currentRoom}/players/${myId}`).once('value', (snapshot) => {
@@ -478,10 +470,8 @@
                         if (me && me.hp > 0) {
                             const punishDmg = 15;
                             me.hp = Math.max(0, me.hp - punishDmg);
-                            
                             database.ref(`rooms/${currentRoom}/players/${myId}`).set(me);
                             saveToGlobalUser(me.userId, me);
-                            
                             let logMsg = `🛑【切換視窗懲罰】學生【${me.name}】因擅自切換視窗/離開分頁，觸發系統制裁，強制扣減 ${punishDmg} 點生命值！`;
                             if (me.hp <= 0) {
                                 logMsg += ` 💀 並且不幸暴斃陣亡！`;
@@ -493,19 +483,13 @@
             });
         }
 
-        // 👑 魔王特權：將選定的學生角色永久登出當前房間
         function bossForceLogoutUser() {
             const dropdown = document.getElementById('target-dropdown');
-            const targetId = dropdown.value; 
+            const targetId = dropdown.value;
             if (!targetId || targetId === 'teacher_boss') return;
-
             if (confirm(`確定要將學員【${allPlayersData[targetId].name}】強制踢出並登出房間嗎？`)) {
                 sendGlobalLog(`👑🛑【魔王放逐】老師動用了管理權限，將【${allPlayersData[targetId].name}】強制登出戰場！`);
-                // 寫入遠端 forceLogout 訊號，對方的網頁會立刻觸發 reload
-                database.ref(`rooms/${currentRoom}/players/${targetId}`).update({
-                    forceLogout: true,
-                    online: false
-                });
+                database.ref(`rooms/${currentRoom}/players/${targetId}`).update({ forceLogout: true, online: false });
             }
         }
 
@@ -520,41 +504,37 @@
 
         function loadGlobalUsersMonitor() {
             const tbody = document.getElementById('monitor-tbody');
-            tbody.innerHTML = `<tr><td colspan="6" style="color:#888; text-align:center;">正在調閱安全雲端伺服器資料庫...</td></tr>`;
-
-            database.ref('secret_auth').once('value', (authSnapshot) => {
-                const auths = authSnapshot.val() || {};
-                
-                database.ref('global_users').once('value', (userSnapshot) => {
-                    const users = userSnapshot.val() || {};
+            tbody.innerHTML = `<tr><td colspan="6" style="color:#888; text-align:center;">正在安全同步線上資料...</td></tr>`;
+            
+            database.ref('secret_auth').once('value', (authSnap) => {
+                const auths = authSnap.val() || {};
+                database.ref('global_users').once('value', (userSnap) => {
+                    const users = userSnap.val() || {};
                     tbody.innerHTML = '';
-
-                    Object.keys(auths).forEach(userId => {
-                        if (userId === 'Teacher') return; 
-                        const pwd = auths[userId];
-                        const progress = users[userId] || { level: 1, exp: 0, job: '未初始化', ap: 3 };
+                    
+                    Object.keys(auths).forEach(uid => {
+                        if (uid === 'Teacher') return;
+                        const pwd = auths[uid] || '無';
+                        const uInfo = users[uid] || { job:'戰士', level:1, ap:3 };
                         
-                        const sid = 'student_' + userId;
-                        const currentRoomAP = allPlayersData[sid] ? allPlayersData[sid].ap : progress.ap;
+                        const sid = 'student_' + uid;
+                        let activeAp = uInfo.ap;
+                        if (allPlayersData[sid]) {
+                            activeAp = allPlayersData[sid].ap;
+                        }
 
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-                            <td style="color:#3498db; font-weight:bold;">${userId}</td>
+                            <td><b>${uid}</b></td>
+                            <td><input type="text" id="input-pwd-${uid}" class="input-pwd" value="${pwd}"></td>
+                            <td><span style="color:#aaa;">${uInfo.job}</span></td>
+                            <td><input type="number" id="input-lv-${uid}" class="input-sm" value="${uInfo.level}"></td>
+                            <td><b style="color:#3498db; font-size:13px;">${activeAp} AP</b></td>
                             <td>
-                                <input type="text" id="input-pwd-${userId}" class="input-pwd" value="${pwd}">
-                            </td>
-                            <td><span class="role-tag" style="background:#444;">${allPlayersData[sid] ? allPlayersData[sid].job : progress.job}</span></td>
-                            <td>
-                                <input type="number" id="input-lv-${userId}" class="input-sm" value="${allPlayersData[sid] ? allPlayersData[sid].level : progress.level}">
-                            </td>
-                            <td style="font-weight:bold; color:#2ecc71;">
-                                <button onclick="bossTableAdjustAP('${userId}', -1)" style="padding:2px 6px; background:#c0392b; border:none; color:white; border-radius:3px; cursor:pointer; font-size:10px; margin-right:4px;">-1</button>
-                                <span>${currentRoomAP}</span>
-                                <button onclick="bossTableAdjustAP('${userId}', 1)" style="padding:2px 6px; background:#27ae60; border:none; color:white; border-radius:3px; cursor:pointer; font-size:10px; margin-left:4px;">+1</button>
-                            </td>
-                            <td>
-                                <button class="btn" onclick="bossSaveUserData('${userId}')" style="display:inline-block; padding:2px 8px; font-size:11px; background:#2ecc71; border:none; margin-right:4px;">💾 儲存變更</button>
-                                <button class="btn" onclick="bossResetUserLevel('${userId}')" style="display:inline-block; padding:2px 8px; font-size:11px; background:#e74c3c; border:none;">重置1等</button>
+                                <button class="ap-mini-btn" style="background:#27ae60; padding:4px 8px;" onclick="bossSaveUserData('${uid}')">儲存變更</button>
+                                <button class="ap-mini-btn" style="background:#e67e22; padding:4px 6px;" onclick="bossTableAdjustAP('${uid}', 1)">+1 AP</button>
+                                <button class="ap-mini-btn" style="background:#555; padding:4px 6px;" onclick="bossTableAdjustAP('${uid}', -1)">-1 AP</button>
+                                <button onclick="bossResetUserLevel('${uid}')" style="display:inline-block; padding:2px 8px; font-size:11px; background:#e74c3c; border:none;">重置1等</button>
                             </td>
                         `;
                         tbody.appendChild(tr);
@@ -565,7 +545,6 @@
 
         function bossTableAdjustAP(studentId, amount) {
             const sid = 'student_' + studentId;
-            
             if (!allPlayersData[sid]) {
                 database.ref(`global_users/${studentId}`).once('value', (snap) => {
                     let u = snap.val() || { ap: 3 };
@@ -578,10 +557,8 @@
                 });
                 return;
             }
-            
             const currentAP = allPlayersData[sid].ap || 0;
             const newAP = Math.max(0, currentAP + amount);
-            
             database.ref(`rooms/${currentRoom}/players/${sid}/ap`).set(newAP);
             database.ref(`global_users/${studentId}/ap`).set(newAP).then(() => {
                 loadGlobalUsersMonitor();
@@ -592,14 +569,12 @@
         function bossSaveUserData(targetUserId) {
             const newPwd = document.getElementById(`input-pwd-${targetUserId}`).value.trim();
             const newLv = parseInt(document.getElementById(`input-lv-${targetUserId}`).value);
-
             if (!newPwd) return alert('密碼不能留空！');
             if (isNaN(newLv) || newLv < 1 || newLv > 10000) return alert('請輸入合理的等級！');
 
             database.ref(`secret_auth/${targetUserId}`).set(newPwd);
-
             const scaled = getScaledStats(allPlayersData['student_' + targetUserId] ? allPlayersData['student_' + targetUserId].job : '戰士', newLv);
-
+            
             database.ref(`global_users/${targetUserId}`).update({
                 level: newLv,
                 exp: 0,
@@ -615,7 +590,6 @@
                     currentPlayerData.en = 0;
                     database.ref(`rooms/${currentRoom}/players/${sid}`).set(currentPlayerData);
                 }
-                
                 sendGlobalLog(`👑 魔王老師動用特權：更動了【${targetUserId}】的雲端資料 (等級滿血/密碼)！`);
                 alert(`儲存成功！已將 ${targetUserId} 的密碼及等級同步更正。`);
                 loadGlobalUsersMonitor();
@@ -624,53 +598,59 @@
 
         function bossResetUserLevel(targetUserId) {
             if (confirm(`確定要將【${targetUserId}】的歷史等級與數值全部重置嗎？`)) {
-                document.getElementById(`input-lv-${targetUserId}`).value = 1;
-                bossSaveUserData(targetUserId);
+                database.ref(`global_users/${targetUserId}`).set({
+                    level: 1,
+                    exp: 0,
+                    hp: null,
+                    en: 0,
+                    ap: 3,
+                    job: '戰士'
+                }).then(() => {
+                    const sid = 'student_' + targetUserId;
+                    if (allPlayersData[sid]) {
+                        database.ref(`rooms/${currentRoom}/players/${sid}`).remove();
+                    }
+                    sendGlobalLog(`👑 🛑【重置處置】老師將學生【${targetUserId}】的所有歷史雲端檔案永久清空至初始 1 等！`);
+                    loadGlobalUsersMonitor();
+                });
             }
         }
 
-        // === 👥 渲染戰場玩家卡片 ===
-        function renderAllPlayers() {
+        function renderPlayers() {
             const container = document.getElementById('players-container');
             container.innerHTML = '';
-            const currentSelectedTarget = document.getElementById('target-dropdown').value;
 
-            let playerList = Object.values(allPlayersData);
-
-            playerList.sort((a, b) => {
+            let sortedPlayers = Object.values(allPlayersData).sort((a, b) => {
                 if (a.id === 'teacher_boss') return -1;
                 if (b.id === 'teacher_boss') return 1;
-                
                 let numA = parseInt(a.userId.replace(/[^0-9]/g, '')) || 999;
                 let numB = parseInt(b.userId.replace(/[^0-9]/g, '')) || 999;
                 return numA - numB;
             });
 
-            playerList.forEach(player => {
+            if (sortedPlayers.length === 0) {
+                container.innerHTML = '<p style="color:#888; font-style:italic;">暫無任何玩家在線...</p>';
+                return;
+            }
+
+            sortedPlayers.forEach(player => {
                 const scaled = getScaledStats(player.job, player.level);
-                const isDead = player.hp <= 0;
-                const hpPercent = Math.max(0, (player.hp / scaled.hp) * 100);
-                const enPercent = Math.max(0, (player.en / scaled.en) * 100);
+                const hpPercent = Math.min(100, Math.max(0, (player.hp / scaled.hp) * 100));
+                const enPercent = Math.min(100, Math.max(0, (player.en / scaled.en) * 100));
+                
                 const reqExp = player.level * 100;
-                const expPercent = Math.min(100, (player.exp / reqExp) * 100);
+                const expPercent = Math.min(100, Math.max(0, (player.exp / reqExp) * 100));
+                const isDead = player.hp <= 0;
 
                 const card = document.createElement('div');
                 card.id = `player-card-${player.id}`;
-                card.className = `card ${player.id === myId ? 'is-me' : ''} ${player.id === currentSelectedTarget ? 'is-targeted' : ''}`;
-                
-                if (player.online === false) {
-                    card.style.borderStyle = 'dashed';
-                    card.style.opacity = '0.6';
-                } else if (isDead) {
-                    card.style.opacity = '0.4';
-                }
+                card.className = `card ${player.id === myId ? 'is-me' : ''}`;
+                if (isDead) card.style.opacity = '0.5';
 
                 card.onclick = () => {
-                    // 🛡️ 限制一般學生透過點擊卡片將「已離線角色」設為目標（魔王除外，且魔王現在也可以選死亡的人復活）
                     if (myId !== 'teacher_boss' && player.online === false) {
                         return; 
                     }
-                    
                     const dropdown = document.getElementById('target-dropdown');
                     if (dropdown.querySelector(`option[value="${player.id}"]`)) {
                         dropdown.value = player.id;
@@ -708,7 +688,7 @@
         function syncTargetCardEffects() {
             const dropdown = document.getElementById('target-dropdown');
             const targetId = dropdown.value;
-            
+
             document.querySelectorAll('.card').forEach(c => c.classList.remove('is-targeted'));
             const selectedCard = document.getElementById(`player-card-${targetId}`);
             if (selectedCard) selectedCard.classList.add('is-targeted');
@@ -723,60 +703,61 @@
 
         function bossQuickAdjustAP(amount) {
             const dropdown = document.getElementById('target-dropdown');
-            const targetId = dropdown.value; 
+            const targetId = dropdown.value;
             if (!targetId || targetId === 'teacher_boss') return;
 
             const currentAP = allPlayersData[targetId].ap || 0;
             const newAP = Math.max(0, currentAP + amount);
-            
+
             database.ref(`rooms/${currentRoom}/players/${targetId}/ap`).set(newAP);
-            saveToGlobalUser(allPlayersData[targetId].userId, { ...allPlayersData[targetId], ap: newAP });
-            sendGlobalLog(`👑 魔王老師直接點擊方塊，調整【${allPlayersData[targetId].name}】點數： ${currentAP} AP ➔ ${newAP} AP！`);
+            database.ref(`global_users/${allPlayersData[targetId].userId}/ap`).set(newAP);
+            sendGlobalLog(`👑 魔王老師動用特權：快速調整了【${allPlayersData[targetId].name}】的點數： ${currentAP} AP ➔ ${newAP} AP！`);
         }
 
-        function updateControlPanel() {
-            const me = allPlayersData[myId];
-            if (!me) return;
-
-            document.getElementById('my-status-display').innerText = `${me.name} (Lv.${me.level} ${me.job})`;
+        function renderSkills() {
             const skillsContainer = document.getElementById('skills-container');
             skillsContainer.innerHTML = '';
 
-            const totalSkills = [...SKILL_DATABASE['通用'], ...SKILL_DATABASE[me.job]];
-            const isBoss = me.job === '魔王(老師)';
-            
-            totalSkills.forEach(skill => {
+            const currentMe = allPlayersData[myId];
+            if (!currentMe) return;
+
+            const job = currentMe.job;
+            const mySkills = [...(SKILL_DATABASE['通用'] || []), ...(SKILL_DATABASE[job] || [])];
+
+            mySkills.forEach(skill => {
                 const btn = document.createElement('button');
-                btn.className = `btn ${skill.enCost > 0 ? 'btn-ult' : ''}`;
-                
-                const hasEnoughAP = me.ap >= skill.apCost;
-                const hasEnoughEN = me.en >= skill.enCost;
-                
-                if (!isBoss && (me.ap <= 0 || !hasEnoughAP || !hasEnoughEN || me.hp <= 0)) {
+                btn.className = 'btn';
+                if (skill.type === 'boss_stage_aoe' || skill.name.includes('【終極') || skill.name.includes('【絕世')) {
+                    btn.className += ' btn-ult';
+                }
+
+                const isBoss = job === '魔王(老師)';
+                const hasEnoughAp = isBoss || currentMe.ap >= skill.apCost;
+                const hasEnoughEn = isBoss || currentMe.en >= skill.enCost;
+                const isDead = currentMe.hp <= 0;
+
+                if (!hasEnoughAp || !hasEnoughEn || isDead) {
                     btn.disabled = true;
                 }
-                
-                // 📜 注入技能詳細簡介渲染 HTML（包含詳細數據與用途）
+
+                btn.onclick = () => {
+                    const latestMe = allPlayersData[myId];
+                    if (!isBoss && latestMe.ap < skill.apCost) {
+                        sendGlobalLog(`[🔴警告] 學生【${latestMe.name}】目前 AP 點數不足 (AP:0)，行動遭系統阻斷！`);
+                        return;
+                    }
+                    executeBattleAction(latestMe, skill);
+                };
+
                 btn.innerHTML = `
                     <div class="btn-header">
-                        <strong style="color:#fff;">${skill.name}</strong>
-                        <span style="font-size:10px;color: #f1c40f; background:#111; padding:1px 5px; border-radius:3px;">
-                            ${isBoss ? '消耗: 無' : 'AP:' + skill.apCost + (skill.enCost > 0 ? ' EN:' + skill.enCost : '')}
+                        <span>${skill.name}</span>
+                        <span style="font-size:11px; background:rgba(0,0,0,0.4); padding:1px 5px; border-radius:4px;">
+                            ${isBoss ? '消耗: 0' : `AP:${skill.apCost} EN:${skill.enCost}`}
                         </span>
                     </div>
                     <div class="skill-desc">${skill.desc}</div>
                 `;
-
-                btn.onclick = () => {
-                    const currentMe = allPlayersData[myId];
-                    if (!currentMe || currentMe.hp <= 0) return;
-                    
-                    if (!isBoss && currentMe.ap <= 0) {
-                        sendGlobalLog(`[🔴警告] 學生【${currentMe.name}】目前 AP 點數不足 (AP:0)，行動遭系統阻斷！`);
-                        return;
-                    }
-                    executeBattleAction(currentMe, skill);
-                };
                 skillsContainer.appendChild(btn);
             });
         }
@@ -796,11 +777,9 @@
 
             sortedPlayers.forEach(p => {
                 const isDead = p.hp <= 0;
-
-                // 🛡️ 限制一般學生的下拉選單過濾掉「已離線同學」與「死亡同學」；魔王老師依然可以指定所有人（包括死亡用來復活）
                 if (myId !== 'teacher_boss') {
                     if (p.online === false || isDead) {
-                        return; 
+                        return;
                     }
                 }
 
@@ -809,6 +788,7 @@
                 opt.innerText = `${p.id === myId ? '【自己】' : ''}${p.name} (Lv.${p.level}) - HP:${p.hp} ${isDead ? '[☠️已陣亡]' : ''} ${p.online === false ? '[離線]' : ''}`;
                 dropdown.appendChild(opt);
             });
+
             dropdown.value = currentSel ? currentSel : (dropdown.firstChild ? dropdown.firstChild.value : "");
             syncTargetCardEffects();
         }
@@ -817,7 +797,7 @@
             const isBoss = me.job === '魔王(老師)';
             const targetId = document.getElementById('target-dropdown').value;
             const target = allPlayersData[targetId];
-            
+
             if (!target && skill.type !== 'charge' && skill.type !== 'boss_stage_aoe') {
                 return alert('請選擇一個目標！');
             }
@@ -827,55 +807,47 @@
                 return alert('🚫 錯誤：不可對自己使用破壞性技能！');
             }
 
-            // 🛡️ 核心防護：一般學生的攻擊技能不可指定「已離線」角色（魔王除外）
             if (!isBoss && target && target.online === false && attackTypes.includes(skill.type)) {
-                alert(`🚫 行動失敗：學員【${target.name}】目前處於離線保護狀態，不可被其他同學攻擊或指定！`);
+                alert(`🚫 行動失敗：學員【${target.name}】目前處於離線保護狀態，不可被其他同學攻擊！`);
                 return;
             }
 
             if (!isBoss) {
-                if (me.ap < skill.apCost) {
-                    sendGlobalLog(`[🔴警告] 學生【${me.name}】點數不足，無法施放 [${skill.name}]！`);
-                    return;
-                }
-                me.ap -= skill.apCost;
-                me.en -= skill.enCost;
-            } else {
-                me.ap = 99999; 
+                me.ap = Math.max(0, me.ap - skill.apCost);
+                me.en = Math.max(0, me.en - skill.enCost);
             }
 
-            let logText = '';
-            let isDmgDealt = false;
             const myScaled = getScaledStats(me.job, me.level);
-            const targetScaled = target ? getScaledStats(target.job, target.level) : null;
+            let targetScaled = target ? getScaledStats(target.job, target.level) : null;
+
+            let logText = "";
+            let isDmgDealt = false;
 
             if (skill.type === 'boss_insta_kill') {
-                target.hp = 0; 
-                logText = `☠️👑 魔王老師動用了法則力量，發動 [${skill.name}]！瞬間 100% 抹除了【${target.name}】的所有存在值（直接死亡）！`;
+                target.hp = 0;
+                logText = `👑☠️【魔王降臨・絕對抹除】魔王老師動用了至尊權限，指定學生【${target.name}】瞬間暴斃歸零陣亡！`;
                 isDmgDealt = true;
-            }
+            } 
             else if (skill.type === 'boss_stage_aoe') {
                 bossAoeCount++;
                 if (bossAoeCount === 1) {
-                    logText = `⚡💥👑【天劫降臨・第一階段】魔王老師發動了 [${skill.name}]！全場所有學生瞬間被天雷轟擊，扣減當前 50% 的生命值！\n`;
+                    logText = `👑⚡【滅世天劫・第一階】魔王老師發動全場天罰大考！雷雲密布，所有人強制削減 50% 當前生命值！\n`;
                     Object.values(allPlayersData).forEach(p => {
-                        if (p.id !== me.id && p.hp > 0) {
+                        if (p.id !== 'teacher_boss' && p.hp > 0) {
                             let dmg = Math.floor(p.hp * 0.5);
-                            if (dmg < 1) dmg = 1; 
-                            p.hp = Math.max(0, p.hp - dmg);
-                            logText += ` ➔【${p.name}】當前生命被削去 50% (造成 ${dmg} 點天劫傷害)！\n`;
+                            p.hp = Math.max(1, p.hp - dmg);
+                            logText += ` ➔【${p.name}】生命值減半，受到 ${dmg} 點精神重創！\n`;
                             database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
-                            saveToGlobalUser(p.userId, p); 
                         }
                     });
                 } else {
-                    logText = `💀🌋👑【天劫降臨・最終毀滅】魔王老師第二次施展 [${skill.name}]！末日火山噴發，場上所有活著的學生被全部強制抹殺！！！\n`;
+                    logText = `👑💥【滅世天劫・第二階：終焉降臨】考卷滿天飛舞！所有存活的學生全部遭到秒殺，戰場全滅！\n`;
                     Object.values(allPlayersData).forEach(p => {
-                        if (p.id !== me.id && p.hp > 0) {
+                        if (p.id !== 'teacher_boss' && p.hp > 0) {
                             p.hp = 0;
                             logText += ` ➔【${p.name}】直接暴斃歸零！\n`;
                             database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
-                            saveToGlobalUser(p.userId, p); 
+                            saveToGlobalUser(p.userId, p);
                         }
                     });
                 }
@@ -883,74 +855,62 @@
             else if (skill.type === 'charge') {
                 me.en = Math.min(myScaled.en, me.en + skill.value);
                 logText = `⚡【${me.name}】使用 [${skill.name}]，將 EN 提升了 ${skill.value} 點。`;
-            } else {
+            } 
+            else {
                 if (skill.type === 'atk_p') {
                     let dmg = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
                     target.hp = Math.max(0, target.hp - dmg);
                     if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + 10);
                     logText = `⚔️【${me.name}】對【${target.name}】施展 [${skill.name}]，造成 ${dmg} 點物理傷害！`;
                     isDmgDealt = true;
-                } else if (skill.type === 'atk_m') {
+                } 
+                else if (skill.type === 'atk_m') {
                     let dmg = Math.max(1, (myScaled.matk + skill.value) - Math.floor(targetScaled.def * 0.5));
                     target.hp = Math.max(0, target.hp - dmg);
                     if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + 15);
                     logText = `🔮【${me.name}】對【${target.name}】施展 [${skill.name}]，轟出 ${dmg} 點法術傷害！`;
                     isDmgDealt = true;
                 } 
+                else if (skill.type === 'debuff_ap') {
+                    const oldAp = target.ap || 0;
+                    target.ap = Math.max(0, oldAp - skill.value);
+                    logText = `🛑【${me.name}】對【${target.name}】施展 [${skill.name}]！強制扣除其 ${skill.value} 點行動 AP (原:${oldAp} ➔ 現:${target.ap})`;
+                } 
                 else if (skill.type === 'heal') {
-                    // 👑 魔王特權：檢測補血目標是否死亡，若是，啟動至尊復活術
                     const wasDead = target.hp <= 0;
-                    target.hp = Math.min(targetScaled.hp, target.hp + skill.value);
-                    
-                    if (isBoss && wasDead) {
-                        target.online = true; // 強制拉回在線狀態
-                        logText = `😇✨👑【神聖復活】魔王老師對已陣亡的【${target.name}】施展 [${skill.name}]！鳳凰涅槃，使其強制滿血復活，重返戰場！`;
+                    if (wasDead && isBoss) {
+                        target.hp = skill.value;
+                        logText = `😇👑【魔王至尊復活術】老師對已陣亡的【${target.name}】降下讚美之光！打破生死法則，將其滿血強制復活重生！`;
+                    } else if (wasDead && !isBoss) {
+                        alert("🚫 錯誤：一般同學的治癒術無法復活已經陣亡的隊友！");
+                        return;
                     } else {
-                        logText = `💚【${me.name}】使用 [${skill.name}]，為【${target.name}】成功回復了 ${skill.value} 點生命值！`;
+                        target.hp = Math.min(targetScaled.hp, target.hp + skill.value);
+                        logText = `💖【${me.name}】對【${target.name}】使用 [${skill.name}]，回復了 ${skill.value} 點生命值。`;
                     }
-                } else if (skill.type === 'debuff_ap') {
-                    if (target.id !== 'teacher_boss') target.ap = Math.max(0, target.ap - skill.value);
-                    logText = `🚫【${me.name}】對【${target.name}】使出 [${skill.name}]，扣除其 ${skill.value} 點 AP！`;
-                } else if (skill.type === 'ult_berserk') {
+                } 
+                else if (skill.type === 'ult_berserk') {
                     let dmg = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
                     target.hp = Math.max(0, target.hp - dmg);
-                    me.hp = Math.min(myScaled.hp, me.hp + Math.floor(dmg * 0.5));
-                    logText = `🔥【${me.name}】開啟 [諸神黃昏] 劈向【${target.name}】造成 ${dmg} 傷害並狂暴回復自身血量！`;
+                    let吸血 = Math.floor(dmg * 0.5);
+                    me.hp = Math.min(myScaled.hp, me.hp + 吸血);
+                    logText = `🩸【${me.name}】發動絕招 [${skill.name}]，重創【${target.name}】造成 ${dmg} 點物理傷害，並狂暴吸血回復自身 ${吸血} 點生命值！`;
                     isDmgDealt = true;
-                } else if (skill.type === 'log_only') {
-                    logText = `✨【${me.name}】對【${target.name}】施展了狀態技 [${skill.name}]！`;
                 }
 
-                if (isDmgDealt && me.level < 100 && !isBoss) {
-                    const reqExp = me.level * 100;
-                    if (target.hp <= 0) {
-                        const killExp = Math.floor(reqExp / 3);
-                        me.exp += killExp;
-                        logText += ` 💀【${target.name}】已陣亡！【${me.name}】獲得 1/3 升級經驗值 ${killExp} 點！`;
-                    } else {
-                        const pct = Math.floor(Math.random() * 5) + 1;
-                        const atkExp = Math.floor(reqExp * (pct / 100));
-                        me.exp += atkExp;
-                        logText += ` (獲得 1-5% 隨機傷害經驗 ${atkExp} 點)`;
-                    }
-
-                    if (me.exp >= reqExp) {
-                        me.exp -= reqExp;
-                        me.level = Math.min(100, me.level + 1);
-                        logText += ` 🌟🌟 恭喜升級！【${me.name}】提升至 Lv.${me.level}，技能數值按比例大幅膨脹！`;
-                        const newScaled = getScaledStats(me.job, me.level);
-                        me.hp = newScaled.hp; 
-                    }
+                if (isDmgDealt && target.id !== 'teacher_boss' && target.hp <= 0) {
+                    logText += ` 💀【${target.name}】因承受不住致命打擊，當場陣亡！`;
                 }
             }
 
             database.ref(`rooms/${currentRoom}/players/${me.id}`).set(me);
-            if (!isBoss) saveToGlobalUser(me.userId, me);
+            if (me.id !== 'teacher_boss') saveToGlobalUser(me.userId, me);
 
-            if (target && target.id !== me.id && skill.type !== 'boss_stage_aoe') {
+            if (target && target.id !== me.id) {
                 database.ref(`rooms/${currentRoom}/players/${target.id}`).set(target);
                 if (target.id !== 'teacher_boss') saveToGlobalUser(target.userId, target);
             }
+
             sendGlobalLog(logText);
         }
 
@@ -983,7 +943,7 @@
                     if (p.id !== 'teacher_boss') saveToGlobalUser(p.userId, p);
                 });
                 database.ref(`rooms/${currentRoom}/logs`).remove();
-                sendGlobalLog(`🔄 戰場已被魔王老師重置，新一輪課堂對決點燃！滅世天劫次數已恢復。`);
+                sendGlobalLog(`🔄 👑 魔王老師重置了整個房間的所有戰局數值，日誌已刷新，新的一輪開始！`);
             }
         }
     </script>
