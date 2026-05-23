@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClassMana 跨裝置聯網對戰系統 (GitHub 雲端安全版)</title>
+    <title>ClassMana - Multi-Device Network Battle System</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
@@ -19,7 +19,7 @@
             --light: #f5f6fa;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'PingFang TC', sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #121212; color: var(--light); padding: 15px; }
         
         header {
@@ -29,22 +29,22 @@
         h1 { font-size: 22px; color: #fff; }
         .room-badge { background: #e67e22; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-left: 10px; }
 
-        /* 聯網登入面板 */
+        /* Login Panel */
         .login-panel { background: #1e1e1e; border: 2px solid #444; border-radius: 12px; padding: 20px; margin-bottom: 15px; }
         .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 15px; }
         .form-group label { display: block; font-size: 13px; margin-bottom: 5px; color: #ccc; }
         .form-control { width: 100%; padding: 10px; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; }
         
-        /* 戰場佈局 */
+        /* Battlefield Layout */
         .battlefield { display: grid; grid-template-columns: 1fr; gap: 15px; }
         @media(min-width: 992px) { .battlefield { grid-template-columns: 2fr 1fr; } }
 
-        /* 角色列表與卡片 */
+        /* Player Lists & Cards */
         .players-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
         .card { background: #1e1e1e; border-radius: 12px; padding: 15px; border: 2px solid #333; position: relative; cursor: pointer; transition: transform 0.1s, border-color 0.2s; }
         .card:hover { border-color: #555; transform: translateY(-2px); }
         .card.is-me { border-color: var(--primary); box-shadow: 0 0 12px rgba(52, 152, 219, 0.3); }
-        .card.is-me::after { content: "🎯 我的角色"; position: absolute; top: -10px; right: 10px; background: var(--primary); font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+        .card.is-me::after { content: "🎯 MY CHARACTER"; position: absolute; top: -10px; right: 10px; background: var(--primary); font-size: 10px; padding: 2px 6px; border-radius: 4px; }
         .card.is-targeted { border-color: #f1c40f !important; box-shadow: 0 0 15px rgba(241, 196, 15, 0.6); }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; pointer-events: none; }
         .role-tag { padding: 2px 6px; border-radius: 20px; font-size: 11px; font-weight: bold; color: #fff; }
@@ -56,7 +56,7 @@
         .bg-archer { background-color: var(--archer); }
         .bg-boss { background-color: var(--boss); border: 1px solid #f1c40f; }
 
-        /* 屬性條 */
+        /* Status Bars */
         .bar-container { margin: 6px 0; font-size: 11px; pointer-events: none; }
         .bar-label { display: flex; justify-content: space-between; margin-bottom: 2px; }
         .bar { height: 10px; background: #333; border-radius: 5px; overflow: hidden; }
@@ -66,7 +66,7 @@
         .fill-exp { background: linear-gradient(90deg, #2ecc71, #27ae60); }
         .ap-badge { background: #2980b9; color: white; padding: 1px 5px; border-radius: 4px; font-weight: bold; }
 
-        /* 控制面板 */
+        /* Control Panel */
         .control-panel { background: #252525; border-radius: 12px; padding: 15px; border: 1px solid #444; }
         .section-title { font-size: 15px; margin-bottom: 10px; color: #fff; border-left: 4px solid var(--primary); padding-left: 8px; }
         .skill-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 10px; margin-bottom: 15px; }
@@ -86,15 +86,15 @@
         .btn-ult { background: linear-gradient(135deg, #8e44ad, #c0392b); border: 1px solid #f1c40f; }
         .target-select { width: 100%; padding: 8px; background: #333; color: white; border-radius: 8px; margin-bottom: 15px; }
 
-        /* 日誌 */
+        /* Logs */
         .log-box { background: #000; border-radius: 8px; padding: 10px; height: 130px; overflow-y: auto; font-family: monospace; font-size: 11px; color: #00ff00; border: 1px solid #333; }
         .log-entry { margin-bottom: 3px; }
         .log-alert-red { color: #ff3333 !important; font-weight: bold; }
         
-        /* 👑 老師管理控制台 */
+        /* Teacher Admin Panel */
         .boss-panel { background: #2c3e50; border: 2px solid #f1c40f; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; }
         
-        /* 👁️ 老師資料分頁獨立彈出式視窗 (Modal Layer) */
+        /* Teacher Data Modal */
         .boss-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center;
@@ -109,7 +109,7 @@
         .input-sm { width: 55px; padding: 4px; background: #333; border: 1px solid #555; color: white; border-radius: 4px; text-align: center; font-weight: bold; }
         .input-pwd { width: 90px; padding: 4px; background: #333; border: 1px solid #555; color: #2ecc71; border-radius: 4px; font-family: monospace; }
         
-        /* 魔王專屬快捷 AP 微調按鈕樣式 */
+        /* Boss Quick Control AP Panel */
         .boss-quick-ap-box { display: none; background: #1e272e; border: 1px solid #f1c40f; border-radius: 8px; padding: 10px; margin-bottom: 15px; }
         .ap-btn-group { display: flex; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
         .ap-mini-btn { padding: 5px 12px; font-size: 11px; font-weight: bold; border-radius: 4px; border: none; cursor: pointer; color: white; }
@@ -118,72 +118,72 @@
 <body>
 
     <header>
-        <h1>ClassMana 跨裝置多人在線對戰系統 <span id="room-display" class="room-badge">未連線房間</span></h1>
+        <h1>ClassMana Arena Platform <span id="room-display" class="room-badge">NOT CONNECTED</span></h1>
     </header>
 
     <div class="login-panel" id="login-panel">
-        <h2 class="section-title" style="border-left-color: #e67e22;">🌐 iPad 雲端安全對戰登入系統</h2>
+        <h2 class="section-title" style="border-left-color: #e67e22;">🌐 iPad Cloud Secure Battle Login</h2>
         <div class="grid-4">
             <div class="form-group">
-                <label>🏠 房間號碼 (全班需一致)：</label>
+                <label>🏠 Room Number (Must match whole class):</label>
                 <input type="text" id="room-id" class="form-control" value="101">
             </div>
             <div class="form-group">
-                <label>👤 登入學號 / ID：</label>
-                <input type="text" id="player-id" class="form-control" placeholder="學號如 1A01，老師請輸入 Teacher">
+                <label>👤 Student ID / Username:</label>
+                <input type="text" id="player-id" class="form-control" placeholder="e.g. 1A01, Teacher enters 'Teacher'">
             </div>
             <div class="form-group">
-                <label>🔑 登入密碼 / PWD：</label>
-                <input type="password" id="player-pwd" class="form-control" placeholder="請輸入對應驗證密碼">
+                <label>🔑 Verification Password / PWD:</label>
+                <input type="password" id="player-pwd" class="form-control" placeholder="Enter corresponding account PWD">
             </div>
             <div class="form-group">
-                <label>⚔️ 選擇職業 (新玩家首登生效)：</label>
+                <label>⚔️ Choose Class (Overwrites style but keeps Level data):</label>
                 <select id="player-job" class="form-control">
-                    <option value="戰士">戰士 (高血高防護盾)</option>
-                    <option value="法師">法師 (高魔傷大範圍)</option>
-                    <option value="狂戰士">狂戰士 (血少狂暴吸血)</option>
-                    <option value="弓手">弓手 (下毒扣AP控制)</option>
+                    <option value="Warrior">Warrior (Balanced / Shield & Survival)</option>
+                    <option value="Mage">Mage (Status Control / EN Recharge)</option>
+                    <option value="Berserker">Berserker (High Crit Rate / Burst DPS)</option>
+                    <option value="Archer">Archer (Multi-Hit Barrage / EN Burn)</option>
                 </select>
             </div>
         </div>
-        <button class="btn" onclick="connectToRoom()" style="background: #27ae60; border-color: #2ecc71; padding: 12px 25px; font-size: 14px;">📡 安全驗證並登入戰場</button>
+        <button class="btn" onclick="connectToRoom()" style="background: #27ae60; border-color: #2ecc71; padding: 12px 25px; font-size: 14px;">📡 Secure Authenticate & Join Arena</button>
     </div>
 
     <div class="boss-panel" id="boss-panel">
-        <h3 style="color:#f1c40f; margin-bottom:5px;">😈 尊貴的魔王老師管理後台 (ID: Teacher)</h3>
+        <h3 style="color:#f1c40f; margin-bottom:5px;">😈 Teacher Management Backstage Console (ID: Teacher)</h3>
         <p style="font-size: 12px; color: #ddd; margin-bottom: 10px;">
-            您的等級：<b style="color:#f1c40f;">9999</b>，初始血量：<b style="color:#ff4d4d;">99999</b>。
-            <span style="color:#2ecc71; font-weight:bold;">[狀態：AP與技能無限制、無消耗、自帶弒神大招、GitHub防竊密碼模式已啟用]</span>
+            Your Level: <b style="color:#f1c40f;">9999</b>, Initial HP: <b style="color:#ff4d4d;">99999</b>.
+            <span style="color:#2ecc71; font-weight:bold;">[Status: Unrestricted AP & Skills, Zero Cost, God-Slayer AoE, Secure Mode Enabled]</span>
         </p>
         
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="btn" onclick="bossDistributeAP()" style="background: #e67e22; border-color: #d35400; padding: 8px 15px;">📢 發放全體生存同學 +2 AP</button>
-            <button class="btn" onclick="bossResetRoom()" style="background: #c0392b; border-color: #95a5a6; padding: 8px 15px;">🔄 重置此房間所有數據</button>
-            <button class="btn" onclick="openBossModal()" style="background: #2980b9; border-color: #3498db; padding: 8px 20px; color: #fff; box-shadow: 0 0 10px rgba(52,152,219,0.5);">🔑 開啟雲端至尊控制台 (帳密/等級)</button>
+            <button class="btn" onclick="bossDistributeAP()" style="background: #e67e22; border-color: #d35400; padding: 8px 15px;">📢 Distribute +2 AP to All Living Students</button>
+            <button class="btn" onclick="bossResetRoom()" style="background: #c0392b; border-color: #95a5a6; padding: 8px 15px;">🔄 Full Reset Current Room Data</button>
+            <button class="btn" onclick="openBossModal()" style="background: #2980b9; border-color: #3498db; padding: 8px 20px; color: #fff; box-shadow: 0 0 10px rgba(52,152,219,0.5);">🔑 Open Cloud Management Console (Accounts/Levels)</button>
         </div>
     </div>
 
     <div class="boss-modal" id="boss-modal">
         <div class="modal-content">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #f1c40f; padding-bottom:10px;">
-                <h3 style="color:#2ecc71;">📊 全體帳戶雲端原始資料庫 (實時隔離分頁)</h3>
-                <button class="btn" onclick="closeBossModal()" style="background:#7f8c8d; padding:5px 15px; border:none;">❌ 關閉此分頁</button>
+                <h3 style="color:#2ecc71;">📊 Global Accounts Database Dashboard (Real-time Sync)</h3>
+                <button class="btn" onclick="closeBossModal()" style="background:#7f8c8d; padding:5px 15px; border:none;">❌ Close Window</button>
             </div>
-            <p style="font-size:11px; color:#bbb; margin-top:5px;">提示：修改密碼、等級或微調 AP 後，需點擊該列的「儲存變更」以即時同步雲端。</p>
+            <p style="font-size:11px; color:#bbb; margin-top:5px;">Tip: Click "Save Changes" to update passwords, levels, or AP fields instantly in the cloud database.</p>
             <div style="overflow-x:auto; margin-top:10px;">
                 <table class="monitor-table">
                     <thead>
                         <tr>
-                            <th>學生學號 (ID)</th>
-                            <th>雲端驗證密碼 (可隨時改)</th>
-                            <th>當前職業</th>
-                            <th>當前等級 (Lv)</th>
-                            <th>動態點數 (AP)</th>
-                            <th>核心控制操作</th>
+                            <th>Student ID</th>
+                            <th>Cloud Password</th>
+                            <th>Current Class</th>
+                            <th>Current Level (Lv)</th>
+                            <th>Active Action Points (AP)</th>
+                            <th>Core Admin Control Operations</th>
                         </tr>
                     </thead>
                     <tbody id="monitor-tbody">
-                        <tr><td colspan="6" style="color:#888; text-align:center;">正在安全同步線上資料...</td></tr>
+                        <tr><td colspan="6" style="color:#888; text-align:center;">Synchronizing online database cloud streams...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -192,62 +192,72 @@
 
     <div class="battlefield">
         <div>
-            <h2 class="section-title">👥 本房間所有在線玩家 (👑魔王絕對置頂 / 學生 1-35 順序排列)</h2>
+            <h2 class="section-title">👥 All Players in This Room (👑 Teacher Always Top / Students Sorted)</h2>
             <div id="players-container" class="players-list">
-                <p style="color:#888; font-style:italic;">等待登入驗證中...</p>
+                <p style="color:#888; font-style:italic;">Awaiting login verification parameters...</p>
             </div>
         </div>
 
         <div>
             <div class="control-panel">
-                <h2 class="section-title">🎮 我的 iPad 行動面板</h2>
+                <h2 class="section-title">🎮 My iPad Action Hub</h2>
                 <p style="font-size: 12px; margin-bottom: 10px; color: #aaa;">
-                    當前身分：<span id="my-status-display" style="color:var(--primary); font-weight:bold;">未連線</span>
+                    Current Identity: <span id="my-status-display" style="color:var(--primary); font-weight:bold;">Offline</span>
                 </p>
                 
-                <label for="target-dropdown" style="font-size:11px; color:#ccc; display:block; margin-bottom:3px;">🎯 當前施放目標：</label>
-                <select id="target-dropdown" class="target-select" onchange="syncTargetCardEffects()"><option value="">-- 請先連線 --</option></select>
+                <label for="target-dropdown" style="font-size:11px; color:#ccc; display:block; margin-bottom:3px;">Active Target Selection:</label>
+                <select id="target-dropdown" class="target-select" onchange="syncTargetCardEffects()"><option value="">-- Please Login First --</option></select>
 
                 <div id="boss-quick-ap-panel" class="boss-quick-ap-box">
-                    <span style="font-size: 11px; color: #f1c40f; font-weight: bold;">⚡ 魔王特權：個別學員即時操控控管</span>
+                    <span style="font-size: 11px; color: #f1c40f; font-weight: bold;">⚡ Teacher Prerogative: Immediate Student Overwrite</span>
                     <div class="ap-btn-group">
                         <button class="ap-mini-btn" style="background:#e74c3c;" onclick="bossQuickAdjustAP(-1)">-1 AP</button>
                         <button class="ap-mini-btn" style="background:#2ecc71;" onclick="bossQuickAdjustAP(1)">+1 AP</button> <button class="ap-mini-btn" style="background:#3498db;" onclick="bossQuickAdjustAP(2)">+2 AP</button>
-                        <button class="ap-mini-btn" style="background:#c0392b; border:1px solid #fff;" onclick="bossForceLogoutUser()">❌ 強制該角色登出戰場</button>
+                        <button class="ap-mini-btn" style="background:#c0392b; border:1px solid #fff;" onclick="bossForceLogoutUser()">❌ Force Disconnect Student</button>
                     </div>
                 </div>
 
-                <label style="font-size:11px; color:#ccc; display:block; margin-bottom:3px;">✨ 技能面板 (AP 0 時會自動變暗 / 回復技能均可對他人施放)：</label>
+                <label style="font-size:11px; color:#ccc; display:block; margin-bottom:3px;">✨ Skill Matrix Panel (All Student moves cost 1 AP / Intensity scales with EN cost):</label>
                 <div id="skills-container" class="skill-grid"></div>
 
-                <h2 class="section-title" style="margin-top:10px;">📜 房間即時戰況日誌</h2>
+                <h2 class="section-title" style="margin-top:10px;">📜 Live Combat Feed Logs</h2>
                 <div id="log-box" class="log-box"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // === 🛠️ FREE FIREBASE 免費雲端資料庫設定 ===
+        // === 🛠️ FREE FIREBASE CLOUD DATABASE CONFIGURATION ===
         const firebaseConfig = {
             databaseURL: "https://classwar-91a0a-default-rtdb.asia-southeast1.firebasedatabase.app/" 
         };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // === 🎲 遊戲數值基礎配置 ===
+        // === 🎲 GAME STATS CONFIGURATIONS ===
         const CLASS_CONFIGS = {
-            '戰士':    { hp: 150, en: 100, def: 25, patk: 15, matk: 5,  colorClass: 'bg-warrior' },
-            '法師':    { hp: 80,  en: 150, def: 5,  patk: 5,  matk: 30, colorClass: 'bg-mage' },
-            '狂戰士':  { hp: 130, en: 100, def: 10, patk: 25, matk: 0,  colorClass: 'bg-berserker' },
-            '弓手':    { hp: 100,  en: 100, def: 12, patk: 20, matk: 10, colorClass: 'bg-archer' },
-            '魔王(老師)': { hp: 99999, en: 9999, def: 500, patk: 200, matk: 200, colorClass: 'bg-boss' }
+            'Warrior':     { hp: 160, en: 100, def: 25, patk: 16, matk: 5,  colorClass: 'bg-warrior' },
+            'Mage':        { hp: 85,  en: 160, def: 6,  patk: 4,  matk: 32, colorClass: 'bg-mage' },
+            'Berserker':   { hp: 120, en: 100, def: 12, patk: 24, matk: 0,  colorClass: 'bg-berserker' },
+            'Archer':      { hp: 100,  en: 110, def: 10, patk: 18, matk: 12, colorClass: 'bg-archer' },
+            'TeacherBoss': { hp: 99999, en: 9999, def: 500, patk: 200, matk: 200, colorClass: 'bg-boss' }
+        };
+
+        // 💥 CRIT CHARACTERISTICS INDEX TABLE
+        const CRIT_CONFIGS = {
+            'Warrior':     { chance: 0.05, multiplier: 1.5 },
+            'Mage':        { chance: 0.05, multiplier: 1.5 },
+            'Berserker':   { chance: 0.25, multiplier: 2.0 },
+            'Archer':      { chance: 0.05, multiplier: 1.5 },
+            'TeacherBoss': { chance: 0.00, multiplier: 1.0 }
         };
 
         function getScaledStats(job, level) {
-            if (job === '魔王(老師)') {
+            if (job === 'TeacherBoss') {
                 return { hp: 99999, en: 9999, def: 500, patk: 200, matk: 200 };
             }
             const base = CLASS_CONFIGS[job];
+            if (!base) return { hp: 100, en: 100, def: 10, patk: 10, matk: 10 };
             const multiplier = 1 + (level - 1) * 0.1; 
             return {
                 hp: Math.floor(base.hp * multiplier),
@@ -258,45 +268,41 @@
             };
         }
 
-        // 📜 新增技能基礎文字與效果數據對照表
+        // 📜 SKILLS DATABASE
         const SKILL_DATABASE = {
-            '通用': [
-                { name: '普通攻擊', apCost: 1, enCost: 0, type: 'atk_p', value: 5, desc: '最基礎的肉搏打擊。造成 (基礎物攻 + 5) 點物理傷害。' },
-                { name: '儲存 EN',  apCost: 1, enCost: 0, type: 'charge', value: 30, desc: '凝神聚氣。不發動攻擊，直接回復自身 30 點 EN 能量。' }
+            'General': [
+                { name: 'Charge EN', apCost: 1, enCost: 0, type: 'charge', value: 35, desc: 'Focus energy internally. Does not attack; recovers 35 EN points directly.' }
             ],
-            '戰士': [
-                { name: '英勇嘲諷', apCost: 2, enCost: 0, type: 'log_only', value: 0, desc: '發出咆哮挑釁指定目標，在日誌中留下戰術印記。' },
-                { name: '盾牌猛擊', apCost: 2, enCost: 0, type: 'atk_p', value: 15, desc: '以重盾狠狠砸向敵人。造成 (基礎物攻 + 15) 點高額物理傷害。' },
-                { name: '戰意高昂（回復他人/自）', apCost: 2, enCost: 0, type: 'heal', value: 30, desc: '激發不屈戰意。為己方單體成員或自己回復 30 點 HP。' },
-                { name: '破甲擊',   apCost: 3, enCost: 0, type: 'atk_p', value: 25, desc: '貫穿護甲的沉重一擊。造成 (基礎物攻 + 25) 點毀滅性物理傷害。' },
-                { name: '不落要塞（回復他人/自）', apCost: 3, enCost: 80, type: 'heal', value: 80, desc: '【終極大招】消耗 80 EN，為目標或自己超量回復 80 點 HP！' }
+            'Warrior': [
+                { name: 'Ground Strike', apCost: 1, enCost: 0, type: 'atk_p', value: 8, desc: 'Basic physical heavy swing. Deals (ATK + 8) Physical Damage.' },
+                { name: 'Iron Aegis Shield', apCost: 1, enCost: 20, type: 'heal', value: 25, desc: 'Costs 20 EN. Deploys defensive shield matrix, recovering 25 HP for self or ally.' },
+                { name: 'Sunder Armor', apCost: 1, enCost: 40, type: 'atk_p_pierce', value: 20, desc: 'Costs 40 EN. A piercing blow that completely bypasses 50% of the target\'s Physical DEF.' },
+                { name: '【ULTIMATE】Bastion Smash', apCost: 1, enCost: 80, type: 'warrior_ult', value: 55, desc: 'Costs 80 EN. Absolute Offense! Deals massive (ATK + 55) Physical Damage, shattering target defenses, and inspires the recipient to instantly gain 30 EN!' }
             ],
-            '法師': [
-                { name: '奧術飛彈', apCost: 2, enCost: 0, type: 'atk_m', value: 35, desc: '召喚魔法飛彈鎖定轟炸。造成 (基礎魔攻 + 35) 點法術傷害。' },
-                { name: '冰凍術',   apCost: 2, enCost: 0, type: 'log_only', value: 0, desc: '凝結寒冰減緩敵方行動。在戰況日誌中施加冰凍標記。' },
-                { name: '時光回溯（回復他人/自）', apCost: 2, enCost: 0, type: 'heal', value: 25, desc: '扭轉局部時間。為己方單體成員或自己回復 25 點 HP。' },
-                { name: '末日審判', apCost: 3, enCost: 100, type: 'atk_m', value: 65, desc: '【終極奧義】燃燒 100 EN，降下末日烈焰造成 (基礎魔攻 + 65) 點法術傷害。' }
+            'Mage': [
+                { name: 'Arcane Missile', apCost: 1, enCost: 0, type: 'atk_m', value: 12, desc: 'Basic magic spark. Deals (MATK + 12) Magic Damage.' },
+                { name: 'Energy Drain Feed', apCost: 1, enCost: 20, type: 'mage_drain', value: 15, desc: 'Costs 20 EN. Siphons up to 20 EN from target, rendering 15 EN back to self while dealing micro magic damage.' },
+                { name: 'Chrono Transfer', apCost: 1, enCost: 35, type: 'mage_transfer', value: 40, desc: 'Costs 35 EN. Warps space-time to donate 40 EN directly to a chosen teammate (cannot target self).' },
+                { name: '【ULTIMATE】Doomsday Verdict', apCost: 1, enCost: 90, type: 'mage_ult', value: 60, desc: 'Costs 90 EN. Summons a cosmic meteor strike dealing immense (MATK + 60) Magic Damage, evaporating 10 EN from target instantly.' }
             ],
-            '狂戰士': [
-                { name: '嗜血狂暴', apCost: 2, enCost: 0, type: 'atk_p', value: 40, desc: '不計後果的瘋狂斬擊。爆發性造成 (基礎物攻 + 40) 點物理傷害。' },
-                { name: '橫掃千軍', apCost: 2, enCost: 0, type: 'atk_p', value: 25, desc: '揮舞重兵器大範圍劈砍。穩定造成 (基礎物攻 + 25) 點物理傷害。' },
-                { name: '不死意志（回復他人/自）', apCost: 2, enCost: 0, type: 'heal', value: 20, desc: '憑藉強悍肉體強行止血。為己方成員或自己回復 20 點 HP。' },
-                { name: '諸神黃昏', apCost: 3, enCost: 90, type: 'ult_berserk', value: 85, desc: '【絕世大招】消耗 90 EN 猛烈劈砍。造成 (基礎物攻 + 85) 傷害，並將傷害值的 50% 轉化為自身血量！' }
+            'Berserker': [
+                { name: 'Brutal Cleave', apCost: 1, enCost: 0, type: 'atk_p', value: 10, desc: 'Heavy swing. Synergizes exceptionally well with default 25% Critical Chance and 2x Critical Multiplier.' },
+                { name: 'Undying Rage Blood', apCost: 1, enCost: 25, type: 'heal', value: 20, desc: 'Costs 25 EN. Channels inner fury into adrenaline, forcing 20 HP recovery to self or ally.' },
+                { name: 'Furious Assault', apCost: 1, enCost: 45, type: 'atk_p', value: 35, desc: 'Costs 45 EN. Enraged execute, slicing down to deal (ATK + 35) high physical damage.' },
+                { name: '【ULTIMATE】Ragnarok Apocalypse', apCost: 1, enCost: 85, type: 'ult_berserk', value: 65, desc: 'Costs 85 EN. Berserker ultimate chaos! Deals overwhelming (ATK + 65) damage and life-steals 60% of final output directly back into self HP!' }
             ],
-            '弓手': [
-                { name: '二連矢',   apCost: 2, enCost: 0, type: 'atk_p', value: 35, desc: '雙箭齊發。精準造成 (基礎物攻 + 35) 點物理傷害。' },
-                { name: '毒箭',     apCost: 2, enCost: 0, type: 'atk_p', value: 20, desc: '淬毒的箭矢。造成 (基礎物攻 + 20) 點物理傷害，並干擾對手。' },
-                { name: '自然治癒（回復他人/自）', apCost: 2, enCost: 0, type: 'heal', value: 25, desc: '引導森林的生命之風。為己方成員或自己回復 25 點 HP。' },
-                { name: '絆馬索',   apCost: 2, enCost: 0, type: 'debuff_ap', value: 1, desc: '投擲機關繩索絆倒敵手。直接強制扣除目標學生 1 點珍貴的 AP！' },
-                { name: '流星箭雨', apCost: 3, enCost: 80, type: 'atk_p', value: 45, desc: '【終極大招】消耗 80 EN 覆蓋戰場。造成 (基礎物攻 + 45) 點大範圍物理穿透傷害。' }
+            'Archer': [
+                { name: 'Precision Double-Shot', apCost: 1, enCost: 0, type: 'archer_multi', hits: 2, value: 5, desc: 'Fires 2 rapid arrows. Each hits independently, calculates DEF separately, and has a discrete 5% crit check.' },
+                { name: 'Envenomed Arrow', apCost: 1, enCost: 30, type: 'archer_drain_en', value: 15, desc: 'Costs 30 EN. Fires a toxic arrowhead dealing damage while chemically dissolving 15 EN from target.' },
+                { name: '【ULTIMATE】Meteor Arrow Rain', apCost: 1, enCost: 80, type: 'archer_ult', hits: 4, value: 10, desc: 'Costs 80 EN. Rains down a vicious barrage of 4 sequential shots on a single target! Total output is extremely lethal if multiple arrows crit.' }
             ],
-            '魔王(老師)': [
-                { name: '點名突擊', apCost: 0, enCost: 0, type: 'atk_p', value: 60, desc: '隨機抽查點名！無視護甲造成 60+ 點絕對物理震懾傷害。' },
-                { name: '隨堂小測驗', apCost: 0, enCost: 0, type: 'atk_m', value: 40, desc: '突如其來的考卷轟炸！重創目標並造成 40+ 點精神法術傷害。' },
-                { name: '沒收 iPad',  apCost: 0, enCost: 0, type: 'debuff_ap', value: 2, desc: '終極課堂控制。直接強制奪走學生的行動力，瞬間扣除其 2 點 AP！' },
-                { name: '讚美之光（回復他人/自）', apCost: 0, enCost: 0, type: 'heal', value: 5000, desc: '【👑至尊復活術】給予學生至高讚美！補滿 5000 點血量。若目標已陣亡（💀），將打破生死法則「強制滿血復活」重生！' },
-                { name: '☠️ 絕對點名抹除 (單體秒殺)', apCost: 0, enCost: 0, type: 'boss_insta_kill', value: 0, desc: '至尊權限法则。100% 抹除任何單體存在的生存值，使其瞬間陣亡。' },
-                { name: '⚡ 滅世天劫 (全體打擊/死亡)', apCost: 0, enCost: 0, type: 'boss_stage_aoe', value: 0, desc: '終極管理權威。一階全場扣當前 50% 生命並記錄日誌；二階啟動毀滅末日，全場活著的學生強制歸零暴斃。' }
+            'TeacherBoss': [
+                { name: 'Surprise Roll-Call Attack', apCost: 0, enCost: 0, type: 'atk_p', value: 60, desc: 'Teacher calls your name! Bypasses armor to deal 60+ point absolute physical authority shock.' },
+                { name: 'Pop Quiz Flash Bomb', apCost: 0, enCost: 0, type: 'atk_m', value: 40, desc: 'Sudden tests out of nowhere! Inflicts 40+ points of mental stress magic damage.' },
+                { name: 'Confiscate iPad Device',  apCost: 0, enCost: 0, type: 'debuff_ap', value: 2, desc: 'Teacher confiscates iPad device from student! Drains target student of 2 AP!' },
+                { name: 'Praise of Light (Max Heal)', apCost: 0, enCost: 0, type: 'heal', value: 5000, desc: 'Sovereign Resurrection! Restores 5000 HP. Breaks death codes to fully revive entity!' },
+                { name: '☠️ Absolute Name Erase (Insta-Kill)', apCost: 0, enCost: 0, type: 'boss_insta_kill', value: 0, desc: 'Supreme admin command. 100% obliterates any single student entity.' },
+                { name: '⚡ Apocalypse Cataclysm (Room Wipe)', apCost: 0, enCost: 0, type: 'boss_stage_aoe', value: 0, desc: 'Phase 1 cuts health by 50%. Phase 2 triggers full instant wipeout.' }
             ]
         };
 
@@ -311,7 +317,7 @@
             const inputPwd = document.getElementById('player-pwd').value.trim();
 
             if (!roomNum || !inputId || !inputPwd) {
-                return alert('請完整填寫房間號碼、登入ID與密碼！');
+                return alert('Please completely fill out the Room ID, User ID, and Password fields!');
             }
 
             currentRoom = roomNum;
@@ -319,22 +325,21 @@
             database.ref(`secret_auth/${inputId}`).once('value', (authSnap) => {
                 let validPassword = authSnap.val();
                 if (!validPassword) {
-                    return alert('❌ 登入失敗：雲端帳戶資料庫中查無此 ID，請確認是否輸入正確。');
+                    return alert('❌ Login Failed: ID not found in security directory registry database.');
                 }
                 if (validPassword !== inputPwd) {
-                    return alert('❌ 登入失敗：驗證密碼不匹配！');
+                    return alert('❌ Login Failed: Verification credentials password mismatch!');
                 }
 
                 const isBoss = (inputId === 'Teacher');
                 if (isBoss) {
                     myId = 'teacher_boss';
-                    proceedLogin(inputId, '魔王(老師)');
+                    proceedLogin(inputId, 'TeacherBoss');
                 } else {
-                    // 🛡️ 強化學生登入限制：嚴格檢查魔王節點是否存在，且 online 必須為 true
                     database.ref(`rooms/${currentRoom}/players/teacher_boss`).once('value', (bossSnap) => {
                         const bossData = bossSnap.val();
                         if (!bossSnap.exists() || !bossData || bossData.online === false || bossData.hp <= 0) {
-                            alert('❌ 該房間目前沒有魔王(老師)在線！無法登入，請等待老師開啟房間。');
+                            alert('❌ Failed: No active Teacher/Boss detected in this room! Please wait for your instructor to launch the room session.');
                         } else {
                             myId = 'student_' + inputId;
                             const studentJob = document.getElementById('player-job').value;
@@ -343,20 +348,26 @@
                     });
                 }
             }).catch(err => {
-                alert('網路同步異常，無法連接雲端驗證庫：' + err.message);
+                alert('Network stream error connecting to auth cloud module: ' + err.message);
             });
         }
 
         function proceedLogin(inputId, job) {
             database.ref(`global_users/${inputId}`).once('value', (snapshot) => {
                 let userData = snapshot.val();
+                
                 if (!userData) {
                     userData = { level: (inputId === 'Teacher') ? 9999 : 1, exp: 0, job: job, hp: null, en: 0, ap: 3 };
+                } else {
+                    if (inputId !== 'Teacher') {
+                        userData.job = job; 
+                        userData.hp = null; 
+                    }
                 }
 
                 if (inputId === 'Teacher') {
                     userData.level = 9999;
-                    userData.job = '魔王(老師)';
+                    userData.job = 'TeacherBoss';
                     userData.hp = 99999;
                     userData.en = 9999;
                     userData.ap = 99999;
@@ -379,21 +390,24 @@
                     forceLogout: false
                 };
 
-                // 核心功能：設定斷線監聽器 (OnDisconnect)
                 const myPlayerRef = database.ref(`rooms/${currentRoom}/players/${myId}`);
                 
                 if (inputId === 'Teacher') {
-                    // 👑 如果是老師關閉網頁或中斷連線，直接將老師節點從房間中刪除（不留屍體與離線狀態）
                     myPlayerRef.onDisconnect().remove();
                 } else {
-                    // 🛡️ 如果是學生斷線，則正常標記為離線
                     myPlayerRef.onDisconnect().update({ online: false });
                 }
 
                 myPlayerRef.set(sessionData).then(() => {
+                    if (inputId !== 'Teacher') {
+                        saveToGlobalUser(inputId, sessionData);
+                    }
+                    
                     document.getElementById('login-panel').style.display = 'none';
-                    document.getElementById('room-display').innerText = `房間: ${currentRoom}`;
-                    document.getElementById('my-status-display').innerText = `${sessionData.name} (${sessionData.job})`;
+                    document.getElementById('room-display').innerText = `ROOM: ${currentRoom}`;
+                    
+                    let displayJob = sessionData.job === 'TeacherBoss' ? 'Teacher' : sessionData.job;
+                    document.getElementById('my-status-display').innerText = `${sessionData.name} (${displayJob})`;
                     
                     if(inputId === 'Teacher') {
                         document.getElementById('boss-panel').style.display = 'block';
@@ -409,14 +423,13 @@
                 allPlayersData = snapshot.val() || {};
                 
                 if (myId && (!allPlayersData[myId] || allPlayersData[myId].forceLogout)) {
-                    alert("🛑 您已被系統或老師移出戰場房間！");
+                    alert("🛑 You have been disconnected or removed from this room arena!");
                     location.reload();
                     return;
                 }
 
-                // 🛡️ 如果學生在線期間，發現老師節點徹底不見了或被移除了，強制彈出並同步重新整理網頁
                 if (myId !== 'teacher_boss' && !allPlayersData['teacher_boss']) {
-                    alert("📢 老師已關閉網頁或登出房間，戰場已關閉！");
+                    alert("📢 Teacher closed the app or left the session. Room terminated!");
                     location.reload();
                     return;
                 }
@@ -433,7 +446,7 @@
                 Object.values(logs).forEach(l => {
                     const entry = document.createElement('div');
                     entry.className = 'log-entry';
-                    if (l.includes('[🔴警告]') || l.includes('🌟') || l.includes('👑') || l.includes('💥') || l.includes('☠️') || l.includes('點數不足') || l.includes('🛑【切換視窗懲罰】') || l.includes('😇')) {
+                    if (l.includes('[⚠️WARNING]') || l.includes('🌟') || l.includes('👑') || l.includes('💥') || l.includes('☠️') || l.includes('💥CRITICAL') || l.includes('🛑【WINDOW_PUNISHMENT】') || l.includes('😇')) {
                         entry.className += ' log-alert-red';
                     }
                     entry.innerText = l;
@@ -444,7 +457,8 @@
 
             const currentMe = allPlayersData[myId];
             if (currentMe) {
-                sendGlobalLog(`🚀【${currentMe.name}】(Lv.${currentMe.level} ${currentMe.job}) 已成功載入存檔並登入聯網戰場！`);
+                let displayJob = currentMe.job === 'TeacherBoss' ? 'Teacher' : currentMe.job;
+                sendGlobalLog(`🚀【${currentMe.name}】(Lv.${currentMe.level} ${displayJob}) successfully synchronized profile and spawned into battle!`);
             }
             initVisibilityMonitor();
         }
@@ -472,9 +486,9 @@
                             me.hp = Math.max(0, me.hp - punishDmg);
                             database.ref(`rooms/${currentRoom}/players/${myId}`).set(me);
                             saveToGlobalUser(me.userId, me);
-                            let logMsg = `🛑【切換視窗懲罰】學生【${me.name}】因擅自切換視窗/離開分頁，觸發系統制裁，強制扣減 ${punishDmg} 點生命值！`;
+                            let logMsg = `🛑【WINDOW_PUNISHMENT】Student【${me.name}】switched tabs/minimized screen! System triggered force penalization of -${punishDmg} HP!`;
                             if (me.hp <= 0) {
-                                logMsg += ` 💀 並且不幸暴斃陣亡！`;
+                                logMsg += ` 💀 Banishment complete: Entity Perished!`;
                             }
                             sendGlobalLog(logMsg);
                         }
@@ -487,8 +501,8 @@
             const dropdown = document.getElementById('target-dropdown');
             const targetId = dropdown.value;
             if (!targetId || targetId === 'teacher_boss') return;
-            if (confirm(`確定要將學員【${allPlayersData[targetId].name}】強制踢出並登出房間嗎？`)) {
-                sendGlobalLog(`👑🛑【魔王放逐】老師動用了管理權限，將【${allPlayersData[targetId].name}】強制登出戰場！`);
+            if (confirm(`Are you sure you want to forcibly disconnect student【${allPlayersData[targetId].name}】?`)) {
+                sendGlobalLog(`👑🛑【ADMIN BANISH】Teacher invoked supreme authorization to disconnect student【${allPlayersData[targetId].name}】!`);
                 database.ref(`rooms/${currentRoom}/players/${targetId}`).update({ forceLogout: true, online: false });
             }
         }
@@ -504,7 +518,7 @@
 
         function loadGlobalUsersMonitor() {
             const tbody = document.getElementById('monitor-tbody');
-            tbody.innerHTML = `<tr><td colspan="6" style="color:#888; text-align:center;">正在安全同步線上資料...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="color:#888; text-align:center;">Synchronizing database cloud streams...</td></tr>`;
             
             database.ref('secret_auth').once('value', (authSnap) => {
                 const auths = authSnap.val() || {};
@@ -514,8 +528,8 @@
                     
                     Object.keys(auths).forEach(uid => {
                         if (uid === 'Teacher') return;
-                        const pwd = auths[uid] || '無';
-                        const uInfo = users[uid] || { job:'戰士', level:1, ap:3 };
+                        const pwd = auths[uid] || 'N/A';
+                        const uInfo = users[uid] || { job:'Warrior', level:1, ap:3 };
                         
                         const sid = 'student_' + uid;
                         let activeAp = uInfo.ap;
@@ -531,10 +545,10 @@
                             <td><input type="number" id="input-lv-${uid}" class="input-sm" value="${uInfo.level}"></td>
                             <td><b style="color:#3498db; font-size:13px;">${activeAp} AP</b></td>
                             <td>
-                                <button class="ap-mini-btn" style="background:#27ae60; padding:4px 8px;" onclick="bossSaveUserData('${uid}')">儲存變更</button>
+                                <button class="ap-mini-btn" style="background:#27ae60; padding:4px 8px;" onclick="bossSaveUserData('${uid}')">Save Changes</button>
                                 <button class="ap-mini-btn" style="background:#e67e22; padding:4px 6px;" onclick="bossTableAdjustAP('${uid}', 1)">+1 AP</button>
                                 <button class="ap-mini-btn" style="background:#555; padding:4px 6px;" onclick="bossTableAdjustAP('${uid}', -1)">-1 AP</button>
-                                <button onclick="bossResetUserLevel('${uid}')" style="display:inline-block; padding:2px 8px; font-size:11px; background:#e74c3c; border:none;">重置1等</button>
+                                <button onclick="bossResetUserLevel('${uid}')" style="display:inline-block; padding:2px 8px; font-size:11px; background:#e74c3c; border:none; color:white; border-radius:4px; cursor:pointer;">Reset Lv.1</button>
                             </td>
                         `;
                         tbody.appendChild(tr);
@@ -553,7 +567,7 @@
                     database.ref(`global_users/${studentId}/ap`).set(newAp).then(() => {
                         loadGlobalUsersMonitor();
                     });
-                    sendGlobalLog(`👑 魔王老師在控制台離線調整了【${studentId}】的永久帳戶點數： ${oldAp} AP ➔ ${newAp} AP！`);
+                    sendGlobalLog(`👑 Teacher modified permanent offline registry profile points for【${studentId}】: ${oldAp} AP ➔ ${newAp} AP!`);
                 });
                 return;
             }
@@ -563,17 +577,19 @@
             database.ref(`global_users/${studentId}/ap`).set(newAP).then(() => {
                 loadGlobalUsersMonitor();
             });
-            sendGlobalLog(`👑 魔王老師在控制台調整了【${studentId}】的點數： ${currentAP} AP ➔ ${newAP} AP！`);
+            sendGlobalLog(`👑 Teacher modified active room parameters for【${studentId}】: ${currentAP} AP ➔ ${newAP} AP!`);
         }
 
         function bossSaveUserData(targetUserId) {
             const newPwd = document.getElementById(`input-pwd-${targetUserId}`).value.trim();
             const newLv = parseInt(document.getElementById(`input-lv-${targetUserId}`).value);
-            if (!newPwd) return alert('密碼不能留空！');
-            if (isNaN(newLv) || newLv < 1 || newLv > 10000) return alert('請輸入合理的等級！');
+            if (!newPwd) return alert('Password cannot be left blank!');
+            if (isNaN(newLv) || newLv < 1 || newLv > 10000) return alert('Please enter a valid logical level parameter!');
 
             database.ref(`secret_auth/${targetUserId}`).set(newPwd);
-            const scaled = getScaledStats(allPlayersData['student_' + targetUserId] ? allPlayersData['student_' + targetUserId].job : '戰士', newLv);
+            
+            const currentJob = allPlayersData['student_' + targetUserId] ? allPlayersData['student_' + targetUserId].job : 'Warrior';
+            const scaled = getScaledStats(currentJob, newLv);
             
             database.ref(`global_users/${targetUserId}`).update({
                 level: newLv,
@@ -590,27 +606,27 @@
                     currentPlayerData.en = 0;
                     database.ref(`rooms/${currentRoom}/players/${sid}`).set(currentPlayerData);
                 }
-                sendGlobalLog(`👑 魔王老師動用特權：更動了【${targetUserId}】的雲端資料 (等級滿血/密碼)！`);
-                alert(`儲存成功！已將 ${targetUserId} 的密碼及等級同步更正。`);
+                sendGlobalLog(`👑 Supreme Privilege: Teacher forced modification on profile【${targetUserId}】(MaxHP Synced / PWD Changed)!`);
+                alert(`Saved changes for student user registry: ${targetUserId}`);
                 loadGlobalUsersMonitor();
             });
         }
 
         function bossResetUserLevel(targetUserId) {
-            if (confirm(`確定要將【${targetUserId}】的歷史等級與數值全部重置嗎？`)) {
+            if (confirm(`Are you sure you want to completely erase historical campaign progress for student【${targetUserId}】 back to initial Level 1 status?`)) {
                 database.ref(`global_users/${targetUserId}`).set({
                     level: 1,
                     exp: 0,
                     hp: null,
                     en: 0,
                     ap: 3,
-                    job: '戰士'
+                    job: 'Warrior'
                 }).then(() => {
                     const sid = 'student_' + targetUserId;
                     if (allPlayersData[sid]) {
                         database.ref(`rooms/${currentRoom}/players/${sid}`).remove();
                     }
-                    sendGlobalLog(`👑 🛑【重置處置】老師將學生【${targetUserId}】的所有歷史雲端檔案永久清空至初始 1 等！`);
+                    sendGlobalLog(`👑 🛑【DATABASE WIPEOUT】Teacher hard-reset student metadata profile【${targetUserId}】 back to baseline Level 1.`);
                     loadGlobalUsersMonitor();
                 });
             }
@@ -629,7 +645,7 @@
             });
 
             if (sortedPlayers.length === 0) {
-                container.innerHTML = '<p style="color:#888; font-style:italic;">暫無任何玩家在線...</p>';
+                container.innerHTML = '<p style="color:#888; font-style:italic;">No online entities found in this room node...</p>';
                 return;
             }
 
@@ -641,6 +657,8 @@
                 const reqExp = player.level * 100;
                 const expPercent = Math.min(100, Math.max(0, (player.exp / reqExp) * 100));
                 const isDead = player.hp <= 0;
+                
+                let jobDisplay = player.job === 'TeacherBoss' ? 'Teacher' : player.job;
 
                 const card = document.createElement('div');
                 card.id = `player-card-${player.id}`;
@@ -660,9 +678,9 @@
 
                 card.innerHTML = `
                     <div class="card-header">
-                        <strong style="font-size:14px;">${player.name} ${isDead ? '💀' : ''} ${player.online === false ? '💤(離線)' : ''}</strong>
+                        <strong style="font-size:14px;">${player.name} ${isDead ? '💀' : ''} ${player.online === false ? '💤(AFK)' : ''}</strong>
                         <span class="level-badge">Lv.${player.level}</span>
-                        <span class="role-tag ${CLASS_CONFIGS[player.job].colorClass}">${player.job}</span>
+                        <span class="role-tag ${CLASS_CONFIGS[player.job] ? CLASS_CONFIGS[player.job].colorClass : 'bg-warrior'}">${jobDisplay}</span>
                     </div>
                     <div class="bar-container">
                         <div class="bar-label"><span>HP (${player.hp}/${scaled.hp})</span></div>
@@ -677,8 +695,8 @@
                         <div class="bar" style="height:6px;"><div class="fill fill-exp" style="width: ${expPercent}%"></div></div>
                     </div>
                     <div style="margin-top:5px; display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#aaa;">
-                        <span>防:${scaled.def} 攻:${scaled.patk}</span>
-                        <span class="ap-badge">${player.job === '魔王(老師)' ? 'AP: ∞' : 'AP: ' + player.ap}</span>
+                        <span>DEF:${scaled.def} ATK:${scaled.patk}</span>
+                        <span class="ap-badge">${player.job === 'TeacherBoss' ? 'AP: ∞' : 'AP: ' + player.ap}</span>
                     </div>
                 `;
                 container.appendChild(card);
@@ -711,7 +729,7 @@
 
             database.ref(`rooms/${currentRoom}/players/${targetId}/ap`).set(newAP);
             database.ref(`global_users/${allPlayersData[targetId].userId}/ap`).set(newAP);
-            sendGlobalLog(`👑 魔王老師動用特權：快速調整了【${allPlayersData[targetId].name}】的點數： ${currentAP} AP ➔ ${newAP} AP！`);
+            sendGlobalLog(`👑 Teacher triggered active micro override for【${allPlayersData[targetId].name}】: ${currentAP} AP ➔ ${newAP} AP!`);
         }
 
         function renderSkills() {
@@ -722,16 +740,16 @@
             if (!currentMe) return;
 
             const job = currentMe.job;
-            const mySkills = [...(SKILL_DATABASE['通用'] || []), ...(SKILL_DATABASE[job] || [])];
+            const mySkills = [...(SKILL_DATABASE['General'] || []), ...(SKILL_DATABASE[job] || [])];
 
             mySkills.forEach(skill => {
                 const btn = document.createElement('button');
                 btn.className = 'btn';
-                if (skill.type === 'boss_stage_aoe' || skill.name.includes('【終極') || skill.name.includes('【絕世')) {
+                if (skill.type === 'boss_stage_aoe' || skill.name.includes('【ULTIMATE】')) {
                     btn.className += ' btn-ult';
                 }
 
-                const isBoss = job === '魔王(老師)';
+                const isBoss = job === 'TeacherBoss';
                 const hasEnoughAp = isBoss || currentMe.ap >= skill.apCost;
                 const hasEnoughEn = isBoss || currentMe.en >= skill.enCost;
                 const isDead = currentMe.hp <= 0;
@@ -743,7 +761,7 @@
                 btn.onclick = () => {
                     const latestMe = allPlayersData[myId];
                     if (!isBoss && latestMe.ap < skill.apCost) {
-                        sendGlobalLog(`[🔴警告] 學生【${latestMe.name}】目前 AP 點數不足 (AP:0)，行動遭系統阻斷！`);
+                        sendGlobalLog(`[⚠️WARNING] Student【${latestMe.name}】has depleted AP reserves! Command intercepted!`);
                         return;
                     }
                     executeBattleAction(latestMe, skill);
@@ -753,7 +771,7 @@
                     <div class="btn-header">
                         <span>${skill.name}</span>
                         <span style="font-size:11px; background:rgba(0,0,0,0.4); padding:1px 5px; border-radius:4px;">
-                            ${isBoss ? '消耗: 0' : `AP:${skill.apCost} EN:${skill.enCost}`}
+                            ${isBoss ? 'Cost: 0' : `AP:${skill.apCost} EN:${skill.enCost}`}
                         </span>
                     </div>
                     <div class="skill-desc">${skill.desc}</div>
@@ -785,7 +803,9 @@
 
                 const opt = document.createElement('option');
                 opt.value = p.id;
-                opt.innerText = `${p.id === myId ? '【自己】' : ''}${p.name} (Lv.${p.level}) - HP:${p.hp} ${isDead ? '[☠️已陣亡]' : ''} ${p.online === false ? '[離線]' : ''}`;
+                
+                let jobDisplay = p.job === 'TeacherBoss' ? 'Teacher' : p.job;
+                opt.innerText = `${p.id === myId ? '[Self] ' : ''}${p.name} (Lv.${p.level}) - HP:${p.hp} ${isDead ? '[☠️DEFEATED]' : ''} ${p.online === false ? '[AFK]' : ''}`;
                 dropdown.appendChild(opt);
             });
 
@@ -793,22 +813,29 @@
             syncTargetCardEffects();
         }
 
+        function calculateDamageWithCrit(baseDmg, job) {
+            const cfg = CRIT_CONFIGS[job] || { chance: 0.05, multiplier: 1.5 };
+            const isCrit = Math.random() < cfg.chance;
+            const finalDmg = isCrit ? Math.floor(baseDmg * cfg.multiplier) : baseDmg;
+            return { dmg: finalDmg, isCrit: isCrit };
+        }
+
         function executeBattleAction(me, skill) {
-            const isBoss = me.job === '魔王(老師)';
+            const isBoss = me.job === 'TeacherBoss';
             const targetId = document.getElementById('target-dropdown').value;
             const target = allPlayersData[targetId];
 
             if (!target && skill.type !== 'charge' && skill.type !== 'boss_stage_aoe') {
-                return alert('請選擇一個目標！');
+                return alert('Please select an active target first!');
             }
 
-            const attackTypes = ['atk_p', 'atk_m', 'ult_berserk', 'debuff_ap', 'boss_insta_kill'];
+            const attackTypes = ['atk_p', 'atk_m', 'atk_p_pierce', 'ult_berserk', 'debuff_ap', 'boss_insta_kill', 'archer_multi', 'archer_ult', 'archer_drain_en', 'mage_drain', 'mage_ult', 'warrior_ult'];
             if (target && target.id === me.id && attackTypes.includes(skill.type)) {
-                return alert('🚫 錯誤：不可對自己使用破壞性技能！');
+                return alert('🚫 Action Intercepted: Destructive skills cannot be self-inflicted!');
             }
 
             if (!isBoss && target && target.online === false && attackTypes.includes(skill.type)) {
-                alert(`🚫 行動失敗：學員【${target.name}】目前處於離線保護狀態，不可被其他同學攻擊！`);
+                alert(`🚫 Operation Shielded: Entity【${target.name}】is currently safeguarded via offline AFK buffers!`);
                 return;
             }
 
@@ -825,27 +852,27 @@
 
             if (skill.type === 'boss_insta_kill') {
                 target.hp = 0;
-                logText = `👑☠️【魔王降臨・絕對抹除】魔王老師動用了至尊權限，指定學生【${target.name}】瞬間暴斃歸零陣亡！`;
+                logText = `👑☠️【CRITICAL ERASURE】Teacher invoked absolute command line. Entity【${target.name}】obliterated to zero health instantly!`;
                 isDmgDealt = true;
             } 
             else if (skill.type === 'boss_stage_aoe') {
                 bossAoeCount++;
                 if (bossAoeCount === 1) {
-                    logText = `👑⚡【滅世天劫・第一階】魔王老師發動全場天罰大考！雷雲密布，所有人強制削減 50% 當前生命值！\n`;
+                    logText = `👑⚡【CATACLYSM PHASE 1】Teacher initiated massive academic test constraints! Dark thunder rolled, all students lose 50% of current active health!\n`;
                     Object.values(allPlayersData).forEach(p => {
                         if (p.id !== 'teacher_boss' && p.hp > 0) {
                             let dmg = Math.floor(p.hp * 0.5);
                             p.hp = Math.max(1, p.hp - dmg);
-                            logText += ` ➔【${p.name}】生命值減半，受到 ${dmg} 點精神重創！\n`;
+                            logText += ` ➔【${p.name}】takes ${dmg} mental stress disruption damage!\n`;
                             database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
                         }
                     });
                 } else {
-                    logText = `👑💥【滅世天劫・第二階：終焉降臨】考卷滿天飛舞！所有存活的學生全部遭到秒殺，戰場全滅！\n`;
+                    logText = `👑💥【CATACLYSM PHASE 2: WIPE OUT】Pop-quizzes flood the arena! All living students suffer absolute instant total wipeout!\n`;
                     Object.values(allPlayersData).forEach(p => {
                         if (p.id !== 'teacher_boss' && p.hp > 0) {
                             p.hp = 0;
-                            logText += ` ➔【${p.name}】直接暴斃歸零！\n`;
+                            logText += ` ➔【${p.name}】reduced to dust!\n`;
                             database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
                             saveToGlobalUser(p.userId, p);
                         }
@@ -854,52 +881,153 @@
             } 
             else if (skill.type === 'charge') {
                 me.en = Math.min(myScaled.en, me.en + skill.value);
-                logText = `⚡【${me.name}】使用 [${skill.name}]，將 EN 提升了 ${skill.value} 點。`;
+                logText = `⚡【${me.name}】channeled [${skill.name}], recharging EN by +${skill.value} units.`;
             } 
             else {
+                // 1. Basic Physical Strike
                 if (skill.type === 'atk_p') {
-                    let dmg = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
-                    target.hp = Math.max(0, target.hp - dmg);
+                    let rawDmg = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
+                    let result = calculateDamageWithCrit(rawDmg, me.job);
+                    target.hp = Math.max(0, target.hp - result.dmg);
                     if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + 10);
-                    logText = `⚔️【${me.name}】對【${target.name}】施展 [${skill.name}]，造成 ${dmg} 點物理傷害！`;
+                    
+                    logText = `${result.isCrit ? '💥💥【CRITICAL HITS!!】' : '⚔️'}【${me.name}】strikes【${target.name}】with [${skill.name}], dealing ${result.dmg} Physical Damage!`;
                     isDmgDealt = true;
                 } 
+                // 2. Warrior: Sunder Armor
+                else if (skill.type === 'atk_p_pierce') {
+                    let piercedDef = Math.floor(targetScaled.def * 0.5);
+                    let rawDmg = Math.max(1, (myScaled.patk + skill.value) - piercedDef);
+                    let result = calculateDamageWithCrit(rawDmg, me.job);
+                    target.hp = Math.max(0, target.hp - result.dmg);
+                    if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + 10);
+                    
+                    logText = `${result.isCrit ? '💥💥【ARMOR CRIT DEVASTATION!!】' : '🛡️⚔️'}【${me.name}】executes [${skill.name}] on【${target.name}術, ignoring 50% DEF to hammer ${result.dmg} pierce damage!`;
+                    isDmgDealt = true;
+                }
+                // 3. Warrior Ultimate: Bastion Smash
+                else if (skill.type === 'warrior_ult') {
+                    let rawDmg = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
+                    let result = calculateDamageWithCrit(rawDmg, me.job);
+                    target.hp = Math.max(0, target.hp - result.dmg);
+                    if (target.id !== 'teacher_boss') {
+                        target.en = Math.min(targetScaled.en, target.en + 30);
+                    }
+                    logText = `${result.isCrit ? '💥💥【CRITICAL BASTION CRUSH!!】' : '🛡️🔥'}【${me.name}】ignited battle dynamic đại chiêu [${skill.name}]! Crushes【${target.name}】for ${result.dmg} Heavy Physical Damage, and sparks target spirit granting them +30 EN replenishment!`;
+                    isDmgDealt = true;
+                }
+                // 4. Basic Magical Strike
                 else if (skill.type === 'atk_m') {
-                    let dmg = Math.max(1, (myScaled.matk + skill.value) - Math.floor(targetScaled.def * 0.5));
-                    target.hp = Math.max(0, target.hp - dmg);
+                    let rawDmg = Math.max(1, (myScaled.matk + skill.value) - Math.floor(targetScaled.def * 0.5));
+                    let result = calculateDamageWithCrit(rawDmg, me.job);
+                    target.hp = Math.max(0, target.hp - result.dmg);
                     if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + 15);
-                    logText = `🔮【${me.name}】對【${target.name}】施展 [${skill.name}]，轟出 ${dmg} 點法術傷害！`;
+                    
+                    logText = `${result.isCrit ? '💥🔮【MANA CRITICAL EXPLOSION!!】' : '🔮'}【${me.name}】casts [${skill.name}] onto【${target.name}】, bursting ${result.dmg} Magical Damage!`;
                     isDmgDealt = true;
                 } 
-                else if (skill.type === 'debuff_ap') {
-                    const oldAp = target.ap || 0;
-                    target.ap = Math.max(0, oldAp - skill.value);
-                    logText = `🛑【${me.name}】對【${target.name}】施展 [${skill.name}]！強制扣除其 ${skill.value} 點行動 AP (原:${oldAp} ➔ 現:${target.ap})`;
+                // 5. Mage: Energy Drain Feed
+                else if (skill.type === 'mage_drain') {
+                    let rawDmg = Math.max(1, Math.floor(myScaled.matk * 0.5));
+                    let result = calculateDamageWithCrit(rawDmg, me.job);
+                    target.hp = Math.max(0, target.hp - result.dmg);
+                    
+                    let targetOldEn = target.en || 0;
+                    let drainAmount = Math.min(targetOldEn, 20);
+                    target.en = Math.max(0, targetOldEn - drainAmount);
+                    me.en = Math.min(myScaled.en, me.en + skill.value);
+                    
+                    logText = `🔮🌀【${me.name}】channeled [${skill.name}] on【${target.name}】, dealing ${result.dmg} magic stress and siphoned ${drainAmount} EN to feed own reserve by +${skill.value} EN!`;
+                    isDmgDealt = true;
+                }
+                // 6. Mage: Chrono Transfer
+                else if (skill.type === 'mage_transfer') {
+                    target.en = Math.min(targetScaled.en, target.en + skill.value);
+                    logText = `🔮⏳【${me.name}】invoked [${skill.name}], transferring surplus neural elements to inject +${skill.value} EN directly into【${target.name}】!`;
+                }
+                // 7. Mage Ultimate: Doomsday Verdict
+                else if (skill.type === 'mage_ult') {
+                    let rawDmg = Math.max(1, (myScaled.matk + skill.value) - Math.floor(targetScaled.def * 0.3));
+                    let result = calculateDamageWithCrit(rawDmg, me.job);
+                    target.hp = Math.max(0, target.hp - result.dmg);
+                    if (target.id !== 'teacher_boss') {
+                        target.en = Math.max(0, (target.en || 0) - 10);
+                    }
+                    logText = `${result.isCrit ? '💥🔥【APOCALYPTIC CRIT COMBUSTION!!】' : '🔥☄️'}【${me.name}】chants Ultimate [${skill.name}]! Meteor incinerates【${target.name}】for ${result.dmg} cosmic magical damage, while instantly freezing and evaporating 10 points of their EN status!`;
+                    isDmgDealt = true;
+                }
+                // 8. Archer: Multi-Shot Mechanics
+                else if (skill.type === 'archer_multi' || skill.type === 'archer_ult') {
+                    let totalDmg = 0;
+                    let critHits = 0;
+                    let hitCount = skill.hits;
+                    
+                    for (let i = 0; i < hitCount; i++) {
+                        let singleRaw = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
+                        let res = calculateDamageWithCrit(singleRaw, me.job);
+                        totalDmg += res.dmg;
+                        if (res.isCrit) critHits++;
+                    }
+                    
+                    target.hp = Math.max(0, target.hp - totalDmg);
+                    if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + (hitCount * 4));
+                    
+                    if (skill.type === 'archer_ult') {
+                        logText = `🏹⛈️【${me.name}】triggers Ultimate Volley [${skill.name}]! Torrential arrows rain upon【${target.name}】for ${hitCount} rapid impacts, stacking a total of ${totalDmg} Physical Damage ${critHits > 0 ? `(including ${critHits} CRITICAL triggers!!)` : ''}`;
+                    } else {
+                        logText = `🏹【${me.name}】launches [${skill.name}] at【${target.name}術, firing a swift ${hitCount}-shot stream dealing ${totalDmg} total points ${critHits > 0 ? `(with ${critHits} Crit hits)` : ''}`;
+                    }
+                    isDmgDealt = true;
+                }
+                // 9. Archer: Envenomed Arrow
+                else if (skill.type === 'archer_drain_en') {
+                    let targetOldEn = target.en || 0;
+                    let burnedEn = Math.min(targetOldEn, skill.value);
+                    target.en = Math.max(0, targetOldEn - burnedEn);
+                    
+                    let rawDmg = Math.max(1, (myScaled.patk + 12) - targetScaled.def);
+                    let result = calculateDamageWithCrit(rawDmg, me.job);
+                    target.hp = Math.max(0, target.hp - result.dmg);
+                    
+                    logText = `🏹🧪【${me.name}】shot [${skill.name}] onto【${target.name}】! Toxic corrosion strikes for ${result.dmg} damage, while molecularly vaporizing -${burnedEn} EN from target elements!`;
+                    isDmgDealt = true;
                 } 
+                // 10. Heal Modules / Berserker Adrenaline Recovery
                 else if (skill.type === 'heal') {
                     const wasDead = target.hp <= 0;
                     if (wasDead && isBoss) {
                         target.hp = skill.value;
-                        logText = `😇👑【魔王至尊復活術】老師對已陣亡的【${target.name}】降下讚美之光！打破生死法則，將其滿血強制復活重生！`;
+                        logText = `😇👑【SOVEREIGN RESURRECTION】Teacher blessed the fallen student【${target.name}】with maximum light elements, breaking death codes to fully revive entity!`;
                     } else if (wasDead && !isBoss) {
-                        alert("🚫 錯誤：一般同學的治癒術無法復活已經陣亡的隊友！");
+                        alert("🚫 Intervention Denied: Student healing spells lack parameters to resurrect deceased squad members!");
                         return;
                     } else {
                         target.hp = Math.min(targetScaled.hp, target.hp + skill.value);
-                        logText = `💖【${me.name}】對【${target.name}】使用 [${skill.name}]，回復了 ${skill.value} 點生命值。`;
+                        logText = `💖【${me.name}】applied [${skill.name}] upon【${target.name}術, restoring +${skill.value} Health Points.`;
                     }
                 } 
+                // 11. Berserker Ultimate: Ragnarok Apocalypse
                 else if (skill.type === 'ult_berserk') {
-                    let dmg = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
-                    target.hp = Math.max(0, target.hp - dmg);
-                    let吸血 = Math.floor(dmg * 0.5);
-                    me.hp = Math.min(myScaled.hp, me.hp + 吸血);
-                    logText = `🩸【${me.name}】發動絕招 [${skill.name}]，重創【${target.name}】造成 ${dmg} 點物理傷害，並狂暴吸血回復自身 ${吸血} 點生命值！`;
+                    let rawDmg = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
+                    let result = calculateDamageWithCrit(rawDmg, me.job);
+                    target.hp = Math.max(0, target.hp - result.dmg);
+                    
+                    let absorbAmount = Math.floor(result.dmg * 0.6);
+                    me.hp = Math.min(myScaled.hp, me.hp + absorbAmount);
+                    
+                    logText = `${result.isCrit ? '💥🩸💥【RAGNAROK RAGE CRIT 200% EXECUTE!!】' : '🩸'}【${me.name}】unleashes beastial Ultimate [${skill.name}]! Crushes【${target.name}】with ${result.dmg} apocalyptic damage, and life-steals +${absorbAmount} HP instantly to self!`;
                     isDmgDealt = true;
                 }
 
+                // Teacher Only AP Debuff Execution
+                else if (skill.type === 'debuff_ap') {
+                    let oldAp = target.ap || 0;
+                    target.ap = Math.max(0, oldAp - skill.value);
+                    logText = `👑🛑【IPAD SEIZURE】Teacher confiscates iPad device from student【${target.name}】! Action capability drained by -${skill.value} AP (Orig:${oldAp} ➔ Current:${target.ap})`;
+                }
+
                 if (isDmgDealt && target.id !== 'teacher_boss' && target.hp <= 0) {
-                    logText += ` 💀【${target.name}】因承受不住致命打擊，當場陣亡！`;
+                    logText += ` 💀【${target.name}】succumbed to massive trauma and collapsed in battle!`;
                 }
             }
 
@@ -920,17 +1048,17 @@
 
         function bossDistributeAP() {
             Object.values(allPlayersData).forEach(p => {
-                if (p.hp > 0 && p.job !== '魔王(老師)') {
+                if (p.hp > 0 && p.job !== 'TeacherBoss') {
                     const newAp = p.ap + 2;
                     database.ref(`rooms/${currentRoom}/players/${p.id}/ap`).set(newAp);
                     saveToGlobalUser(p.userId, { ...p, ap: newAp });
                 }
             });
-            sendGlobalLog(`📢 老師按下控制台：「發放全體同學 +2 AP！」`);
+            sendGlobalLog(`📢 Teacher triggered master overwrite console command: "Distributed +2 AP to all active students!"`);
         }
 
         function bossResetRoom() {
-            if(confirm("確定要重置整個房間嗎？")) {
+            if(confirm("Are you sure you want to completely clear and reset current room parameters?")) {
                 bossAoeCount = 0; 
                 Object.values(allPlayersData).forEach(p => {
                     const scaled = getScaledStats(p.job, p.level);
@@ -943,7 +1071,7 @@
                     if (p.id !== 'teacher_boss') saveToGlobalUser(p.userId, p);
                 });
                 database.ref(`rooms/${currentRoom}/logs`).remove();
-                sendGlobalLog(`🔄 👑 魔王老師重置了整個房間的所有戰局數值，日誌已刷新，新的一輪開始！`);
+                sendGlobalLog(`🔄 👑 Teacher reset all current room battlefield variables! Feed cleared. A fresh round begins!`);
             }
         }
     </script>
