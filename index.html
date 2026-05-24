@@ -100,7 +100,9 @@
         
         /* Teacher Admin Panel */
         .boss-panel { background: #2c3e50; border: 2px solid #f1c40f; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; }
-        
+        .boss-control-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+        .input-ap-num { width: 60px; padding: 8px; background: #222; border: 1px solid #f1c40f; color: white; border-radius: 6px; font-weight: bold; text-align: center; }
+
         /* Teacher Data Modal */
         .boss-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -158,15 +160,22 @@
 
     <div class="boss-panel" id="boss-panel">
         <h3 style="color:#f1c40f; margin-bottom:5px;">😈 Teacher Management Backstage Console (ID: Teacher)</h3>
-        <p style="font-size: 12px; color: #ddd; margin-bottom: 10px;">
+        <p style="font-size: 12px; color: #ddd; margin-bottom: 12px;">
             Your Level: <b style="color:#f1c40f;">9999</b>, Initial HP: <b style="color:#ff4d4d;">99999</b>.
             <span style="color:#2ecc71; font-weight:bold;">[Status: Unrestricted AP & Skills, Zero Cost, God-Slayer AoE, Secure Mode Enabled]</span>
         </p>
         
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <div class="boss-control-row">
             <button class="btn" onclick="bossDistributeAP()" style="background: #e67e22; border-color: #d35400; padding: 8px 15px;">📢 Distribute +2 AP to All Living Students</button>
-            <button class="btn" onclick="bossResetRoom()" style="background: #c0392b; border-color: #95a5a6; padding: 8px 15px;">🔄 Full Reset Current Room Data</button>
+            <button class="btn" onclick="bossResetRoom()" style="background: #c0392b; border-color: #95a5a6; padding: 8px 15px;">🔄 Restore All HP/EN to 100%</button>
             <button class="btn" onclick="openBossModal()" style="background: #2980b9; border-color: #3498db; padding: 8px 20px; color: #fff; box-shadow: 0 0 10px rgba(52,152,219,0.5);">🔑 Open Cloud Management Console (Accounts/Levels)</button>
+        </div>
+
+        <div class="boss-control-row" style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px dashed #f1c40f;">
+            <label style="font-size: 12px; color: #f1c40f; font-weight: bold;">⚡ Custom AP Automation Tool:</label>
+            <input type="number" id="boss-custom-ap-input" class="input-ap-num" value="5" min="1" max="99">
+            <button class="btn" onclick="bossGrantCustomAP()" style="background: #27ae60; border-color: #2ecc71; padding: 6px 12px; font-size: 12px;">➕ Grant Custom AP</button>
+            <button class="btn" onclick="bossWipeAllAPToZero()" style="background: #7f8c8d; border-color: #95a5a6; padding: 6px 12px; font-size: 12px; color: #ffcccc;">🛑 Clear All Students AP to 0</button>
         </div>
     </div>
 
@@ -935,7 +944,6 @@
             else {
                 expRewardMsg = rewardExperiencePoints(me, 'hit');
 
-                // 1. Basic Physical Strike
                 if (skill.type === 'atk_p') {
                     let rawDmg = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
                     let result = calculateDamageWithCrit(rawDmg, me.job);
@@ -945,7 +953,6 @@
                     logText = `${result.isCrit ? '💥💥【CRITICAL HITS!!】' : '⚔️'}【${me.name}】strikes【${target.name}】with [${skill.name}], dealing ${result.dmg} Physical Damage!`;
                     isDmgDealt = true;
                 } 
-                // 2. Warrior: Sunder Armor
                 else if (skill.type === 'atk_p_pierce') {
                     let piercedDef = Math.floor(targetScaled.def * 0.5);
                     let rawDmg = Math.max(1, (myScaled.patk + skill.value) - piercedDef);
@@ -956,7 +963,6 @@
                     logText = `${result.isCrit ? '💥💥【ARMOR CRIT DEVASTATION!!】' : '🛡️⚔️'}【${me.name}】executes [${skill.name}] on【${target.name}】, ignoring 50% DEF to hammer ${result.dmg} pierce damage!`;
                     isDmgDealt = true;
                 }
-                // 3. Warrior Ultimate: Bastion Smash
                 else if (skill.type === 'warrior_ult') {
                     let rawDmg = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
                     let result = calculateDamageWithCrit(rawDmg, me.job);
@@ -964,10 +970,9 @@
                     if (target.id !== 'teacher_boss') {
                         target.en = Math.min(targetScaled.en, target.en + 30);
                     }
-                    logText = `${result.isCrit ? '💥💥【CRITICAL BASTION CRUSH!!】' : '🛡️🔥'}【${me.name}】ignited battle dynamic đại chiêu [${skill.name}]! Crushes【${target.name}】for ${result.dmg} Heavy Physical Damage, and sparks target spirit granting them +30 EN replenishment!`;
+                    logText = `${result.isCrit ? '💥💥【CRITICAL BASTION CRUSH!!】' : '🛡️🔥'}【${me.name}】ignited大招 [${skill.name}]! Crushes【${target.name}】for ${result.dmg} Heavy Physical Damage, and sparks target spirit granting them +30 EN replenishment!`;
                     isDmgDealt = true;
                 }
-                // 4. Basic Magical Strike
                 else if (skill.type === 'atk_m') {
                     let rawDmg = Math.max(1, (myScaled.matk + skill.value) - Math.floor(targetScaled.def * 0.5));
                     let result = calculateDamageWithCrit(rawDmg, me.job);
@@ -977,7 +982,6 @@
                     logText = `${result.isCrit ? '💥🔮【MANA CRITICAL EXPLOSION!!】' : '🔮'}【${me.name}】casts [${skill.name}] onto【${target.name}】, bursting ${result.dmg} Magical Damage!`;
                     isDmgDealt = true;
                 } 
-                // 5. Mage: Energy Drain Feed
                 else if (skill.type === 'mage_drain') {
                     let rawDmg = Math.max(1, Math.floor(myScaled.matk * 0.5));
                     let result = calculateDamageWithCrit(rawDmg, me.job);
@@ -988,15 +992,13 @@
                     target.en = Math.max(0, targetOldEn - drainAmount);
                     me.en = Math.min(myScaled.en, me.en + skill.value);
                     
-                    logText = `🔮🌀【${me.name}】channeled [${skill.name}] on【${target.name}】, dealing ${result.dmg} magic stress and siphoned ${drainAmount} EN to feed own reserve by +${skill.value} EN!`;
+                    logText = `🔮🌀【${me.name}】channeled [${skill.name}] on【${target.name}術, dealing ${result.dmg} magic stress and siphoned ${drainAmount} EN to feed own reserve by +${skill.value} EN!`;
                     isDmgDealt = true;
                 }
-                // 6. Mage: Chrono Transfer
                 else if (skill.type === 'mage_transfer') {
                     target.en = Math.min(targetScaled.en, target.en + skill.value);
                     logText = `🔮⏳【${me.name}】invoked [${skill.name}], transferring surplus neural elements to inject +${skill.value} EN directly into【${target.name}】!`;
                 }
-                // 7. Mage Ultimate: Doomsday Verdict
                 else if (skill.type === 'mage_ult') {
                     let rawDmg = Math.max(1, (myScaled.matk + skill.value) - Math.floor(targetScaled.def * 0.3));
                     let result = calculateDamageWithCrit(rawDmg, me.job);
@@ -1007,7 +1009,6 @@
                     logText = `${result.isCrit ? '💥🔥【APOCALYPTIC CRIT COMBUSTION!!】' : '🔥☄️'}【${me.name}】chants Ultimate [${skill.name}]! Meteor incinerates【${target.name}】for ${result.dmg} cosmic magical damage, while instantly freezing and evaporating 10 points of their EN status!`;
                     isDmgDealt = true;
                 }
-                // 8. Archer: Multi-Shot Mechanics
                 else if (skill.type === 'archer_multi' || skill.type === 'archer_ult') {
                     let totalDmg = 0;
                     let critHits = 0;
@@ -1030,7 +1031,6 @@
                     }
                     isDmgDealt = true;
                 }
-                // 9. Archer: Envenomed Arrow
                 else if (skill.type === 'archer_drain_en') {
                     let targetOldEn = target.en || 0;
                     let burnedEn = Math.min(targetOldEn, skill.value);
@@ -1043,7 +1043,6 @@
                     logText = `🏹🧪【${me.name}】shot [${skill.name}] onto【${target.name}】! Toxic corrosion strikes for ${result.dmg} damage, while molecularly vaporizing -${burnedEn} EN from target elements!`;
                     isDmgDealt = true;
                 } 
-                // 10. Heal Modules / Berserker Adrenaline Recovery
                 else if (skill.type === 'heal') {
                     const wasDead = target.hp <= 0;
                     if (wasDead && isBoss) {
@@ -1057,7 +1056,6 @@
                         logText = `💖【${me.name}】applied [${skill.name}] upon【${target.name}】, restoring +${skill.value} Health Points.`;
                     }
                 } 
-                // 11. Berserker Ultimate: Ragnarok Apocalypse
                 else if (skill.type === 'ult_berserk') {
                     let rawDmg = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
                     let result = calculateDamageWithCrit(rawDmg, me.job);
@@ -1070,7 +1068,6 @@
                     isDmgDealt = true;
                 }
 
-                // Teacher Only AP Debuff Execution
                 else if (skill.type === 'debuff_ap') {
                     let oldAp = target.ap || 0;
                     target.ap = Math.max(0, oldAp - skill.value);
@@ -1111,22 +1108,45 @@
                     saveToGlobalUser(p.userId, { ...p, ap: newAp });
                 }
             });
-            sendGlobalLogTRANS(`📢 Teacher triggered master overwrite console command: "Distributed +2 AP to all active students!"`);
+            sendGlobalLog(`📢 Teacher triggered master overwrite console command: "Distributed +2 AP to all active students!"`);
         }
 
-        // 🌟 核心修改點：重置房間只會恢復 HP 與 EN 至 100%，不變更 AP/EXP 且不上線
+        // 🌟 新增功能：魔王為全場存活學員增加「指定填寫數值」的 AP
+        function bossGrantCustomAP() {
+            const inputVal = parseInt(document.getElementById('boss-custom-ap-input').value);
+            if (isNaN(inputVal) || inputVal <= 0 || inputVal > 99) {
+                return alert("Please input a valid logical number between 1 and 99!");
+            }
+            Object.values(allPlayersData).forEach(p => {
+                if (p.hp > 0 && p.job !== 'TeacherBoss') {
+                    const newAp = (p.ap || 0) + inputVal;
+                    database.ref(`rooms/${currentRoom}/players/${p.id}/ap`).set(newAp);
+                    saveToGlobalUser(p.userId, { ...p, ap: newAp });
+                }
+            });
+            sendGlobalLog(`👑📢【BATCH AP INJECTION】Teacher granted +${inputVal} AP to all alive students in this arena!`);
+        }
+
+        // 🌟 新增功能：魔王重置全場所有學員的 AP 行動點數到 0
+        function bossWipeAllAPToZero() {
+            if (confirm("🚨 WARNING: Are you sure you want to forcibly clear ALL students Action Points (AP) down to 0? This intercepts all ongoing queue actions.")) {
+                Object.values(allPlayersData).forEach(p => {
+                    if (p.job !== 'TeacherBoss') {
+                        database.ref(`rooms/${currentRoom}/players/${p.id}/ap`).set(0);
+                        saveToGlobalUser(p.userId, { ...p, ap: 0 });
+                    }
+                });
+                sendGlobalLog(`👑🛑【CLASSROOM SILENCE】Teacher cleared ALL student action points (AP) down to 0! Absolute order enforced.`);
+            }
+        }
+
         function bossResetRoom() {
             if(confirm("Are you sure you want to restore HP & EN to 100% for all characters? (Levels, EXP, AP and AFK status will be preserved)")) {
                 bossAoeCount = 0; 
                 Object.values(allPlayersData).forEach(p => {
-                    // 根據角色當前的等級與職業重新取得滿額狀態配額
                     const scaled = getScaledStats(p.job, p.level);
-                    
-                    // 僅回復血量與能量到 100%
                     p.hp = scaled.hp;
                     p.en = (p.id === 'teacher_boss') ? 9999 : 0;
-                    
-                    // 核心守護：AP、EXP、Online (離線/上線) 狀態皆原封不動保留
                     p.forceLogout = false;
 
                     database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
