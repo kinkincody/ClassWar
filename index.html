@@ -36,7 +36,7 @@
         .form-control { width: 100%; padding: 10px; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; }
         
         /* Battlefield Layout */
-        .battlefield { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .battlefield { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 220px; }
         @media(min-width: 992px) { .battlefield { grid-template-columns: 2fr 1fr; } }
 
         /* Player Lists & Cards */
@@ -93,15 +93,29 @@
         }
         .logout-btn:hover { background: #e74c3c; }
 
-        /* Logs */
-        .log-box { background: #000; border-radius: 8px; padding: 10px; height: 130px; overflow-y: auto; font-family: monospace; font-size: 11px; color: #00ff00; border: 1px solid #333; }
-        .log-entry { margin-bottom: 3px; }
+        /* Fixed Bottom Log Layout */
+        .fixed-bottom-log-panel {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 180px;
+            background: linear-gradient(0deg, #000 75%, #181818 100%);
+            border-top: 3px solid var(--primary); z-index: 999; padding: 12px 20px;
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.8);
+        }
+        .log-box { 
+            background: transparent; height: 100%; overflow-y: auto; 
+            font-family: monospace; font-size: 12px; color: #00ff00; border: none; 
+        }
+        .log-entry { margin-bottom: 4px; line-height: 1.4; }
         .log-alert-red { color: #ff3333 !important; font-weight: bold; }
+        .log-teacher-msg { color: #ffff33 !important; font-weight: bold; } 
         
         /* Teacher Admin Panel */
         .boss-panel { background: #2c3e50; border: 2px solid #f1c40f; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; }
         .boss-control-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
         .input-ap-num { width: 60px; padding: 8px; background: #222; border: 1px solid #f1c40f; color: white; border-radius: 6px; font-weight: bold; text-align: center; }
+        
+        /* Teacher chat box */
+        .boss-chat-input-box { display: flex; gap: 8px; width: 100%; max-width: 600px; margin-top: 5px; }
+        .input-boss-msg { flex: 1; padding: 8px 12px; background: #111; border: 1px solid #2ecc71; color: white; border-radius: 6px; font-size: 13px; }
 
         /* Teacher Data Modal */
         .boss-modal {
@@ -159,7 +173,7 @@
     </div>
 
     <div class="boss-panel" id="boss-panel">
-        <h3 style="color:#f1c40f; margin-bottom:5px;">😈 Teacher Management Backstage Console (ID: Teacher)</h3>
+        <h3 style="color:#f1c40f; margin-bottom:5px;">😈 Teacher Management Backstage Console (ID: Teacher - Dark Lord)</h3>
         <p style="font-size: 12px; color: #ddd; margin-bottom: 12px;">
             Your Level: <b style="color:#f1c40f;">9999</b>, Initial HP: <b style="color:#ff4d4d;">99999</b>.
             <span style="color:#2ecc71; font-weight:bold;">[Status: Unrestricted AP & Skills, Zero Cost, God-Slayer AoE, Secure Mode Enabled]</span>
@@ -167,7 +181,8 @@
         
         <div class="boss-control-row">
             <button class="btn" onclick="bossDistributeAP()" style="background: #e67e22; border-color: #d35400; padding: 8px 15px;">📢 Distribute +2 AP to All Living Students</button>
-            <button class="btn" onclick="bossResetRoom()" style="background: #c0392b; border-color: #95a5a6; padding: 8px 15px;">🔄 Restore All HP/EN to 100%</button>
+            <button class="btn" onclick="bossResetRoom()" style="background: #c0392b; border-color: #95a5a6; padding: 8px 15px;">🔄 Restore All HP/EN & Clear Logs</button>
+            <button class="btn" onclick="bossClearAllLogsOnly()" style="background: #7f8c8d; border-color: #555; padding: 8px 15px; color: #fff;">🧹 Clear Combat Logs</button>
             <button class="btn" onclick="openBossModal()" style="background: #2980b9; border-color: #3498db; padding: 8px 20px; color: #fff; box-shadow: 0 0 10px rgba(52,152,219,0.5);">🔑 Open Cloud Management Console (Accounts/Levels)</button>
         </div>
 
@@ -175,7 +190,15 @@
             <label style="font-size: 12px; color: #f1c40f; font-weight: bold;">⚡ Custom AP Automation Tool:</label>
             <input type="number" id="boss-custom-ap-input" class="input-ap-num" value="5" min="1" max="99">
             <button class="btn" onclick="bossGrantCustomAP()" style="background: #27ae60; border-color: #2ecc71; padding: 6px 12px; font-size: 12px;">➕ Grant Custom AP</button>
-            <button class="btn" onclick="bossWipeAllAPToZero()" style="background: #7f8c8d; border-color: #95a5a6; padding: 6px 12px; font-size: 12px; color: #ffcccc;">🛑 Clear All Students AP to 0</button>
+            <button class="btn" onclick="bossWipeAllAPToZero()" style="background: #d35400; border-color: #ba4a00; padding: 6px 12px; font-size: 12px; color: #fff;">🛑 Clear All Students AP to 0</button>
+        </div>
+
+        <div style="margin-top: 10px;">
+            <label style="font-size: 12px; color: #2ecc71; font-weight: bold; display: block; margin-bottom: 2px;">💬 Teacher Cloud Announcement Message Channel (Press Enter to transmit):</label>
+            <div class="boss-chat-input-box">
+                <input type="text" id="boss-custom-chat-msg" class="input-boss-msg" placeholder="Type instructions or feedback here for the entire room to see...">
+                <button class="btn" onclick="bossSubmitCustomMessage()" style="background: #2ecc71; border-color: #27ae60; padding: 6px 18px; font-size: 12px;">📣 Broadcast</button>
+            </div>
         </div>
     </div>
 
@@ -237,11 +260,15 @@
 
                 <label style="font-size:11px; color:#ccc; display:block; margin-bottom:3px;">✨ Skill Matrix Panel (All Student moves cost 1 AP / Intensity scales with EN cost):</label>
                 <div id="skills-container" class="skill-grid"></div>
-
-                <h2 class="section-title" style="margin-top:10px;">📜 Live Combat Feed Logs</h2>
-                <div id="log-box" class="log-box"></div>
             </div>
         </div>
+    </div>
+
+    <div class="fixed-bottom-log-panel">
+        <div style="font-size: 11px; color: #aaa; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">
+            📜 Live Combat & Classroom Management Feed Logs (Auto-Scrolling)
+        </div>
+        <div id="log-box" class="log-box"></div>
     </div>
 
     <script>
@@ -253,24 +280,25 @@
         const database = firebase.database();
 
         // === 🎲 GAME STATS CONFIGURATIONS ===
+        // 👑 職稱代碼全面統一更換為 'Dark Lord'
         const CLASS_CONFIGS = {
-            'Warrior':     { hp: 160, en: 100, def: 25, patk: 16, matk: 5,  colorClass: 'bg-warrior' },
-            'Mage':        { hp: 85,  en: 160, def: 6,  patk: 4,  matk: 32, colorClass: 'bg-mage' },
-            'Berserker':   { hp: 120, en: 100, def: 12, patk: 24, matk: 0,  colorClass: 'bg-berserker' },
-            'Archer':      { hp: 100,  en: 110, def: 10, patk: 18, matk: 12, colorClass: 'bg-archer' },
-            'TeacherBoss': { hp: 99999, en: 9999, def: 500, patk: 200, matk: 200, colorClass: 'bg-boss' }
+            'Warrior':   { hp: 160, en: 100, def: 25, patk: 16, matk: 5,  colorClass: 'bg-warrior' },
+            'Mage':      { hp: 85,  en: 160, def: 6,  patk: 4,  matk: 32, colorClass: 'bg-mage' },
+            'Berserker': { hp: 120, en: 100, def: 12, patk: 24, matk: 0,  colorClass: 'bg-berserker' },
+            'Archer':    { hp: 100, en: 110, def: 10, patk: 18, matk: 12, colorClass: 'bg-archer' },
+            'Dark Lord': { hp: 99999, en: 9999, def: 500, patk: 200, matk: 200, colorClass: 'bg-boss' }
         };
 
         const CRIT_CONFIGS = {
-            'Warrior':     { chance: 0.05, multiplier: 1.5 },
-            'Mage':        { chance: 0.05, multiplier: 1.5 },
-            'Berserker':   { chance: 0.25, multiplier: 2.0 },
-            'Archer':      { chance: 0.05, multiplier: 1.5 },
-            'TeacherBoss': { chance: 0.00, multiplier: 1.0 }
+            'Warrior':   { chance: 0.05, multiplier: 1.5 },
+            'Mage':      { chance: 0.05, multiplier: 1.5 },
+            'Berserker': { chance: 0.25, multiplier: 2.0 },
+            'Archer':    { chance: 0.05, multiplier: 1.5 },
+            'Dark Lord': { chance: 0.00, multiplier: 1.0 }
         };
 
         function getScaledStats(job, level) {
-            if (job === 'TeacherBoss') {
+            if (job === 'Dark Lord') {
                 return { hp: 99999, en: 9999, def: 500, patk: 200, matk: 200 };
             }
             const base = CLASS_CONFIGS[job];
@@ -313,7 +341,7 @@
                 { name: 'Envenomed Arrow', apCost: 1, enCost: 30, type: 'archer_drain_en', value: 15, desc: 'Costs 30 EN. Fires a toxic arrowhead dealing damage while chemically dissolving 15 EN from target.' },
                 { name: '【ULTIMATE】Meteor Arrow Rain', apCost: 1, enCost: 80, type: 'archer_ult', hits: 4, value: 10, desc: 'Costs 80 EN. Rains down a vicious barrage of 4 sequential shots on a single target! Total output is extremely lethal if multiple arrows crit.' }
             ],
-            'TeacherBoss': [
+            'Dark Lord': [
                 { name: 'Surprise Roll-Call Attack', apCost: 0, enCost: 0, type: 'atk_p', value: 60, desc: 'Teacher calls your name! Bypasses armor to deal 60+ point absolute physical authority shock.' },
                 { name: 'Pop Quiz Flash Bomb', apCost: 0, enCost: 0, type: 'atk_m', value: 40, desc: 'Sudden tests out of nowhere! Inflicts 40+ points of mental stress magic damage.' },
                 { name: 'Confiscate iPad Device',  apCost: 0, enCost: 0, type: 'debuff_ap', value: 2, desc: 'Teacher confiscates iPad device from student! Drains target student of 2 AP!' },
@@ -351,12 +379,12 @@
                 const isBoss = (inputId === 'Teacher');
                 if (isBoss) {
                     myId = 'teacher_boss';
-                    proceedLogin(inputId, 'TeacherBoss');
+                    proceedLogin(inputId, 'Dark Lord');
                 } else {
                     database.ref(`rooms/${currentRoom}/players/teacher_boss`).once('value', (bossSnap) => {
                         const bossData = bossSnap.val();
                         if (!bossSnap.exists() || !bossData || bossData.online === false || bossData.hp <= 0) {
-                            alert('❌ Failed: No active Teacher/Boss detected in this room! Please wait for your instructor to launch the room session.');
+                            alert('❌ Failed: No active Dark Lord detected in this room! Please wait for your instructor to launch the room session.');
                         } else {
                             myId = 'student_' + inputId;
                             const studentJob = document.getElementById('player-job').value;
@@ -384,7 +412,7 @@
 
                 if (inputId === 'Teacher') {
                     userData.level = 9999;
-                    userData.job = 'TeacherBoss';
+                    userData.job = 'Dark Lord';
                     userData.hp = 99999;
                     userData.en = 9999;
                     userData.ap = 99999;
@@ -424,11 +452,14 @@
                     document.getElementById('room-display').innerText = `ROOM: ${currentRoom}`;
                     document.getElementById('logout-button').style.display = 'block';
                     
-                    let displayJob = sessionData.job === 'TeacherBoss' ? 'Teacher' : sessionData.job;
-                    document.getElementById('my-status-display').innerText = `${sessionData.name} (${displayJob})`;
+                    document.getElementById('my-status-display').innerText = `${sessionData.name} (${sessionData.job})`;
                     
                     if(inputId === 'Teacher') {
                         document.getElementById('boss-panel').style.display = 'block';
+                        
+                        document.getElementById('boss-custom-chat-msg').addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') bossSubmitCustomMessage();
+                        });
                     }
                     
                     initRealtimeSync();
@@ -456,7 +487,7 @@
                 }
 
                 if (myId !== 'teacher_boss' && !allPlayersData['teacher_boss']) {
-                    alert("📢 Teacher closed the app or left the session. Room terminated!");
+                    alert("📢 Dark Lord closed the app or left the session. Room terminated!");
                     location.reload();
                     return;
                 }
@@ -466,16 +497,20 @@
                 renderSkills();
             });
 
-            database.ref(`rooms/${currentRoom}/logs`).limitToLast(30).on('value', (snapshot) => {
+            database.ref(`rooms/${currentRoom}/logs`).limitToLast(40).on('value', (snapshot) => {
                 const logs = snapshot.val() || {};
                 const logBox = document.getElementById('log-box');
                 logBox.innerHTML = '';
                 Object.values(logs).forEach(l => {
                     const entry = document.createElement('div');
                     entry.className = 'log-entry';
-                    if (l.includes('[⚠️WARNING]') || l.includes('🌟') || l.includes('👑') || l.includes('💥') || l.includes('☠️') || l.includes('💥CRITICAL') || l.includes('🛑【WINDOW_PUNISHMENT】') || l.includes('😇') || l.includes('⭐LEVEL UP')) {
+                    
+                    if (l.includes('👑【TEACHER ANNOUNCEMENT】')) {
+                        entry.className += ' log-teacher-msg';
+                    } else if (l.includes('[⚠️WARNING]') || l.includes('🌟') || l.includes('👑') || l.includes('💥') || l.includes('☠️') || l.includes('💥CRITICAL') || l.includes('🛑【WINDOW_PUNISHMENT】') || l.includes('😇') || l.includes('⭐LEVEL UP')) {
                         entry.className += ' log-alert-red';
                     }
+                    
                     entry.innerText = l;
                     logBox.appendChild(entry);
                 });
@@ -484,8 +519,7 @@
 
             const currentMe = allPlayersData[myId];
             if (currentMe) {
-                let displayJob = currentMe.job === 'TeacherBoss' ? 'Teacher' : currentMe.job;
-                sendGlobalLog(`🚀【${currentMe.name}】(Lv.${currentMe.level} ${displayJob}) successfully synchronized profile and spawned into battle!`);
+                sendGlobalLog(`🚀【${currentMe.name}】(Lv.${currentMe.level} ${currentMe.job}) successfully synchronized profile and spawned into battle!`);
             }
             initVisibilityMonitor();
         }
@@ -522,6 +556,17 @@
                     });
                 }
             });
+        }
+
+        function bossSubmitCustomMessage() {
+            if (myId !== 'teacher_boss' || !currentRoom) return;
+            const inputField = document.getElementById('boss-custom-chat-msg');
+            const msgText = inputField.value.trim();
+            if (!msgText) return;
+
+            sendGlobalLog(`👑【TEACHER ANNOUNCEMENT】Teacher Says: "${msgText}"`);
+            inputField.value = ""; 
+            inputField.focus();
         }
 
         function bossForceLogoutUser() {
@@ -684,8 +729,6 @@
                 const reqExp = player.level * 100;
                 const expPercent = Math.min(100, Math.max(0, ((player.exp || 0) / reqExp) * 100));
                 const isDead = player.hp <= 0;
-                
-                let jobDisplay = player.job === 'TeacherBoss' ? 'Teacher' : player.job;
 
                 const card = document.createElement('div');
                 card.id = `player-card-${player.id}`;
@@ -707,7 +750,7 @@
                     <div class="card-header">
                         <strong style="font-size:14px;">${player.name} ${isDead ? '💀' : ''} ${player.online === false ? '💤(AFK)' : ''}</strong>
                         <span class="level-badge">Lv.${player.level}</span>
-                        <span class="role-tag ${CLASS_CONFIGS[player.job] ? CLASS_CONFIGS[player.job].colorClass : 'bg-warrior'}">${jobDisplay}</span>
+                        <span class="role-tag ${CLASS_CONFIGS[player.job] ? CLASS_CONFIGS[player.job].colorClass : 'bg-warrior'}">${player.job}</span>
                     </div>
                     <div class="bar-container">
                         <div class="bar-label"><span>HP (${player.hp}/${scaled.hp})</span></div>
@@ -723,7 +766,7 @@
                     </div>
                     <div style="margin-top:5px; display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#aaa;">
                         <span>DEF:${scaled.def} ATK:${scaled.patk}</span>
-                        <span class="ap-badge">${player.job === 'TeacherBoss' ? 'AP: ∞' : 'AP: ' + player.ap}</span>
+                        <span class="ap-badge">${player.job === 'Dark Lord' ? 'AP: ∞' : 'AP: ' + player.ap}</span>
                     </div>
                 `;
                 container.appendChild(card);
@@ -776,7 +819,7 @@
                     btn.className += ' btn-ult';
                 }
 
-                const isBoss = job === 'TeacherBoss';
+                const isBoss = job === 'Dark Lord';
                 const hasEnoughAp = isBoss || currentMe.ap >= skill.apCost;
                 const hasEnoughEn = isBoss || currentMe.en >= skill.enCost;
                 const isDead = currentMe.hp <= 0;
@@ -831,7 +874,6 @@
                 const opt = document.createElement('option');
                 opt.value = p.id;
                 
-                let jobDisplay = p.job === 'TeacherBoss' ? 'Teacher' : p.job;
                 opt.innerText = `${p.id === myId ? '[Self] ' : ''}${p.name} (Lv.${p.level}) - HP:${p.hp} ${isDead ? '[☠️DEFEATED]' : ''} ${p.online === false ? '[AFK]' : ''}`;
                 dropdown.appendChild(opt);
             });
@@ -878,7 +920,7 @@
         }
 
         function executeBattleAction(me, skill) {
-            const isBoss = me.job === 'TeacherBoss';
+            const isBoss = me.job === 'Dark Lord';
             const targetId = document.getElementById('target-dropdown').value;
             const target = allPlayersData[targetId];
 
@@ -910,13 +952,13 @@
 
             if (skill.type === 'boss_insta_kill') {
                 target.hp = 0;
-                logText = `👑☠️【CRITICAL ERASURE】Teacher invoked absolute command line. Entity【${target.name}】obliterated to zero health instantly!`;
+                logText = `👑☠️【CRITICAL ERASURE】Dark Lord invoked absolute command line. Entity【${target.name}】obliterated to zero health instantly!`;
                 isDmgDealt = true;
             } 
             else if (skill.type === 'boss_stage_aoe') {
                 bossAoeCount++;
                 if (bossAoeCount === 1) {
-                    logText = `👑⚡【CATACLYSM PHASE 1】Teacher initiated massive academic test constraints! Dark thunder rolled, all students lose 50% of current active health!\n`;
+                    logText = `👑⚡【CATACLYSM PHASE 1】Dark Lord initiated massive academic test constraints! Dark thunder rolled, all students lose 50% of current active health!\n`;
                     Object.values(allPlayersData).forEach(p => {
                         if (p.id !== 'teacher_boss' && p.hp > 0) {
                             let dmg = Math.floor(p.hp * 0.5);
@@ -970,7 +1012,7 @@
                     if (target.id !== 'teacher_boss') {
                         target.en = Math.min(targetScaled.en, target.en + 30);
                     }
-                    logText = `${result.isCrit ? '💥💥【CRITICAL BASTION CRUSH!!】' : '🛡️🔥'}【${me.name}】ignited大招 [${skill.name}]! Crushes【${target.name}】for ${result.dmg} Heavy Physical Damage, and sparks target spirit granting them +30 EN replenishment!`;
+                    logText = `${result.isCrit ? '💥💥【CRITICAL BASTION CRUSH!!】' : '🛡️🔥'}【${me.name}】ignited [${skill.name}]! Crushes【${target.name}】for ${result.dmg} Heavy Physical Damage, and sparks target spirit granting them +30 EN replenishment!`;
                     isDmgDealt = true;
                 }
                 else if (skill.type === 'atk_m') {
@@ -979,7 +1021,7 @@
                     target.hp = Math.max(0, target.hp - result.dmg);
                     if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + 15);
                     
-                    logText = `${result.isCrit ? '💥🔮【MANA CRITICAL EXPLOSION!!】' : '🔮'}【${me.name}】casts [${skill.name}] onto【${target.name}】, bursting ${result.dmg} Magical Damage!`;
+                    logText = `${result.isCrit ? '💥🔮【MANA CRITICAL EXPLOSION!!】' : '🔮'}【${me.name}】casts [${skill.name}] onto【${target.name}術, bursting ${result.dmg} Magical Damage!`;
                     isDmgDealt = true;
                 } 
                 else if (skill.type === 'mage_drain') {
@@ -992,7 +1034,7 @@
                     target.en = Math.max(0, targetOldEn - drainAmount);
                     me.en = Math.min(myScaled.en, me.en + skill.value);
                     
-                    logText = `🔮🌀【${me.name}】channeled [${skill.name}] on【${target.name}術, dealing ${result.dmg} magic stress and siphoned ${drainAmount} EN to feed own reserve by +${skill.value} EN!`;
+                    logText = `🔮🌀【${me.name}】channeled [${skill.name}] on【${target.name}】, dealing ${result.dmg} magic stress and siphoned ${drainAmount} EN to feed own reserve by +${skill.value} EN!`;
                     isDmgDealt = true;
                 }
                 else if (skill.type === 'mage_transfer') {
@@ -1047,7 +1089,7 @@
                     const wasDead = target.hp <= 0;
                     if (wasDead && isBoss) {
                         target.hp = skill.value;
-                        logText = `😇👑【SOVEREIGN RESURRECTION】Teacher blessed the fallen student【${target.name}】with maximum light elements, breaking death codes to fully revive entity!`;
+                        logText = `😇👑【SOVEREIGN RESURRECTION】Dark Lord blessed the fallen student【${target.name}】with maximum light elements, breaking death codes to fully revive entity!`;
                     } else if (wasDead && !isBoss) {
                         alert("🚫 Intervention Denied: Student healing spells lack parameters to resurrect deceased squad members!");
                         return;
@@ -1067,11 +1109,10 @@
                     logText = `${result.isCrit ? '💥🩸💥【RAGNAROK RAGE CRIT 200% EXECUTE!!】' : '🩸'}【${me.name}】unleashes beastial Ultimate [${skill.name}]! Crushes【${target.name}】with ${result.dmg} apocalyptic damage, and life-steals +${absorbAmount} HP instantly to self!`;
                     isDmgDealt = true;
                 }
-
                 else if (skill.type === 'debuff_ap') {
                     let oldAp = target.ap || 0;
                     target.ap = Math.max(0, oldAp - skill.value);
-                    logText = `👑🛑【IPAD SEIZURE】Teacher confiscates iPad device from student【${target.name}】! Action capability drained by -${skill.value} AP (Orig:${oldAp} ➔ Current:${target.ap})`;
+                    logText = `👑🛑【IPAD SEIZURE】Dark Lord confiscates iPad device from student【${target.name}】! Action capability drained by -${skill.value} AP (Orig:${oldAp} ➔ Current:${target.ap})`;
                 }
 
                 if (isDmgDealt && target.id !== 'teacher_boss' && target.hp <= 0) {
@@ -1102,46 +1143,53 @@
 
         function bossDistributeAP() {
             Object.values(allPlayersData).forEach(p => {
-                if (p.hp > 0 && p.job !== 'TeacherBoss') {
+                if (p.hp > 0 && p.job !== 'Dark Lord') {
                     const newAp = p.ap + 2;
                     database.ref(`rooms/${currentRoom}/players/${p.id}/ap`).set(newAp);
                     saveToGlobalUser(p.userId, { ...p, ap: newAp });
                 }
             });
-            sendGlobalLog(`📢 Teacher triggered master overwrite console command: "Distributed +2 AP to all active students!"`);
+            sendGlobalLog(`📢 Dark Lord distributed +2 AP to all active students!`);
         }
 
-        // 🌟 新增功能：魔王為全場存活學員增加「指定填寫數值」的 AP
         function bossGrantCustomAP() {
             const inputVal = parseInt(document.getElementById('boss-custom-ap-input').value);
             if (isNaN(inputVal) || inputVal <= 0 || inputVal > 99) {
                 return alert("Please input a valid logical number between 1 and 99!");
             }
             Object.values(allPlayersData).forEach(p => {
-                if (p.hp > 0 && p.job !== 'TeacherBoss') {
+                if (p.hp > 0 && p.job !== 'Dark Lord') {
                     const newAp = (p.ap || 0) + inputVal;
                     database.ref(`rooms/${currentRoom}/players/${p.id}/ap`).set(newAp);
                     saveToGlobalUser(p.userId, { ...p, ap: newAp });
                 }
             });
-            sendGlobalLog(`👑📢【BATCH AP INJECTION】Teacher granted +${inputVal} AP to all alive students in this arena!`);
+            sendGlobalLog(`👑📢【BATCH AP INJECTION】Dark Lord granted +${inputVal} AP to all alive students in this arena!`);
         }
 
-        // 🌟 新增功能：魔王重置全場所有學員的 AP 行動點數到 0
         function bossWipeAllAPToZero() {
-            if (confirm("🚨 WARNING: Are you sure you want to forcibly clear ALL students Action Points (AP) down to 0? This intercepts all ongoing queue actions.")) {
+            if (confirm("🚨 WARNING: Are you sure you want to forcibly clear ALL students Action Points (AP) down to 0?")) {
                 Object.values(allPlayersData).forEach(p => {
-                    if (p.job !== 'TeacherBoss') {
+                    if (p.job !== 'Dark Lord') {
                         database.ref(`rooms/${currentRoom}/players/${p.id}/ap`).set(0);
                         saveToGlobalUser(p.userId, { ...p, ap: 0 });
                     }
                 });
-                sendGlobalLog(`👑🛑【CLASSROOM SILENCE】Teacher cleared ALL student action points (AP) down to 0! Absolute order enforced.`);
+                sendGlobalLog(`👑🛑【CLASSROOM SILENCE】Dark Lord cleared ALL student action points (AP) down to 0! Absolute order enforced.`);
+            }
+        }
+
+        function bossClearAllLogsOnly() {
+            if (!currentRoom) return alert("Please connect to a room first!");
+            if (confirm("Are you sure you want to completely clear the combat feed logs?")) {
+                database.ref(`rooms/${currentRoom}/logs`).remove().then(() => {
+                    alert("Combat feed logs successfully cleared!");
+                });
             }
         }
 
         function bossResetRoom() {
-            if(confirm("Are you sure you want to restore HP & EN to 100% for all characters? (Levels, EXP, AP and AFK status will be preserved)")) {
+            if(confirm("Are you sure you want to restore HP & EN to 100% and completely CLEAR all combat feed logs? (Levels, EXP, AP and AFK status will be preserved)")) {
                 bossAoeCount = 0; 
                 Object.values(allPlayersData).forEach(p => {
                     const scaled = getScaledStats(p.job, p.level);
@@ -1152,8 +1200,10 @@
                     database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
                     if (p.id !== 'teacher_boss') saveToGlobalUser(p.userId, p);
                 });
-                database.ref(`rooms/${currentRoom}/logs`).remove();
-                sendGlobalLog(`🔄 👑 Teacher restored HP and EN status to 100% for all room entities! Campaign elements and AP preserved!`);
+                
+                database.ref(`rooms/${currentRoom}/logs`).remove().then(() => {
+                    sendGlobalLog(`🔄 👑 Dark Lord restored HP and EN status to 100% for all room entities! Campaign elements and AP preserved! Battle logs have been refreshed.`);
+                });
             }
         }
     </script>
