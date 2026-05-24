@@ -67,7 +67,7 @@
         .ap-badge { background: #2980b9; color: white; padding: 1px 5px; border-radius: 4px; font-weight: bold; }
 
         /* Control Panel */
-        .control-panel { background: #252525; border-radius: 12px; padding: 15px; border: 1px solid #444; }
+        .control-panel { background: #252525; border-radius: 12px; padding: 15px; border: 1px solid #444; position: relative; }
         .section-title { font-size: 15px; margin-bottom: 10px; color: #fff; border-left: 4px solid var(--primary); padding-left: 8px; }
         .skill-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 10px; margin-bottom: 15px; }
         
@@ -85,6 +85,13 @@
         .skill-desc { font-size: 11px; color: #aaa; font-weight: normal; margin-top: 2px; line-height: 1.3; }
         .btn-ult { background: linear-gradient(135deg, #8e44ad, #c0392b); border: 1px solid #f1c40f; }
         .target-select { width: 100%; padding: 8px; background: #333; color: white; border-radius: 8px; margin-bottom: 15px; }
+
+        /* Logout Button Style */
+        .logout-btn {
+            position: absolute; top: 12px; right: 12px; background: #c0392b; border: 1px solid #e74c3c;
+            color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold;
+        }
+        .logout-btn:hover { background: #e74c3c; }
 
         /* Logs */
         .log-box { background: #000; border-radius: 8px; padding: 10px; height: 130px; overflow-y: auto; font-family: monospace; font-size: 11px; color: #00ff00; border: 1px solid #333; }
@@ -200,6 +207,8 @@
 
         <div>
             <div class="control-panel">
+                <button id="logout-button" class="logout-btn" onclick="userManualLogout()" style="display:none;">🚪 Logout Safely</button>
+                
                 <h2 class="section-title">🎮 My iPad Action Hub</h2>
                 <p style="font-size: 12px; margin-bottom: 10px; color: #aaa;">
                     Current Identity: <span id="my-status-display" style="color:var(--primary); font-weight:bold;">Offline</span>
@@ -243,7 +252,6 @@
             'TeacherBoss': { hp: 99999, en: 9999, def: 500, patk: 200, matk: 200, colorClass: 'bg-boss' }
         };
 
-        // 💥 CRIT CHARACTERISTICS INDEX TABLE
         const CRIT_CONFIGS = {
             'Warrior':     { chance: 0.05, multiplier: 1.5 },
             'Mage':        { chance: 0.05, multiplier: 1.5 },
@@ -382,7 +390,7 @@
                     name: inputId,
                     job: userData.job,
                     level: userData.level,
-                    exp: userData.exp,
+                    exp: userData.exp || 0,
                     hp: (userData.hp !== undefined && userData.hp !== null) ? userData.hp : scaledStats.hp,
                     en: (userData.en !== undefined && userData.en !== null) ? userData.en : 0,
                     ap: (userData.ap !== undefined && userData.ap !== null) ? userData.ap : 3,
@@ -405,6 +413,7 @@
                     
                     document.getElementById('login-panel').style.display = 'none';
                     document.getElementById('room-display').innerText = `ROOM: ${currentRoom}`;
+                    document.getElementById('logout-button').style.display = 'block';
                     
                     let displayJob = sessionData.job === 'TeacherBoss' ? 'Teacher' : sessionData.job;
                     document.getElementById('my-status-display').innerText = `${sessionData.name} (${displayJob})`;
@@ -416,6 +425,15 @@
                     initRealtimeSync();
                 });
             });
+        }
+
+        function userManualLogout() {
+            if (!currentRoom || !myId) return;
+            if (confirm("Are you sure you want to log out safely from this arena session?")) {
+                database.ref(`rooms/${currentRoom}/players/${myId}`).remove().then(() => {
+                    location.reload();
+                });
+            }
         }
 
         function initRealtimeSync() {
@@ -446,7 +464,7 @@
                 Object.values(logs).forEach(l => {
                     const entry = document.createElement('div');
                     entry.className = 'log-entry';
-                    if (l.includes('[⚠️WARNING]') || l.includes('🌟') || l.includes('👑') || l.includes('💥') || l.includes('☠️') || l.includes('💥CRITICAL') || l.includes('🛑【WINDOW_PUNISHMENT】') || l.includes('😇')) {
+                    if (l.includes('[⚠️WARNING]') || l.includes('🌟') || l.includes('👑') || l.includes('💥') || l.includes('☠️') || l.includes('💥CRITICAL') || l.includes('🛑【WINDOW_PUNISHMENT】') || l.includes('😇') || l.includes('⭐LEVEL UP')) {
                         entry.className += ' log-alert-red';
                     }
                     entry.innerText = l;
@@ -655,7 +673,7 @@
                 const enPercent = Math.min(100, Math.max(0, (player.en / scaled.en) * 100));
                 
                 const reqExp = player.level * 100;
-                const expPercent = Math.min(100, Math.max(0, (player.exp / reqExp) * 100));
+                const expPercent = Math.min(100, Math.max(0, ((player.exp || 0) / reqExp) * 100));
                 const isDead = player.hp <= 0;
                 
                 let jobDisplay = player.job === 'TeacherBoss' ? 'Teacher' : player.job;
@@ -691,7 +709,7 @@
                         <div class="bar"><div class="fill fill-en" style="width: ${player.id === 'teacher_boss' ? 100 : enPercent}%"></div></div>
                     </div>
                     <div class="bar-container">
-                        <div class="bar-label" style="color:#2ecc71;"><span>EXP (${player.exp}/${reqExp})</span></div>
+                        <div class="bar-label" style="color:#2ecc71;"><span>EXP (${player.exp || 0}/${reqExp})</span></div>
                         <div class="bar" style="height:6px;"><div class="fill fill-exp" style="width: ${expPercent}%"></div></div>
                     </div>
                     <div style="margin-top:5px; display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#aaa;">
@@ -820,6 +838,36 @@
             return { dmg: finalDmg, isCrit: isCrit };
         }
 
+        function rewardExperiencePoints(player, type) {
+            if (player.id === 'teacher_boss') return ""; 
+            
+            const reqExp = player.level * 100;
+            let earned = 0;
+            let note = "";
+
+            if (type === 'hit') {
+                earned = Math.floor(reqExp * (Math.random() * 0.04 + 0.01));
+                note = ` (+${earned} EXP generated)`;
+            } else if (type === 'kill') {
+                earned = Math.floor(reqExp / 3);
+                note = ` 🌟⭐【FATAL BONUS】Earned +${earned} EXP for delivering the execution blow!`;
+            }
+
+            player.exp = (player.exp || 0) + earned;
+
+            if (player.exp >= reqExp) {
+                player.level += 1;
+                player.exp = player.exp - reqExp;
+                
+                const newScaled = getScaledStats(player.job, player.level);
+                player.hp = newScaled.hp;
+                player.en = 0; 
+                note += ` 👑⭐LEVEL UP!!【${player.name}】reached Level ${player.level}! Health fully restored!`;
+            }
+
+            return note;
+        }
+
         function executeBattleAction(me, skill) {
             const isBoss = me.job === 'TeacherBoss';
             const targetId = document.getElementById('target-dropdown').value;
@@ -849,6 +897,7 @@
 
             let logText = "";
             let isDmgDealt = false;
+            let expRewardMsg = "";
 
             if (skill.type === 'boss_insta_kill') {
                 target.hp = 0;
@@ -884,6 +933,8 @@
                 logText = `⚡【${me.name}】channeled [${skill.name}], recharging EN by +${skill.value} units.`;
             } 
             else {
+                expRewardMsg = rewardExperiencePoints(me, 'hit');
+
                 // 1. Basic Physical Strike
                 if (skill.type === 'atk_p') {
                     let rawDmg = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
@@ -902,7 +953,7 @@
                     target.hp = Math.max(0, target.hp - result.dmg);
                     if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + 10);
                     
-                    logText = `${result.isCrit ? '💥💥【ARMOR CRIT DEVASTATION!!】' : '🛡️⚔️'}【${me.name}】executes [${skill.name}] on【${target.name}術, ignoring 50% DEF to hammer ${result.dmg} pierce damage!`;
+                    logText = `${result.isCrit ? '💥💥【ARMOR CRIT DEVASTATION!!】' : '🛡️⚔️'}【${me.name}】executes [${skill.name}] on【${target.name}】, ignoring 50% DEF to hammer ${result.dmg} pierce damage!`;
                     isDmgDealt = true;
                 }
                 // 3. Warrior Ultimate: Bastion Smash
@@ -975,7 +1026,7 @@
                     if (skill.type === 'archer_ult') {
                         logText = `🏹⛈️【${me.name}】triggers Ultimate Volley [${skill.name}]! Torrential arrows rain upon【${target.name}】for ${hitCount} rapid impacts, stacking a total of ${totalDmg} Physical Damage ${critHits > 0 ? `(including ${critHits} CRITICAL triggers!!)` : ''}`;
                     } else {
-                        logText = `🏹【${me.name}】launches [${skill.name}] at【${target.name}術, firing a swift ${hitCount}-shot stream dealing ${totalDmg} total points ${critHits > 0 ? `(with ${critHits} Crit hits)` : ''}`;
+                        logText = `🏹【${me.name}】launches [${skill.name}] at【${target.name}】, firing a swift ${hitCount}-shot stream dealing ${totalDmg} total points ${critHits > 0 ? `(with ${critHits} Crit hits)` : ''}`;
                     }
                     isDmgDealt = true;
                 }
@@ -1003,7 +1054,7 @@
                         return;
                     } else {
                         target.hp = Math.min(targetScaled.hp, target.hp + skill.value);
-                        logText = `💖【${me.name}】applied [${skill.name}] upon【${target.name}術, restoring +${skill.value} Health Points.`;
+                        logText = `💖【${me.name}】applied [${skill.name}] upon【${target.name}】, restoring +${skill.value} Health Points.`;
                     }
                 } 
                 // 11. Berserker Ultimate: Ragnarok Apocalypse
@@ -1028,7 +1079,13 @@
 
                 if (isDmgDealt && target.id !== 'teacher_boss' && target.hp <= 0) {
                     logText += ` 💀【${target.name}】succumbed to massive trauma and collapsed in battle!`;
+                    let killBonusMsg = rewardExperiencePoints(me, 'kill');
+                    expRewardMsg += killBonusMsg; 
                 }
+            }
+
+            if (expRewardMsg) {
+                logText += expRewardMsg;
             }
 
             database.ref(`rooms/${currentRoom}/players/${me.id}`).set(me);
@@ -1054,24 +1111,29 @@
                     saveToGlobalUser(p.userId, { ...p, ap: newAp });
                 }
             });
-            sendGlobalLog(`📢 Teacher triggered master overwrite console command: "Distributed +2 AP to all active students!"`);
+            sendGlobalLogTRANS(`📢 Teacher triggered master overwrite console command: "Distributed +2 AP to all active students!"`);
         }
 
+        // 🌟 核心修改點：重置房間只會恢復 HP 與 EN 至 100%，不變更 AP/EXP 且不上線
         function bossResetRoom() {
-            if(confirm("Are you sure you want to completely clear and reset current room parameters?")) {
+            if(confirm("Are you sure you want to restore HP & EN to 100% for all characters? (Levels, EXP, AP and AFK status will be preserved)")) {
                 bossAoeCount = 0; 
                 Object.values(allPlayersData).forEach(p => {
+                    // 根據角色當前的等級與職業重新取得滿額狀態配額
                     const scaled = getScaledStats(p.job, p.level);
+                    
+                    // 僅回復血量與能量到 100%
                     p.hp = scaled.hp;
                     p.en = (p.id === 'teacher_boss') ? 9999 : 0;
-                    p.ap = (p.id === 'teacher_boss') ? 99999 : 3;
-                    p.online = true; 
+                    
+                    // 核心守護：AP、EXP、Online (離線/上線) 狀態皆原封不動保留
                     p.forceLogout = false;
+
                     database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
                     if (p.id !== 'teacher_boss') saveToGlobalUser(p.userId, p);
                 });
                 database.ref(`rooms/${currentRoom}/logs`).remove();
-                sendGlobalLog(`🔄 👑 Teacher reset all current room battlefield variables! Feed cleared. A fresh round begins!`);
+                sendGlobalLog(`🔄 👑 Teacher restored HP and EN status to 100% for all room entities! Campaign elements and AP preserved!`);
             }
         }
     </script>
