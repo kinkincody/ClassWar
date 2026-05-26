@@ -619,7 +619,7 @@
             inputField.focus();
         }
 
-        // 🌟 核心修改點：踢出按鈕直接從 Firebase 當前房間節點執行 remove() 踢出角色，並在日誌精確回報數據已保存
+        // 🌟 核心修改點一：強化踢出按鈕。在刪除節點前，先強制將 online 與 forceLogout 設定寫入，並配合引導清理避免 AFK 殘留快取
         function bossForceLogoutUser() {
             const dropdown = document.getElementById('target-dropdown');
             const targetId = dropdown.value;
@@ -630,11 +630,16 @@
             if (confirm(`Are you sure you want to forcibly KICK student【${studentName}】out of this room arena? (Historical metadata will be preserved securely)`)) {
                 sendGlobalLog(`👑🛑【ADMIN BANISH】Teacher invoked supreme authorization to KICK student【${studentName}】out of this arena session! [Status: Disconnected & Removed from room, historical profile data preserved]`);
                 
-                // 直接將其自當前房間節點中抹除，達成踢出房間的效果
-                database.ref(`rooms/${currentRoom}/players/${targetId}`).remove().then(() => {
-                    // 清空下拉選單選擇，避免殘留
-                    if (dropdown.value === targetId) dropdown.value = "";
-                    syncTargetCardEffects();
+                // 第一步：先將該卡片在本地與資料庫標記為斷線與移除狀態，切斷其 onDisconnect 快取機制
+                database.ref(`rooms/${currentRoom}/players/${targetId}`).update({
+                    online: false,
+                    forceLogout: true
+                }).then(() => {
+                    // 第二步：立刻從當前對戰房間完全消除節點（達成不殘留 AFK 的乾淨消除）
+                    database.ref(`rooms/${currentRoom}/players/${targetId}`).remove().then(() => {
+                        if (dropdown.value === targetId) dropdown.value = "";
+                        syncTargetCardEffects();
+                    });
                 });
             }
         }
@@ -785,6 +790,7 @@
             }
         }
 
+        // 🌟 核心修改點二：渲染列表加入更嚴格的防殘留機制。如果 online 為 false 且當前節點被完全刪除時，不對其進行任何卡片渲染
         function renderPlayers() {
             const container = document.getElementById('players-container');
             if (!container) return;
@@ -805,6 +811,11 @@
 
             sortedPlayers.forEach(player => {
                 if (!player || !player.job) return; 
+                
+                // 加強機制：如果該角色的節點正在被強制斷線中或已被老師在後台移除，直接跳過不渲染，防範 AFK 殘留
+                if (player.id !== 'teacher_boss' && player.forceLogout === true) {
+                    return;
+                }
                 
                 const scaled = getScaledStats(player.job, player.level || 1);
                 const hpPercent = Math.min(100, Math.max(0, ((player.hp || 0) / (scaled.hp || 100)) * 100));
@@ -956,6 +967,12 @@
 
             sortedPlayers.forEach(p => {
                 const isDead = (p.hp || 0) <= 0;
+                
+                // 如果角色已被標記為強制退出，則不加入選單，防止老師端選單殘留快取
+                if (p.id !== 'teacher_boss' && p.forceLogout === true) {
+                    return;
+                }
+
                 if (myId !== 'teacher_boss') {
                     if (p.online === false || isDead) {
                         return;
@@ -1135,7 +1152,7 @@
                     target.hp = Math.max(0, target.hp - result.dmg);
                     if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + 10);
                     
-                    logText = `${result.isCrit ? '💥💥【ARMOR CRIT DEVASTATION!!】' : '🛡️⚔️'}【${me.name}】executes [${skill.name}] on【${target.name}術, ignoring 50% DEF to hammer ${result.dmg} pierce damage!`;
+                    logText = `${result.isCrit ? '💥💥【ARMOR CRIT DEVASTATION!!】' : '🛡️⚔️'}【${me.name}】executes [${skill.name}] on【${target.name}】, ignoring 50% DEF to hammer ${result.dmg} pierce damage!`;
                     isDmgDealt = true;
                 }
                 else if (skill.type === 'warrior_ult') {
@@ -1154,7 +1171,7 @@
                     target.hp = Math.max(0, target.hp - result.dmg);
                     if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + 15);
                     
-                    logText = `${result.isCrit ? '💥🔮【MANA CRITICAL EXPLOSION!!】' : '🔮'}【${me.name}】casts [${skill.name}] onto【${target.name}】, bursting ${result.dmg} Magical Damage!`;
+                    logText = `${result.isCrit ? '💥🔮【MANA CRITICAL EXPLOSION!!】' : '🔮'}【${me.name}】casts [${skill.name}] onto【${target.name}術, bursting ${result.dmg} Magical Damage!`;
                     isDmgDealt = true;
                 } 
                 else if (skill.type === 'mage_drain') {
@@ -1186,23 +1203,23 @@
                 }
                 else if (skill.type === 'archer_multi' || skill.type === 'archer_ult') {
                     let totalDmg = 0;
-                    let critHits = 0;
+                    let fontCrit = 0;
                     let hitCount = skill.hits;
                     
                     for (let i = 0; i < hitCount; i++) {
                         let singleRaw = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
                         let res = calculateDamageWithCrit(singleRaw, me.job);
                         totalDmg += res.dmg;
-                        if (res.isCrit) critHits++;
+                        if (res.isCrit) fontCrit++;
                     }
                     
                     target.hp = Math.max(0, target.hp - totalDmg);
                     if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + (hitCount * 4));
                     
                     if (skill.type === 'archer_ult') {
-                        logText = `🏹⛈️【${me.name}】triggers Ultimate Volley [${skill.name}]! Torrential arrows rain upon【${target.name}】for ${hitCount} rapid impacts, stacking a total of ${totalDmg} Physical Damage ${critHits > 0 ? `(including ${critHits} CRITICAL triggers!!)` : ''}`;
+                        logText = `🏹⛈️【${me.name}】triggers Ultimate Volley [${skill.name}]! Torrential arrows rain upon【${target.name}】for ${hitCount} rapid impacts, stacking a total of ${totalDmg} Physical Damage ${fontCrit > 0 ? `(including ${fontCrit} CRITICAL triggers!!)` : ''}`;
                     } else {
-                        logText = `🏹【${me.name}】launches [${skill.name}] at【${target.name}術, firing a swift ${hitCount}-shot stream dealing ${totalDmg} total points ${critHits > 0 ? `(with ${critHits} Crit hits)` : ''}`;
+                        logText = `🏹【${me.name}】launches [${skill.name}] at【${target.name}】, firing a swift ${hitCount}-shot stream dealing ${totalDmg} total points ${fontCrit > 0 ? `(with ${fontCrit} Crit hits)` : ''}`;
                     }
                     isDmgDealt = true;
                 }
