@@ -132,13 +132,33 @@
         .input-sm { width: 55px; padding: 4px; background: #333; border: 1px solid #555; color: white; border-radius: 4px; text-align: center; font-weight: bold; }
         .input-pwd { width: 90px; padding: 4px; background: #333; border: 1px solid #555; color: #2ecc71; border-radius: 4px; font-family: monospace; }
         
-        /* Boss Quick Control AP Panel */
-        .boss-quick-ap-box { display: none; background: #1e272e; border: 1px solid #f1c40f; border-radius: 8px; padding: 10px; margin-bottom: 15px; }
-        .ap-btn-group { display: flex; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
-        .ap-mini-btn { padding: 5px 12px; font-size: 11px; font-weight: bold; border-radius: 4px; border: none; cursor: pointer; color: white; }
+        /* Fixed Bottom Death Lock Overlay */
+        .death-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95); z-index: 99999; flex-direction: column;
+            align-items: center; justify-content: center; color: #ff3333; pointer-events: auto;
+        }
+        .death-text {
+            font-size: 56px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase;
+            text-shadow: 0 0 25px rgba(255, 0, 0, 0.8); animation: pulse 2s infinite;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .death-subtext {
+            font-size: 14px; color: #888; margin-top: 15px; letter-spacing: 1px;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.05); opacity: 1; text-shadow: 0 0 40px rgba(255, 0, 0, 1); }
+            100% { transform: scale(1); opacity: 0.9; }
+        }
     </style>
 </head>
 <body>
+
+    <div id="death-screen" class="death-overlay">
+        <div class="death-text">You Are Dead</div>
+        <div class="death-subtext">Your level has been completely wiped back to Lv.1. Awaiting Dark Lord's resurrection elements...</div>
+    </div>
 
     <header>
         <h1>ClassWar Arena Platform <span id="room-display" class="room-badge">NOT CONNECTED</span></h1>
@@ -149,7 +169,7 @@
         <div class="grid-4">
             <div class="form-group">
                 <label>🏠 Room Number (Must match whole class):</label>
-                <input type="text" id="room-id" class="form-control" value="">
+                <input type="text" id="room-id" class="form-control" value="101">
             </div>
             <div class="form-group">
                 <label>👤 Student ID / Username:</label>
@@ -193,7 +213,7 @@
             <button class="btn" onclick="bossWipeAllAPToZero()" style="background: #d35400; border-color: #ba4a00; padding: 6px 12px; font-size: 12px; color: #fff;">🛑 Clear All Students AP to 0</button>
         </div>
 
-        <div style="margin-top: 10px;">
+        <div>
             <label style="font-size: 12px; color: #2ecc71; font-weight: bold; display: block; margin-bottom: 2px;">💬 Teacher Cloud Announcement Message Channel (Press Enter to transmit):</label>
             <div class="boss-chat-input-box">
                 <input type="text" id="boss-custom-chat-msg" class="input-boss-msg" placeholder="Type instructions or feedback here for the entire room to see...">
@@ -203,7 +223,7 @@
     </div>
 
     <div class="boss-modal" id="boss-modal">
-        <div class="modal-content">
+        <div class="modal-content" id="boss-modal-content">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #f1c40f; padding-bottom:10px;">
                 <h3 style="color:#2ecc71;">📊 Global Accounts Database Dashboard (Real-time Sync)</h3>
                 <button class="btn" onclick="closeBossModal()" style="background:#7f8c8d; padding:5px 15px; border:none;">❌ Close Window</button>
@@ -281,10 +301,10 @@
 
         // === 🎲 GAME STATS CONFIGURATIONS ===
         const CLASS_CONFIGS = {
-            'Warrior':   { hp: 160, en: 100, def: 25, patk: 16, matk: 5,  colorClass: 'bg-warrior' },
-            'Mage':      { hp: 85,  en: 160, def: 6,  patk: 4,  matk: 32, colorClass: 'bg-mage' },
-            'Berserker': { hp: 120, en: 100, def: 12, patk: 24, matk: 0,  colorClass: 'bg-berserker' },
-            'Archer':    { hp: 100, en: 110, def: 10, patk: 18, matk: 12, colorClass: 'bg-archer' },
+            'Warrior':   { hp: 320, en: 100, def: 25, patk: 16, matk: 5,  colorClass: 'bg-warrior' }, 
+            'Mage':      { hp: 170, en: 160, def: 6,  patk: 4,  matk: 32, colorClass: 'bg-mage' },    
+            'Berserker': { hp: 240, en: 100, def: 12, patk: 24, matk: 0,  colorClass: 'bg-berserker' },
+            'Archer':    { hp: 200, en: 110, def: 10, patk: 18, matk: 12, colorClass: 'bg-archer' },   
             'Dark Lord': { hp: 99999, en: 9999, def: 500, patk: 200, matk: 200, colorClass: 'bg-boss' }
         };
 
@@ -301,7 +321,7 @@
                 return { hp: 99999, en: 9999, def: 500, patk: 200, matk: 200 };
             }
             const base = CLASS_CONFIGS[job];
-            if (!base) return { hp: 100, en: 100, def: 10, patk: 10, matk: 10 };
+            if (!base) return { hp: 200, en: 100, def: 10, patk: 10, matk: 10 };
             const multiplier = 1 + (level - 1) * 0.1; 
             return {
                 hp: Math.floor(base.hp * multiplier),
@@ -312,7 +332,7 @@
             };
         }
 
-        // 📜 SKILLS DATABASE (已更換通用技能，並重塑 Dark Lord 技能描述)
+        // 📜 SKILLS DATABASE
         const SKILL_DATABASE = {
             'General': [
                 { name: 'Meditation Focus', apCost: 1, enCost: 0, type: 'charge', value: 40, desc: 'Focus energy internally. Recharges 40 EN points directly to your pool.' }
@@ -504,6 +524,15 @@
                     return;
                 }
 
+                const dScreen = document.getElementById('death-screen');
+                if (dScreen && myId && myId !== 'teacher_boss' && allPlayersData[myId]) {
+                    if (parseInt(allPlayersData[myId].hp) <= 0) {
+                        dScreen.style.display = 'flex'; 
+                    } else {
+                        dScreen.style.display = 'none';  
+                    }
+                }
+
                 renderPlayers();
                 populateTargets();
                 renderSkills();
@@ -559,12 +588,18 @@
                             const punishDmg = 50; 
                             me.hp = Math.max(0, me.hp - punishDmg);
                             
+                            if (me.hp <= 0) {
+                                me.level = 1;
+                                me.exp = 0;
+                                me.en = 0;
+                            }
+                            
                             database.ref(`rooms/${currentRoom}/players/${myId}`).set(me);
                             saveToGlobalUser(me.userId, me);
                             
                             let logMsg = `🛑【WINDOW_PUNISHMENT】Student【${me.name}】triggered iPad split-screen/window-mode or switched apps! System enforced immediate penalization: -${punishDmg} HP!`;
                             if (me.hp <= 0) {
-                                logMsg += ` 💀 Banishment complete: Entity Perished!`;
+                                logMsg += ` 💀 Banishment complete: Entity Perished! Level completely hard-reset back to Lv.1!`;
                             }
                             sendGlobalLog(logMsg);
                         }
@@ -594,7 +629,7 @@
             }
         }
 
-        // === MODAL FUNCTIONS ===
+        // === MODAL CONTROL FUNCTIONS ===
         function openBossModal() {
             document.getElementById('boss-modal').style.display = 'flex';
             loadGlobalUsersMonitor();
@@ -603,6 +638,30 @@
         function closeBossModal() {
             document.getElementById('boss-modal').style.display = 'none';
         }
+
+        // 🌟 核心修改點：綁定全域鍵盤 Esc 鍵與 iPad 點擊彈窗外部關閉的事件監聽
+        document.addEventListener('DOMContentLoaded', () => {
+            // 監聽鍵盤事件：按下 Esc 鍵關閉雲端管理控制台
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' || event.key === 'Esc') {
+                    const modal = document.getElementById('boss-modal');
+                    if (modal && modal.style.display === 'flex') {
+                        closeBossModal();
+                    }
+                }
+            });
+
+            // 監聽點擊外部事件：iPad 或行動端點擊畫面彈窗主體之外（即半透明背景層）關閉
+            const bossModalOverlay = document.getElementById('boss-modal');
+            if (bossModalOverlay) {
+                bossModalOverlay.addEventListener('click', (event) => {
+                    // 確保點擊到的完全是遮罩層本身，而不是裡面的表格、按鈕或主體內容
+                    if (event.target === bossModalOverlay) {
+                        closeBossModal();
+                    }
+                });
+            }
+        });
 
         function loadGlobalUsersMonitor() {
             const tbody = document.getElementById('monitor-tbody');
@@ -976,15 +1035,20 @@
             let isDmgDealt = false;
             let expRewardMsg = "";
 
-            // 👑 核心修改點：Surprise Roll-Call Attack 改為最大生命值 10% 的百分比裁決傷害
             if (skill.type === 'boss_pct_strike') {
                 let pctDmg = Math.floor(targetScaled.hp * 0.10);
                 if (pctDmg < 1) pctDmg = 1;
                 target.hp = Math.max(0, target.hp - pctDmg);
+                
+                if (target.hp <= 0) {
+                    target.level = 1;
+                    target.exp = 0;
+                    target.en = 0;
+                }
+
                 logText = `👑⚔️【PERCENTAGE JUDGEMENT】Dark Lord activated [${skill.name}] on【${target.name}】! Authority erosion inflicts -10% MAX HP damage (-${pctDmg} HP)!`;
                 isDmgDealt = true;
             }
-            // 👑 核心修改點：Pop Quiz Flash Bomb 改為全班存活學生扣最大生命值 10% 的範圍打擊
             else if (skill.type === 'boss_aoe_pct_strike') {
                 logText = `👑💥【CLASS-WIDE TEST BLAST】Dark Lord unleashed sudden Pop Quiz Flash Bomb! Shockwaves spread across the room, draining 10% Max HP from all living students!\n`;
                 Object.values(allPlayersData).forEach(p => {
@@ -997,7 +1061,10 @@
                         logText += ` ➔【${p.name}】loses ${aoePctDmg} HP points! (${p.hp} HP remaining)\n`;
                         
                         if (p.hp <= 0) {
-                            logText += `  💀【${p.name}】collapsed under mental academic pressure!\n`;
+                            p.level = 1;
+                            p.exp = 0;
+                            p.en = 0;
+                            logText += `  💀【${p.name}】collapsed under mental academic pressure! Level hard-reset back to Lv.1!\n`;
                         }
                         database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
                         saveToGlobalUser(p.userId, p);
@@ -1006,7 +1073,10 @@
             }
             else if (skill.type === 'boss_insta_kill') {
                 target.hp = 0;
-                logText = `👑☠️【CRITICAL ERASURE】Dark Lord invoked absolute command line. Entity【${target.name}】obliterated to zero health instantly!`;
+                target.level = 1;
+                target.exp = 0;
+                target.en = 0;
+                logText = `👑☠️【CRITICAL ERASURE】Dark Lord invoked absolute command line. Entity【${target.name}】obliterated to zero health instantly! Level reset to 1!`;
                 isDmgDealt = true;
             } 
             else if (skill.type === 'boss_stage_aoe') {
@@ -1026,7 +1096,10 @@
                     Object.values(allPlayersData).forEach(p => {
                         if (p && p.id !== 'teacher_boss' && p.hp > 0) {
                             p.hp = 0;
-                            logText += ` ➔【${p.name}】reduced to dust!\n`;
+                            p.level = 1;
+                            p.exp = 0;
+                            p.en = 0;
+                            logText += ` ➔【${p.name}】reduced to dust! Level reset to 1!\n`;
                             database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
                             saveToGlobalUser(p.userId, p);
                         }
@@ -1088,7 +1161,7 @@
                     target.en = Math.max(0, targetOldEn - drainAmount);
                     me.en = Math.min(myScaled.en, me.en + skill.value);
                     
-                    logText = `🔮🌀【${me.name}】channeled [${skill.name}] on【${target.name}】, dealing ${result.dmg} magic stress and siphoned ${drainAmount} EN to feed own reserve by +${skill.value} EN!`;
+                    logText = `🔮🌀【${me.name}】channeled [${skill.name}] on【${target.name}術, dealing ${result.dmg} magic stress and siphoned ${drainAmount} EN to feed own reserve by +${skill.value} EN!`;
                     isDmgDealt = true;
                 }
                 else if (skill.type === 'mage_transfer') {
@@ -1150,10 +1223,9 @@
                     }
                 } 
                 else if (skill.type === 'boss_capped_heal') {
-                    // 👑 核心修改點：Praise of Light 修正為完美回復到生命上限，嚴格限制不允許突破最高極限
                     const wasDead = target.hp <= 0;
                     const oldHp = target.hp;
-                    target.hp = targetScaled.hp; // 直接補滿至縮放後的最大上限值
+                    target.hp = targetScaled.hp; 
                     
                     if (wasDead) {
                         logText = `😇👑【SOVEREIGN RESURRECTION】Dark Lord blessed the fallen student【${target.name}】with maximum light elements, breaking death codes to fully revive entity back to 100% HP (${target.hp}/${targetScaled.hp})!`;
@@ -1161,25 +1233,13 @@
                         logText = `💖😇【HOLY CAP RESTORATION】Dark Lord invoked [Praise of Light], fully cleansing and restoring【${target.name}】health pool back to baseline limit limit: ${oldHp} HP ➔ 100% Full HP (${target.hp}/${targetScaled.hp}) without overflowing!`;
                     }
                 }
-                else if (skill.type === 'ult_berserk') {
-                    let rawDmg = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
-                    let result = calculateDamageWithCrit(rawDmg, me.job);
-                    target.hp = Math.max(0, target.hp - result.dmg);
-                    
-                    let absorbAmount = Math.floor(result.dmg * 0.6);
-                    me.hp = Math.min(myScaled.hp, me.hp + absorbAmount);
-                    
-                    logText = `${result.isCrit ? '💥🩸💥【RAGNAROK RAGE CRIT 200% EXECUTE!!】' : '🩸'}【${me.name}】unleashes beastial Ultimate [${skill.name}]! Crushes【${target.name}】with ${result.dmg} apocalyptic damage, and life-steals +${absorbAmount} HP instantly to self!`;
-                    isDmgDealt = true;
-                }
-                else if (skill.type === 'debuff_ap') {
-                    let oldAp = target.ap || 0;
-                    target.ap = Math.max(0, oldAp - skill.value);
-                    logText = `👑🛑【IPAD SEIZURE】Dark Lord confiscates iPad device from student【${target.name}】! Action capability drained by -${skill.value} AP (Orig:${oldAp} ➔ Current:${target.ap})`;
-                }
 
                 if (isDmgDealt && target.id !== 'teacher_boss' && target.hp <= 0) {
-                    logText += ` 💀【${target.name}】succumbed to massive trauma and collapsed in battle!`;
+                    target.level = 1;
+                    target.exp = 0;
+                    target.en = 0;
+                    
+                    logText += ` 💀【${target.name}】succumbed to massive trauma and collapsed in battle! Level reset to 1!`;
                     let killBonusMsg = rewardExperiencePoints(me, 'kill');
                     expRewardMsg += killBonusMsg; 
                 }
