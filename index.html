@@ -300,6 +300,7 @@
         const database = firebase.database();
 
         // === 🎲 GAME STATS CONFIGURATIONS ===
+        // 🌟 確保配置完備：所有基礎血量維持 100% 雙倍化
         const CLASS_CONFIGS = {
             'Warrior':   { hp: 320, en: 100, def: 25, patk: 16, matk: 5,  colorClass: 'bg-warrior' }, 
             'Mage':      { hp: 170, en: 160, def: 6,  patk: 4,  matk: 32, colorClass: 'bg-mage' },    
@@ -420,6 +421,7 @@
             database.ref(`global_users/${inputId}`).once('value', (snapshot) => {
                 let userData = snapshot.val();
                 
+                // 🌟 確保原本已線上或資料庫內存檔的角色血量均能完美對接雙倍生命架構
                 if (!userData) {
                     userData = { level: (inputId === 'Teacher') ? 9999 : 1, exp: 0, job: job, hp: null, en: 0, ap: 0 };
                 } else {
@@ -594,7 +596,7 @@
                                 me.en = 0;
                             }
                             
-                            database.ref(`rooms/${currentRoom}/players/${myId}`).set(me);
+                            database.ref(`rooms/${currentRoom}/players/${me.id}`).set(me);
                             saveToGlobalUser(me.userId, me);
                             
                             let logMsg = `🛑【WINDOW_PUNISHMENT】Student【${me.name}】triggered iPad split-screen/window-mode or switched apps! System enforced immediate penalization: -${punishDmg} HP!`;
@@ -639,9 +641,7 @@
             document.getElementById('boss-modal').style.display = 'none';
         }
 
-        // 🌟 核心修改點：綁定全域鍵盤 Esc 鍵與 iPad 點擊彈窗外部關閉的事件監聽
         document.addEventListener('DOMContentLoaded', () => {
-            // 監聽鍵盤事件：按下 Esc 鍵關閉雲端管理控制台
             document.addEventListener('keydown', (event) => {
                 if (event.key === 'Escape' || event.key === 'Esc') {
                     const modal = document.getElementById('boss-modal');
@@ -651,11 +651,9 @@
                 }
             });
 
-            // 監聽點擊外部事件：iPad 或行動端點擊畫面彈窗主體之外（即半透明背景層）關閉
             const bossModalOverlay = document.getElementById('boss-modal');
             if (bossModalOverlay) {
                 bossModalOverlay.addEventListener('click', (event) => {
-                    // 確保點擊到的完全是遮罩層本身，而不是裡面的表格、按鈕或主體內容
                     if (event.target === bossModalOverlay) {
                         closeBossModal();
                     }
@@ -1161,7 +1159,7 @@
                     target.en = Math.max(0, targetOldEn - drainAmount);
                     me.en = Math.min(myScaled.en, me.en + skill.value);
                     
-                    logText = `🔮🌀【${me.name}】channeled [${skill.name}] on【${target.name}術, dealing ${result.dmg} magic stress and siphoned ${drainAmount} EN to feed own reserve by +${skill.value} EN!`;
+                    logText = `🔮🌀【${me.name}】channeled [${skill.name}] on【${target.name}】, dealing ${result.dmg} magic stress and siphoned ${drainAmount} EN to feed own reserve by +${skill.value} EN!`;
                     isDmgDealt = true;
                 }
                 else if (skill.type === 'mage_transfer') {
@@ -1312,22 +1310,27 @@
             }
         }
 
+        // 🌟 核心優化修改點：重置按鈕全面賦予復活、強制清空死亡狀態、恢復雙倍滿血的最高同步控制力
         function bossResetRoom() {
-            if(confirm("Are you sure you want to restore HP & EN to 100% and completely CLEAR all combat feed logs? (Levels, EXP, AP and AFK status will be preserved)")) {
+            if(confirm("Are you sure you want to restore HP & EN to 100% and completely CLEAR all combat feed logs? (This operation will ALSO REVIVE all deceased student entities to 100% full health!)")) {
                 bossAoeCount = 0; 
                 Object.values(allPlayersData).forEach(p => {
                     if (!p) return;
-                    const scaled = getScaledStats(p.job, p.level);
-                    p.hp = scaled.hp;
+                    
+                    // 根據當前角色的等級取得正確的雙倍最大血量上限設定
+                    const scaled = getScaledStats(p.job, p.level || 1);
+                    
+                    p.hp = scaled.hp; // 賦予滿血狀態（已死去的角色在此被強行復活）
                     p.en = (p.id === 'teacher_boss') ? 9999 : 0;
                     p.forceLogout = false;
 
+                    // 即時向 Firebase 資料庫推送更新，觸發本地端 visibility/death 遮罩自動解除
                     database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
                     if (p.id !== 'teacher_boss') saveToGlobalUser(p.userId, p);
                 });
                 
                 database.ref(`rooms/${currentRoom}/logs`).remove().then(() => {
-                    sendGlobalLog(`🔄 👑 Dark Lord restored HP and EN status to 100% for all room entities! Campaign elements and AP preserved! Battle logs have been refreshed.`);
+                    sendGlobalLog(`🔄 👑【SUPREME REVIVAL SYSTEM】Dark Lord reset the room! ALL student entities have been fully REVIVED and restored back to 100% double Max HP status! Battle log refreshed.`);
                 });
             }
         }
