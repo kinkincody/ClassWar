@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClassMana - Multi-Device Network Battle System</title>
+    <title>ClassWar - Multi-Device Network Battle System</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
@@ -141,7 +141,7 @@
 <body>
 
     <header>
-        <h1>ClassMana Arena Platform <span id="room-display" class="room-badge">NOT CONNECTED</span></h1>
+        <h1>ClassWar Arena Platform <span id="room-display" class="room-badge">NOT CONNECTED</span></h1>
     </header>
 
     <div class="login-panel" id="login-panel">
@@ -280,7 +280,6 @@
         const database = firebase.database();
 
         // === 🎲 GAME STATS CONFIGURATIONS ===
-        // 👑 職稱代碼全面統一更換為 'Dark Lord'
         const CLASS_CONFIGS = {
             'Warrior':   { hp: 160, en: 100, def: 25, patk: 16, matk: 5,  colorClass: 'bg-warrior' },
             'Mage':      { hp: 85,  en: 160, def: 6,  patk: 4,  matk: 32, colorClass: 'bg-mage' },
@@ -536,6 +535,7 @@
             });
         }
 
+        // 🌟 核心更新點：優化 iPad 多工視窗與背景切換偵測，彈出驚告並扣除 50 HP
         function initVisibilityMonitor() {
             if (myId === 'teacher_boss') return;
             document.addEventListener('visibilitychange', () => {
@@ -543,11 +543,14 @@
                     database.ref(`rooms/${currentRoom}/players/${myId}`).once('value', (snapshot) => {
                         let me = snapshot.val();
                         if (me && me.hp > 0) {
-                            const punishDmg = 15;
+                            const punishDmg = 50; // 變更處罰值為 50 HP
                             me.hp = Math.max(0, me.hp - punishDmg);
+                            
                             database.ref(`rooms/${currentRoom}/players/${myId}`).set(me);
                             saveToGlobalUser(me.userId, me);
-                            let logMsg = `🛑【WINDOW_PUNISHMENT】Student【${me.name}】switched tabs/minimized screen! System triggered force penalization of -${punishDmg} HP!`;
+                            
+                            // 於全場同步的固定底部戰鬥日誌中即時彈出高亮紅色驚告
+                            let logMsg = `🛑【WINDOW_PUNISHMENT】Student【${me.name}】triggered iPad split-screen/window-mode or switched apps! System enforced immediate penalization: -${punishDmg} HP!`;
                             if (me.hp <= 0) {
                                 logMsg += ` 💀 Banishment complete: Entity Perished!`;
                             }
@@ -1002,7 +1005,7 @@
                     target.hp = Math.max(0, target.hp - result.dmg);
                     if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + 10);
                     
-                    logText = `${result.isCrit ? '💥💥【ARMOR CRIT DEVASTATION!!】' : '🛡️⚔️'}【${me.name}】executes [${skill.name}] on【${target.name}】, ignoring 50% DEF to hammer ${result.dmg} pierce damage!`;
+                    logText = `${result.isCrit ? '💥💥【ARMOR CRIT DEVASTATION!!】' : '🛡️⚔️'}【${me.name}】executes [${skill.name}] on【${target.name}術, ignoring 50% DEF to hammer ${result.dmg} pierce damage!`;
                     isDmgDealt = true;
                 }
                 else if (skill.type === 'warrior_ult') {
@@ -1021,7 +1024,7 @@
                     target.hp = Math.max(0, target.hp - result.dmg);
                     if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + 15);
                     
-                    logText = `${result.isCrit ? '💥🔮【MANA CRITICAL EXPLOSION!!】' : '🔮'}【${me.name}】casts [${skill.name}] onto【${target.name}術, bursting ${result.dmg} Magical Damage!`;
+                    logText = `${result.isCrit ? '💥🔮【MANA CRITICAL EXPLOSION!!】' : '🔮'}【${me.name}】casts [${skill.name}] onto【${target.name}】, bursting ${result.dmg} Magical Damage!`;
                     isDmgDealt = true;
                 } 
                 else if (skill.type === 'mage_drain') {
@@ -1053,6 +1056,7 @@
                 }
                 else if (skill.type === 'archer_multi' || skill.type === 'archer_ult') {
                     let totalDmg = 0;
+                    let fontCritHits = 0;
                     let critHits = 0;
                     let hitCount = skill.hits;
                     
