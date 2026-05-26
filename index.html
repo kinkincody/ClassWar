@@ -312,7 +312,7 @@
             };
         }
 
-        // 📜 SKILLS DATABASE
+        // 📜 SKILLS DATABASE (已校檢，各職業與 Dark Lord 技能完全對齊且可用)
         const SKILL_DATABASE = {
             'General': [
                 { name: 'Charge EN', apCost: 1, enCost: 0, type: 'charge', value: 35, desc: 'Focus energy internally. Does not attack; recovers 35 EN points directly.' }
@@ -341,11 +341,11 @@
                 { name: '【ULTIMATE】Meteor Arrow Rain', apCost: 1, enCost: 80, type: 'archer_ult', hits: 4, value: 10, desc: 'Costs 80 EN. Rains down a vicious barrage of 4 sequential shots on a single target! Total output is extremely lethal if multiple arrows crit.' }
             ],
             'Dark Lord': [
-                { name: 'Surprise Roll-Call Attack', apCost: 0, enCost: 0, type: 'atk_p', value: 60, desc: 'Teacher calls your name! Bypasses armor to deal 60+ point absolute physical authority shock.' },
-                { name: 'Pop Quiz Flash Bomb', apCost: 0, enCost: 0, type: 'atk_m', value: 40, desc: 'Sudden tests out of nowhere! Inflicts 40+ points of mental stress magic damage.' },
-                { name: 'Confiscate iPad Device',  apCost: 0, enCost: 0, type: 'debuff_ap', value: 2, desc: 'Teacher confiscates iPad device from student! Drains target student of 2 AP!' },
-                { name: 'Praise of Light (Max Heal)', apCost: 0, enCost: 0, type: 'heal', value: 5000, desc: 'Sovereign Resurrection! Restores 5000 HP. Breaks death codes to fully revive entity!' },
-                { name: '☠️ Absolute Name Erase (Insta-Kill)', apCost: 0, enCost: 0, type: 'boss_insta_kill', value: 0, desc: 'Supreme admin command. 100% obliterates any single student entity.' },
+                { name: 'Surprise Roll-Call Attack', apCost: 0, enCost: 0, type: 'atk_p', value: 60, desc: 'Dark Lord authority call! Bypasses armor to deal 60+ point absolute Authority Damage.' },
+                { name: 'Pop Quiz Flash Bomb', apCost: 0, enCost: 0, type: 'atk_m', value: 40, desc: 'Sudden dynamic stress quiz! Inflicts 40+ points of mental stress Magic Damage.' },
+                { name: 'Confiscate iPad Device',  apCost: 0, enCost: 0, type: 'debuff_ap', value: 2, desc: 'Seize device from student! Drains target student of 2 AP!' },
+                { name: 'Praise of Light (Max Heal)', apCost: 0, enCost: 0, type: 'heal', value: 5000, desc: 'Sovereign Revival Elements! Restores 5000 HP. Breaks death codes to fully revive entity!' },
+                { name: '☠️ Absolute Name Erase (Insta-Kill)', apCost: 0, enCost: 0, type: 'boss_insta_kill', value: 0, desc: 'Supreme master command. 100% obliterates any single student entity.' },
                 { name: '⚡ Apocalypse Cataclysm (Room Wipe)', apCost: 0, enCost: 0, type: 'boss_stage_aoe', value: 0, desc: 'Phase 1 cuts health by 50%. Phase 2 triggers full instant wipeout.' }
             ]
         };
@@ -400,8 +400,9 @@
             database.ref(`global_users/${inputId}`).once('value', (snapshot) => {
                 let userData = snapshot.val();
                 
+                // 🌟 核心修改點：新玩家或未註冊角色首次登入時，預設 AP 由 3 點變更為 0 點
                 if (!userData) {
-                    userData = { level: (inputId === 'Teacher') ? 9999 : 1, exp: 0, job: job, hp: null, en: 0, ap: 3 };
+                    userData = { level: (inputId === 'Teacher') ? 9999 : 1, exp: 0, job: job, hp: null, en: 0, ap: 0 };
                 } else {
                     if (inputId !== 'Teacher') {
                         userData.job = job; 
@@ -429,15 +430,16 @@
                     exp: userData.exp || 0,
                     hp: (userData.hp !== undefined && userData.hp !== null) ? userData.hp : scaledStats.hp,
                     en: (userData.en !== undefined && userData.en !== null) ? userData.en : 0,
-                    ap: (userData.ap !== undefined && userData.ap !== null) ? userData.ap : 3,
+                    ap: (userData.ap !== undefined && userData.ap !== null) ? userData.ap : 0, // 新加入預設為 0
                     online: true,
                     forceLogout: false
                 };
 
                 const myPlayerRef = database.ref(`rooms/${currentRoom}/players/${myId}`);
                 
+                // 🌟 核心修改點：若是魔王 Dark Lord 斷開連線，不執行任何移除或離線動作，確保切換畫面不登出
                 if (inputId === 'Teacher') {
-                    myPlayerRef.onDisconnect().remove();
+                    // Dark Lord: No remove or offline update on disconnect
                 } else {
                     myPlayerRef.onDisconnect().update({ online: false });
                 }
@@ -535,21 +537,20 @@
             });
         }
 
-        // 🌟 核心更新點：優化 iPad 多工視窗與背景切換偵測，彈出驚告並扣除 50 HP
+        // 🌟 核心修改點：當檢測到視窗切換時，如果是魔王（teacher_boss）則直接跳過，只有學生會遭到處罰與扣血
         function initVisibilityMonitor() {
-            if (myId === 'teacher_boss') return;
+            if (myId === 'teacher_boss') return; // 魔王角色豁免背景監測，切換畫面不登出、不扣血
             document.addEventListener('visibilitychange', () => {
                 if (document.hidden) {
                     database.ref(`rooms/${currentRoom}/players/${myId}`).once('value', (snapshot) => {
                         let me = snapshot.val();
                         if (me && me.hp > 0) {
-                            const punishDmg = 50; // 變更處罰值為 50 HP
+                            const punishDmg = 50; 
                             me.hp = Math.max(0, me.hp - punishDmg);
                             
                             database.ref(`rooms/${currentRoom}/players/${myId}`).set(me);
                             saveToGlobalUser(me.userId, me);
                             
-                            // 於全場同步的固定底部戰鬥日誌中即時彈出高亮紅色驚告
                             let logMsg = `🛑【WINDOW_PUNISHMENT】Student【${me.name}】triggered iPad split-screen/window-mode or switched apps! System enforced immediate penalization: -${punishDmg} HP!`;
                             if (me.hp <= 0) {
                                 logMsg += ` 💀 Banishment complete: Entity Perished!`;
@@ -604,7 +605,7 @@
                     Object.keys(auths).forEach(uid => {
                         if (uid === 'Teacher') return;
                         const pwd = auths[uid] || 'N/A';
-                        const uInfo = users[uid] || { job:'Warrior', level:1, ap:3 };
+                        const uInfo = users[uid] || { job:'Warrior', level:1, ap:0 };
                         
                         const sid = 'student_' + uid;
                         let activeAp = uInfo.ap;
@@ -636,7 +637,7 @@
             const sid = 'student_' + studentId;
             if (!allPlayersData[sid]) {
                 database.ref(`global_users/${studentId}`).once('value', (snap) => {
-                    let u = snap.val() || { ap: 3 };
+                    let u = snap.val() || { ap: 0 };
                     let oldAp = u.ap || 0;
                     let newAp = Math.max(0, oldAp + amount);
                     database.ref(`global_users/${studentId}/ap`).set(newAp).then(() => {
@@ -694,7 +695,7 @@
                     exp: 0,
                     hp: null,
                     en: 0,
-                    ap: 3,
+                    ap: 0,
                     job: 'Warrior'
                 }).then(() => {
                     const sid = 'student_' + targetUserId;
@@ -1005,7 +1006,7 @@
                     target.hp = Math.max(0, target.hp - result.dmg);
                     if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + 10);
                     
-                    logText = `${result.isCrit ? '💥💥【ARMOR CRIT DEVASTATION!!】' : '🛡️⚔️'}【${me.name}】executes [${skill.name}] on【${target.name}術, ignoring 50% DEF to hammer ${result.dmg} pierce damage!`;
+                    logText = `${result.isCrit ? '💥💥【ARMOR CRIT DEVASTATION!!】' : '🛡️⚔️'}【${me.name}】executes [${skill.name}] on【${target.name}】, ignoring 50% DEF to hammer ${result.dmg} pierce damage!`;
                     isDmgDealt = true;
                 }
                 else if (skill.type === 'warrior_ult') {
@@ -1037,7 +1038,7 @@
                     target.en = Math.max(0, targetOldEn - drainAmount);
                     me.en = Math.min(myScaled.en, me.en + skill.value);
                     
-                    logText = `🔮🌀【${me.name}】channeled [${skill.name}] on【${target.name}】, dealing ${result.dmg} magic stress and siphoned ${drainAmount} EN to feed own reserve by +${skill.value} EN!`;
+                    logText = `🔮🌀【${me.name}】channeled [${skill.name}] on【${target.name}術, dealing ${result.dmg} magic stress and siphoned ${drainAmount} EN to feed own reserve by +${skill.value} EN!`;
                     isDmgDealt = true;
                 }
                 else if (skill.type === 'mage_transfer') {
@@ -1056,7 +1057,6 @@
                 }
                 else if (skill.type === 'archer_multi' || skill.type === 'archer_ult') {
                     let totalDmg = 0;
-                    let fontCritHits = 0;
                     let critHits = 0;
                     let hitCount = skill.hits;
                     
@@ -1071,7 +1071,7 @@
                     if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + (hitCount * 4));
                     
                     if (skill.type === 'archer_ult') {
-                        logText = `🏹⛈️【${me.name}】triggers Ultimate Volley [${skill.name}]! Torrential arrows rain upon【${target.name}】for ${hitCount} rapid impacts, stacking a total of ${totalDmg} Physical Damage ${critHits > 0 ? `(including ${critHits} CRITICAL triggers!!)` : ''}`;
+                        logText = `🏹⛈️【${me.name}】triggers Ultimate Volley [${skill.name}]! Torrential arrows rain upon【${target.name}術 for ${hitCount} rapid impacts, stacking a total of ${totalDmg} Physical Damage ${critHits > 0 ? `(including ${critHits} CRITICAL triggers!!)` : ''}`;
                     } else {
                         logText = `🏹【${me.name}】launches [${skill.name}] at【${target.name}】, firing a swift ${hitCount}-shot stream dealing ${totalDmg} total points ${critHits > 0 ? `(with ${critHits} Crit hits)` : ''}`;
                     }
