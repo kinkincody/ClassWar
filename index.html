@@ -312,10 +312,10 @@
             };
         }
 
-        // 📜 SKILLS DATABASE (已校檢，各職業與 Dark Lord 技能完全對齊且可用)
+        // 📜 SKILLS DATABASE (已更換通用技能，並重塑 Dark Lord 技能描述)
         const SKILL_DATABASE = {
             'General': [
-                { name: 'Charge EN', apCost: 1, enCost: 0, type: 'charge', value: 35, desc: 'Focus energy internally. Does not attack; recovers 35 EN points directly.' }
+                { name: 'Meditation Focus', apCost: 1, enCost: 0, type: 'charge', value: 40, desc: 'Focus energy internally. Recharges 40 EN points directly to your pool.' }
             ],
             'Warrior': [
                 { name: 'Ground Strike', apCost: 1, enCost: 0, type: 'atk_p', value: 8, desc: 'Basic physical heavy swing. Deals (ATK + 8) Physical Damage.' },
@@ -341,10 +341,10 @@
                 { name: '【ULTIMATE】Meteor Arrow Rain', apCost: 1, enCost: 80, type: 'archer_ult', hits: 4, value: 10, desc: 'Costs 80 EN. Rains down a vicious barrage of 4 sequential shots on a single target! Total output is extremely lethal if multiple arrows crit.' }
             ],
             'Dark Lord': [
-                { name: 'Surprise Roll-Call Attack', apCost: 0, enCost: 0, type: 'atk_p', value: 60, desc: 'Dark Lord authority call! Bypasses armor to deal 60+ point absolute Authority Damage.' },
-                { name: 'Pop Quiz Flash Bomb', apCost: 0, enCost: 0, type: 'atk_m', value: 40, desc: 'Sudden dynamic stress quiz! Inflicts 40+ points of mental stress Magic Damage.' },
+                { name: 'Surprise Roll-Call Attack', apCost: 0, enCost: 0, type: 'boss_pct_strike', value: 10, desc: 'Dark Lord authority call! Unleashes absolute decree, draining 10% of target\'s maximum health.' },
+                { name: 'Pop Quiz Flash Bomb (AoE)', apCost: 0, enCost: 0, type: 'boss_aoe_pct_strike', value: 10, desc: 'Sudden dynamic room quiz constraints! Inflicts 10% max health reduction on ALL alive students.' },
                 { name: 'Confiscate iPad Device',  apCost: 0, enCost: 0, type: 'debuff_ap', value: 2, desc: 'Seize device from student! Drains target student of 2 AP!' },
-                { name: 'Praise of Light (Max Heal)', apCost: 0, enCost: 0, type: 'heal', value: 5000, desc: 'Sovereign Revival Elements! Restores 5000 HP. Breaks death codes to fully revive entity!' },
+                { name: 'Praise of Light (Max Heal Check)', apCost: 0, enCost: 0, type: 'boss_capped_heal', value: 0, desc: 'Sovereign Restoration Elements! Restores target to 100% max health without exceeding boundaries.' },
                 { name: '☠️ Absolute Name Erase (Insta-Kill)', apCost: 0, enCost: 0, type: 'boss_insta_kill', value: 0, desc: 'Supreme master command. 100% obliterates any single student entity.' },
                 { name: '⚡ Apocalypse Cataclysm (Room Wipe)', apCost: 0, enCost: 0, type: 'boss_stage_aoe', value: 0, desc: 'Phase 1 cuts health by 50%. Phase 2 triggers full instant wipeout.' }
             ]
@@ -400,7 +400,6 @@
             database.ref(`global_users/${inputId}`).once('value', (snapshot) => {
                 let userData = snapshot.val();
                 
-                // 🌟 核心修改點：新玩家或未註冊角色首次登入時，預設 AP 由 3 點變更為 0 點
                 if (!userData) {
                     userData = { level: (inputId === 'Teacher') ? 9999 : 1, exp: 0, job: job, hp: null, en: 0, ap: 0 };
                 } else {
@@ -430,14 +429,13 @@
                     exp: userData.exp || 0,
                     hp: (userData.hp !== undefined && userData.hp !== null) ? userData.hp : scaledStats.hp,
                     en: (userData.en !== undefined && userData.en !== null) ? userData.en : 0,
-                    ap: (userData.ap !== undefined && userData.ap !== null) ? userData.ap : 0, // 新加入預設為 0
+                    ap: (userData.ap !== undefined && userData.ap !== null) ? userData.ap : 0, 
                     online: true,
                     forceLogout: false
                 };
 
                 const myPlayerRef = database.ref(`rooms/${currentRoom}/players/${myId}`);
                 
-                // 🌟 核心修改點：若是魔王 Dark Lord 斷開連線，不執行任何移除或離線動作，確保切換畫面不登出
                 if (inputId === 'Teacher') {
                     // Dark Lord: No remove or offline update on disconnect
                 } else {
@@ -471,7 +469,13 @@
         function userManualLogout() {
             if (!currentRoom || !myId) return;
             if (confirm("Are you sure you want to log out safely from this arena session?")) {
-                database.ref(`rooms/${currentRoom}/players/${myId}`).remove().then(() => {
+                database.ref(`rooms/${currentRoom}/players`).off();
+                database.ref(`rooms/${currentRoom}/logs`).off();
+                
+                const logoutRef = database.ref(`rooms/${currentRoom}/players/${myId}`);
+                myId = null; 
+                
+                logoutRef.remove().then(() => {
                     location.reload();
                 });
             }
@@ -479,9 +483,16 @@
 
         function initRealtimeSync() {
             database.ref(`rooms/${currentRoom}/players`).on('value', (snapshot) => {
+                if (myId === null) return;
                 allPlayersData = snapshot.val() || {};
                 
-                if (myId && (!allPlayersData[myId] || allPlayersData[myId].forceLogout)) {
+                if (myId && !allPlayersData[myId]) {
+                    alert("🛑 You have been disconnected or removed from this room arena!");
+                    location.reload();
+                    return;
+                }
+
+                if (myId && allPlayersData[myId] && allPlayersData[myId].forceLogout) {
                     alert("🛑 You have been disconnected or removed from this room arena!");
                     location.reload();
                     return;
@@ -499,6 +510,7 @@
             });
 
             database.ref(`rooms/${currentRoom}/logs`).limitToLast(40).on('value', (snapshot) => {
+                if (myId === null) return;
                 const logs = snapshot.val() || {};
                 const logBox = document.getElementById('log-box');
                 logBox.innerHTML = '';
@@ -537,11 +549,10 @@
             });
         }
 
-        // 🌟 核心修改點：當檢測到視窗切換時，如果是魔王（teacher_boss）則直接跳過，只有學生會遭到處罰與扣血
         function initVisibilityMonitor() {
-            if (myId === 'teacher_boss') return; // 魔王角色豁免背景監測，切換畫面不登出、不扣血
+            if (myId === 'teacher_boss') return; 
             document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
+                if (document.hidden && myId) {
                     database.ref(`rooms/${currentRoom}/players/${myId}`).once('value', (snapshot) => {
                         let me = snapshot.val();
                         if (me && me.hp > 0) {
@@ -583,6 +594,7 @@
             }
         }
 
+        // === MODAL FUNCTIONS ===
         function openBossModal() {
             document.getElementById('boss-modal').style.display = 'flex';
             loadGlobalUsersMonitor();
@@ -710,9 +722,10 @@
 
         function renderPlayers() {
             const container = document.getElementById('players-container');
+            if (!container) return;
             container.innerHTML = '';
 
-            let sortedPlayers = Object.values(allPlayersData).sort((a, b) => {
+            let sortedPlayers = Object.values(allPlayersData).filter(p => p && p.id && p.userId).sort((a, b) => {
                 if (a.id === 'teacher_boss') return -1;
                 if (b.id === 'teacher_boss') return 1;
                 let numA = parseInt(a.userId.replace(/[^0-9]/g, '')) || 999;
@@ -726,13 +739,15 @@
             }
 
             sortedPlayers.forEach(player => {
-                const scaled = getScaledStats(player.job, player.level);
-                const hpPercent = Math.min(100, Math.max(0, (player.hp / scaled.hp) * 100));
-                const enPercent = Math.min(100, Math.max(0, (player.en / scaled.en) * 100));
+                if (!player || !player.job) return; 
                 
-                const reqExp = player.level * 100;
+                const scaled = getScaledStats(player.job, player.level || 1);
+                const hpPercent = Math.min(100, Math.max(0, ((player.hp || 0) / (scaled.hp || 100)) * 100));
+                const enPercent = Math.min(100, Math.max(0, ((player.en || 0) / (scaled.en || 100)) * 100));
+                
+                const reqExp = (player.level || 1) * 100;
                 const expPercent = Math.min(100, Math.max(0, ((player.exp || 0) / reqExp) * 100));
-                const isDead = player.hp <= 0;
+                const isDead = (player.hp || 0) <= 0;
 
                 const card = document.createElement('div');
                 card.id = `player-card-${player.id}`;
@@ -744,7 +759,7 @@
                         return; 
                     }
                     const dropdown = document.getElementById('target-dropdown');
-                    if (dropdown.querySelector(`option[value="${player.id}"]`)) {
+                    if (dropdown && dropdown.querySelector(`option[value="${player.id}"]`)) {
                         dropdown.value = player.id;
                         syncTargetCardEffects();
                     }
@@ -752,16 +767,16 @@
 
                 card.innerHTML = `
                     <div class="card-header">
-                        <strong style="font-size:14px;">${player.name} ${isDead ? '💀' : ''} ${player.online === false ? '💤(AFK)' : ''}</strong>
-                        <span class="level-badge">Lv.${player.level}</span>
+                        <strong style="font-size:14px;">${player.name || player.userId} ${isDead ? '💀' : ''} ${player.online === false ? '💤(AFK)' : ''}</strong>
+                        <span class="level-badge">Lv.${player.level || 1}</span>
                         <span class="role-tag ${CLASS_CONFIGS[player.job] ? CLASS_CONFIGS[player.job].colorClass : 'bg-warrior'}">${player.job}</span>
                     </div>
                     <div class="bar-container">
-                        <div class="bar-label"><span>HP (${player.hp}/${scaled.hp})</span></div>
+                        <div class="bar-label"><span>HP (${player.hp || 0}/${scaled.hp})</span></div>
                         <div class="bar"><div class="fill fill-hp" style="width: ${hpPercent}%"></div></div>
                     </div>
                     <div class="bar-container">
-                        <div class="bar-label"><span>EN (${player.id === 'teacher_boss' ? '∞' : player.en + '/' + scaled.en})</span></div>
+                        <div class="bar-label"><span>EN (${player.id === 'teacher_boss' ? '∞' : (player.en || 0) + '/' + scaled.en})</span></div>
                         <div class="bar"><div class="fill fill-en" style="width: ${player.id === 'teacher_boss' ? 100 : enPercent}%"></div></div>
                     </div>
                     <div class="bar-container">
@@ -770,7 +785,7 @@
                     </div>
                     <div style="margin-top:5px; display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#aaa;">
                         <span>DEF:${scaled.def} ATK:${scaled.patk}</span>
-                        <span class="ap-badge">${player.job === 'Dark Lord' ? 'AP: ∞' : 'AP: ' + player.ap}</span>
+                        <span class="ap-badge">${player.job === 'Dark Lord' ? 'AP: ∞' : 'AP: ' + (player.ap || 0)}</span>
                     </div>
                 `;
                 container.appendChild(card);
@@ -779,6 +794,7 @@
 
         function syncTargetCardEffects() {
             const dropdown = document.getElementById('target-dropdown');
+            if (!dropdown) return;
             const targetId = dropdown.value;
 
             document.querySelectorAll('.card').forEach(c => c.classList.remove('is-targeted'));
@@ -786,17 +802,20 @@
             if (selectedCard) selectedCard.classList.add('is-targeted');
 
             const quickPanel = document.getElementById('boss-quick-ap-panel');
-            if (myId === 'teacher_boss' && targetId && targetId !== 'teacher_boss') {
-                quickPanel.style.display = 'block';
-            } else {
-                quickPanel.style.display = 'none';
+            if (quickPanel) {
+                if (myId === 'teacher_boss' && targetId && targetId !== 'teacher_boss') {
+                    quickPanel.style.display = 'block';
+                } else {
+                    quickPanel.style.display = 'none';
+                }
             }
         }
 
         function bossQuickAdjustAP(amount) {
             const dropdown = document.getElementById('target-dropdown');
+            if (!dropdown) return;
             const targetId = dropdown.value;
-            if (!targetId || targetId === 'teacher_boss') return;
+            if (!targetId || targetId === 'teacher_boss' || !allPlayersData[targetId]) return;
 
             const currentAP = allPlayersData[targetId].ap || 0;
             const newAP = Math.max(0, currentAP + amount);
@@ -808,6 +827,7 @@
 
         function renderSkills() {
             const skillsContainer = document.getElementById('skills-container');
+            if (!skillsContainer) return;
             skillsContainer.innerHTML = '';
 
             const currentMe = allPlayersData[myId];
@@ -819,7 +839,7 @@
             mySkills.forEach(skill => {
                 const btn = document.createElement('button');
                 btn.className = 'btn';
-                if (skill.type === 'boss_stage_aoe' || skill.name.includes('【ULTIMATE】')) {
+                if (skill.type === 'boss_stage_aoe' || skill.type === 'boss_aoe_pct_strike' || (skill.name && skill.name.includes('【ULTIMATE】'))) {
                     btn.className += ' btn-ult';
                 }
 
@@ -834,6 +854,7 @@
 
                 btn.onclick = () => {
                     const latestMe = allPlayersData[myId];
+                    if (!latestMe) return;
                     if (!isBoss && latestMe.ap < skill.apCost) {
                         sendGlobalLog(`[⚠️WARNING] Student【${latestMe.name}】has depleted AP reserves! Command intercepted!`);
                         return;
@@ -856,19 +877,20 @@
 
         function populateTargets() {
             const dropdown = document.getElementById('target-dropdown');
+            if (!dropdown) return;
             const currentSel = dropdown.value;
             dropdown.innerHTML = '';
 
-            let sortedPlayers = Object.values(allPlayersData).sort((a, b) => {
+            let sortedPlayers = Object.values(allPlayersData).filter(p => p && p.id).sort((a, b) => {
                 if (a.id === 'teacher_boss') return -1;
                 if (b.id === 'teacher_boss') return 1;
-                let numA = parseInt(a.userId.replace(/[^0-9]/g, '')) || 999;
-                let numB = parseInt(b.userId.replace(/[^0-9]/g, '')) || 999;
+                let numA = parseInt(a.userId ? a.userId.replace(/[^0-9]/g, '') : '999') || 999;
+                let numB = parseInt(b.userId ? b.userId.replace(/[^0-9]/g, '') : '999') || 999;
                 return numA - numB;
             });
 
             sortedPlayers.forEach(p => {
-                const isDead = p.hp <= 0;
+                const isDead = (p.hp || 0) <= 0;
                 if (myId !== 'teacher_boss') {
                     if (p.online === false || isDead) {
                         return;
@@ -877,8 +899,7 @@
 
                 const opt = document.createElement('option');
                 opt.value = p.id;
-                
-                opt.innerText = `${p.id === myId ? '[Self] ' : ''}${p.name} (Lv.${p.level}) - HP:${p.hp} ${isDead ? '[☠️DEFEATED]' : ''} ${p.online === false ? '[AFK]' : ''}`;
+                opt.innerText = `${p.id === myId ? '[Self] ' : ''}${p.name || p.userId} (Lv.${p.level || 1}) - HP:${p.hp || 0} ${isDead ? '[☠️DEFEATED]' : ''} ${p.online === false ? '[AFK]' : ''}`;
                 dropdown.appendChild(opt);
             });
 
@@ -925,14 +946,15 @@
 
         function executeBattleAction(me, skill) {
             const isBoss = me.job === 'Dark Lord';
-            const targetId = document.getElementById('target-dropdown').value;
+            const dropdown = document.getElementById('target-dropdown');
+            const targetId = dropdown ? dropdown.value : null;
             const target = allPlayersData[targetId];
 
-            if (!target && skill.type !== 'charge' && skill.type !== 'boss_stage_aoe') {
+            if (!target && skill.type !== 'charge' && skill.type !== 'boss_stage_aoe' && skill.type !== 'boss_aoe_pct_strike') {
                 return alert('Please select an active target first!');
             }
 
-            const attackTypes = ['atk_p', 'atk_m', 'atk_p_pierce', 'ult_berserk', 'debuff_ap', 'boss_insta_kill', 'archer_multi', 'archer_ult', 'archer_drain_en', 'mage_drain', 'mage_ult', 'warrior_ult'];
+            const attackTypes = ['atk_p', 'atk_m', 'atk_p_pierce', 'ult_berserk', 'debuff_ap', 'boss_insta_kill', 'archer_multi', 'archer_ult', 'archer_drain_en', 'mage_drain', 'mage_ult', 'warrior_ult', 'boss_pct_strike', 'boss_aoe_pct_strike'];
             if (target && target.id === me.id && attackTypes.includes(skill.type)) {
                 return alert('🚫 Action Intercepted: Destructive skills cannot be self-inflicted!');
             }
@@ -954,7 +976,35 @@
             let isDmgDealt = false;
             let expRewardMsg = "";
 
-            if (skill.type === 'boss_insta_kill') {
+            // 👑 核心修改點：Surprise Roll-Call Attack 改為最大生命值 10% 的百分比裁決傷害
+            if (skill.type === 'boss_pct_strike') {
+                let pctDmg = Math.floor(targetScaled.hp * 0.10);
+                if (pctDmg < 1) pctDmg = 1;
+                target.hp = Math.max(0, target.hp - pctDmg);
+                logText = `👑⚔️【PERCENTAGE JUDGEMENT】Dark Lord activated [${skill.name}] on【${target.name}】! Authority erosion inflicts -10% MAX HP damage (-${pctDmg} HP)!`;
+                isDmgDealt = true;
+            }
+            // 👑 核心修改點：Pop Quiz Flash Bomb 改為全班存活學生扣最大生命值 10% 的範圍打擊
+            else if (skill.type === 'boss_aoe_pct_strike') {
+                logText = `👑💥【CLASS-WIDE TEST BLAST】Dark Lord unleashed sudden Pop Quiz Flash Bomb! Shockwaves spread across the room, draining 10% Max HP from all living students!\n`;
+                Object.values(allPlayersData).forEach(p => {
+                    if (p && p.id !== 'teacher_boss' && p.hp > 0) {
+                        let pScaled = getScaledStats(p.job, p.level || 1);
+                        let aoePctDmg = Math.floor(pScaled.hp * 0.10);
+                        if (aoePctDmg < 1) aoePctDmg = 1;
+                        
+                        p.hp = Math.max(0, p.hp - aoePctDmg);
+                        logText += ` ➔【${p.name}】loses ${aoePctDmg} HP points! (${p.hp} HP remaining)\n`;
+                        
+                        if (p.hp <= 0) {
+                            logText += `  💀【${p.name}】collapsed under mental academic pressure!\n`;
+                        }
+                        database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
+                        saveToGlobalUser(p.userId, p);
+                    }
+                });
+            }
+            else if (skill.type === 'boss_insta_kill') {
                 target.hp = 0;
                 logText = `👑☠️【CRITICAL ERASURE】Dark Lord invoked absolute command line. Entity【${target.name}】obliterated to zero health instantly!`;
                 isDmgDealt = true;
@@ -964,7 +1014,7 @@
                 if (bossAoeCount === 1) {
                     logText = `👑⚡【CATACLYSM PHASE 1】Dark Lord initiated massive academic test constraints! Dark thunder rolled, all students lose 50% of current active health!\n`;
                     Object.values(allPlayersData).forEach(p => {
-                        if (p.id !== 'teacher_boss' && p.hp > 0) {
+                        if (p && p.id !== 'teacher_boss' && p.hp > 0) {
                             let dmg = Math.floor(p.hp * 0.5);
                             p.hp = Math.max(1, p.hp - dmg);
                             logText += ` ➔【${p.name}】takes ${dmg} mental stress disruption damage!\n`;
@@ -974,7 +1024,7 @@
                 } else {
                     logText = `👑💥【CATACLYSM PHASE 2: WIPE OUT】Pop-quizzes flood the arena! All living students suffer absolute instant total wipeout!\n`;
                     Object.values(allPlayersData).forEach(p => {
-                        if (p.id !== 'teacher_boss' && p.hp > 0) {
+                        if (p && p.id !== 'teacher_boss' && p.hp > 0) {
                             p.hp = 0;
                             logText += ` ➔【${p.name}】reduced to dust!\n`;
                             database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
@@ -985,7 +1035,7 @@
             } 
             else if (skill.type === 'charge') {
                 me.en = Math.min(myScaled.en, me.en + skill.value);
-                logText = `⚡【${me.name}】channeled [${skill.name}], recharging EN by +${skill.value} units.`;
+                logText = `⚡【${me.name}】focused under [${skill.name}], recovering EN pool elements by +${skill.value} units.`;
             } 
             else {
                 expRewardMsg = rewardExperiencePoints(me, 'hit');
@@ -1038,7 +1088,7 @@
                     target.en = Math.max(0, targetOldEn - drainAmount);
                     me.en = Math.min(myScaled.en, me.en + skill.value);
                     
-                    logText = `🔮🌀【${me.name}】channeled [${skill.name}] on【${target.name}術, dealing ${result.dmg} magic stress and siphoned ${drainAmount} EN to feed own reserve by +${skill.value} EN!`;
+                    logText = `🔮🌀【${me.name}】channeled [${skill.name}] on【${target.name}】, dealing ${result.dmg} magic stress and siphoned ${drainAmount} EN to feed own reserve by +${skill.value} EN!`;
                     isDmgDealt = true;
                 }
                 else if (skill.type === 'mage_transfer') {
@@ -1071,7 +1121,7 @@
                     if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + (hitCount * 4));
                     
                     if (skill.type === 'archer_ult') {
-                        logText = `🏹⛈️【${me.name}】triggers Ultimate Volley [${skill.name}]! Torrential arrows rain upon【${target.name}術 for ${hitCount} rapid impacts, stacking a total of ${totalDmg} Physical Damage ${critHits > 0 ? `(including ${critHits} CRITICAL triggers!!)` : ''}`;
+                        logText = `🏹⛈️【${me.name}】triggers Ultimate Volley [${skill.name}]! Torrential arrows rain upon【${target.name}】for ${hitCount} rapid impacts, stacking a total of ${totalDmg} Physical Damage ${critHits > 0 ? `(including ${critHits} CRITICAL triggers!!)` : ''}`;
                     } else {
                         logText = `🏹【${me.name}】launches [${skill.name}] at【${target.name}】, firing a swift ${hitCount}-shot stream dealing ${totalDmg} total points ${critHits > 0 ? `(with ${critHits} Crit hits)` : ''}`;
                     }
@@ -1091,10 +1141,7 @@
                 } 
                 else if (skill.type === 'heal') {
                     const wasDead = target.hp <= 0;
-                    if (wasDead && isBoss) {
-                        target.hp = skill.value;
-                        logText = `😇👑【SOVEREIGN RESURRECTION】Dark Lord blessed the fallen student【${target.name}】with maximum light elements, breaking death codes to fully revive entity!`;
-                    } else if (wasDead && !isBoss) {
+                    if (wasDead) {
                         alert("🚫 Intervention Denied: Student healing spells lack parameters to resurrect deceased squad members!");
                         return;
                     } else {
@@ -1102,6 +1149,18 @@
                         logText = `💖【${me.name}】applied [${skill.name}] upon【${target.name}】, restoring +${skill.value} Health Points.`;
                     }
                 } 
+                else if (skill.type === 'boss_capped_heal') {
+                    // 👑 核心修改點：Praise of Light 修正為完美回復到生命上限，嚴格限制不允許突破最高極限
+                    const wasDead = target.hp <= 0;
+                    const oldHp = target.hp;
+                    target.hp = targetScaled.hp; // 直接補滿至縮放後的最大上限值
+                    
+                    if (wasDead) {
+                        logText = `😇👑【SOVEREIGN RESURRECTION】Dark Lord blessed the fallen student【${target.name}】with maximum light elements, breaking death codes to fully revive entity back to 100% HP (${target.hp}/${targetScaled.hp})!`;
+                    } else {
+                        logText = `💖😇【HOLY CAP RESTORATION】Dark Lord invoked [Praise of Light], fully cleansing and restoring【${target.name}】health pool back to baseline limit limit: ${oldHp} HP ➔ 100% Full HP (${target.hp}/${targetScaled.hp}) without overflowing!`;
+                    }
+                }
                 else if (skill.type === 'ult_berserk') {
                     let rawDmg = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
                     let result = calculateDamageWithCrit(rawDmg, me.job);
@@ -1133,7 +1192,7 @@
             database.ref(`rooms/${currentRoom}/players/${me.id}`).set(me);
             if (me.id !== 'teacher_boss') saveToGlobalUser(me.userId, me);
 
-            if (target && target.id !== me.id) {
+            if (target && target.id !== me.id && skill.type !== 'boss_aoe_pct_strike') {
                 database.ref(`rooms/${currentRoom}/players/${target.id}`).set(target);
                 if (target.id !== 'teacher_boss') saveToGlobalUser(target.userId, target);
             }
@@ -1142,13 +1201,14 @@
         }
 
         function sendGlobalLog(text) {
+            if (!currentRoom) return;
             database.ref(`rooms/${currentRoom}/logs`).push(`[${new Date().toLocaleTimeString()}] ${text}`);
         }
 
         function bossDistributeAP() {
             Object.values(allPlayersData).forEach(p => {
-                if (p.hp > 0 && p.job !== 'Dark Lord') {
-                    const newAp = p.ap + 2;
+                if (p && p.hp > 0 && p.job !== 'Dark Lord') {
+                    const newAp = (p.ap || 0) + 2;
                     database.ref(`rooms/${currentRoom}/players/${p.id}/ap`).set(newAp);
                     saveToGlobalUser(p.userId, { ...p, ap: newAp });
                 }
@@ -1162,7 +1222,7 @@
                 return alert("Please input a valid logical number between 1 and 99!");
             }
             Object.values(allPlayersData).forEach(p => {
-                if (p.hp > 0 && p.job !== 'Dark Lord') {
+                if (p && p.hp > 0 && p.job !== 'Dark Lord') {
                     const newAp = (p.ap || 0) + inputVal;
                     database.ref(`rooms/${currentRoom}/players/${p.id}/ap`).set(newAp);
                     saveToGlobalUser(p.userId, { ...p, ap: newAp });
@@ -1174,7 +1234,7 @@
         function bossWipeAllAPToZero() {
             if (confirm("🚨 WARNING: Are you sure you want to forcibly clear ALL students Action Points (AP) down to 0?")) {
                 Object.values(allPlayersData).forEach(p => {
-                    if (p.job !== 'Dark Lord') {
+                    if (p && p.job !== 'Dark Lord') {
                         database.ref(`rooms/${currentRoom}/players/${p.id}/ap`).set(0);
                         saveToGlobalUser(p.userId, { ...p, ap: 0 });
                     }
@@ -1196,6 +1256,7 @@
             if(confirm("Are you sure you want to restore HP & EN to 100% and completely CLEAR all combat feed logs? (Levels, EXP, AP and AFK status will be preserved)")) {
                 bossAoeCount = 0; 
                 Object.values(allPlayersData).forEach(p => {
+                    if (!p) return;
                     const scaled = getScaledStats(p.job, p.level);
                     p.hp = scaled.hp;
                     p.en = (p.id === 'teacher_boss') ? 9999 : 0;
