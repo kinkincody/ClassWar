@@ -187,7 +187,7 @@
         <div class="grid-4">
             <div class="form-group">
                 <label>🏠 Room Number (Must match whole class):</label>
-                <input type="text" id="room-id" class="form-control" value="">
+                <input type="text" id="room-id" class="form-control" value="101">
             </div>
             <div class="form-group">
                 <label>👤 Student ID / Username:</label>
@@ -299,7 +299,7 @@
                     <span style="font-size: 11px; color: #f1c40f; font-weight: bold;">⚡ Teacher Single Student Immediate Overwrite Override</span>
                     <div class="ap-btn-group">
                         <button class="ap-mini-btn" style="background:#e74c3c;" onclick="bossQuickAdjustAP(-1)">-1 AP</button>
-                        <button class="ap-mini-btn" style="background:#2ecc71;" onclick="bossQuickAdjustAP(1)">+1 AP</button> 
+                        <button class="ap-mini-btn" style="background:#27ae60;" onclick="bossQuickAdjustAP(1)">+1 AP</button> 
                         <button class="ap-mini-btn" style="background:#3498db;" onclick="bossQuickAdjustAP(2)">+2 AP</button>
                         <button class="ap-mini-btn" style="background:#c0392b; border:1px solid #fff;" onclick="bossForceLogoutUser()">❌ Force Disconnect Student</button>
                     </div>
@@ -312,6 +312,33 @@
 
                 <label style="font-size:11px; color:#ccc; display:block; margin-bottom:3px;">✨ Skill Matrix Panel (All Student moves cost 1 AP / Intensity scales with EN cost):</label>
                 <div id="skills-container" class="skill-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="boss-modal" id="boss-modal">
+        <div class="modal-content" id="boss-modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #f1c40f; padding-bottom:10px;">
+                <h3 style="color:#2ecc71;">📊 Global Accounts Database Dashboard (Real-time Sync)</h3>
+                <button class="btn" onclick="closeBossModal()" style="background:#7f8c8d; padding:5px 15px; border:none; color:white;">❌ Close Window</button>
+            </div>
+            <p style="font-size:11px; color:#bbb; margin-top:5px;">Tip: Click "Save Changes" to update passwords, levels, or AP fields instantly in the cloud database.</p>
+            <div style="overflow-x:auto; margin-top:10px;">
+                <table class="monitor-table">
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Cloud Password</th>
+                            <th>Current Class</th>
+                            <th>Current Level (Lv)</th>
+                            <th>Active Action Points (AP)</th>
+                            <th>Core Admin Control Operations</th>
+                        </tr>
+                    </thead>
+                    <tbody id="monitor-tbody">
+                        <tr><td colspan="6" style="color:#888; text-align:center;">Synchronizing online database cloud streams...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -571,7 +598,6 @@
                     }
                 }
 
-                // 實時刷新學生端自己的隊伍倒數計時器
                 if (myId && myId !== 'teacher_boss' && allPlayersData[myId]) {
                     updateTeamTimerUIElement(allPlayersData[myId]);
                 }
@@ -579,7 +605,7 @@
                 renderPlayers();
                 populateTargets();
                 renderSkills();
-                renderTeacherMultiSelectGrid(); // 刷新勾選清單
+                renderTeacherMultiSelectGrid();
             });
 
             database.ref(`rooms/${currentRoom}/logs`).limitToLast(40).on('value', (snapshot) => {
@@ -654,7 +680,6 @@
             });
         }
 
-        // 🌟 新增：組隊冷卻判定與UI渲染
         function updateTeamTimerUIElement(me) {
             const display = document.getElementById('team-lock-timer-display');
             if (!display) return;
@@ -667,7 +692,7 @@
 
             const now = Date.now();
             const elapsed = now - (me.lastTeamChange || 0);
-            const cooldownWindow = 10 * 60 * 1000; // 10分鐘
+            const cooldownWindow = 10 * 60 * 1000;
 
             if (elapsed < cooldownWindow) {
                 const remainingSecs = Math.ceil((cooldownWindow - elapsed) / 1000);
@@ -705,7 +730,6 @@
             sendGlobalLog(`🛡️【TEAM ALIGNMENT】Student【${me.name}】has registered and deployed under the [${selectedTeam.toUpperCase()}] Alliance command framework!`);
         }
 
-        // 🌟 新增：魔王多選面板控制UI切換
         function toggleMultiSelectConsoleUI() {
             const p = document.getElementById('teacher-multi-select-panel');
             if (p.style.display === 'block') {
@@ -720,7 +744,6 @@
             const grid = document.getElementById('multi-check-grid');
             if (!grid) return;
             
-            // 記錄目前已經被打勾的 id 避免重新渲染時掉勾
             const savedCheckedIds = [];
             grid.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
                 savedCheckedIds.push(cb.value);
@@ -751,7 +774,6 @@
             grid.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = status);
         }
 
-        // 🌟 新增：執行多選 AP 增減
         function executeMultiTargetAP(direction) {
             const grid = document.getElementById('multi-check-grid');
             const valInput = document.getElementById('multi-ap-value');
@@ -775,7 +797,6 @@
             sendGlobalLog(`👑📢【MULTICAST AP INTERVENTION】Teacher executed mass modification on (${checkedBoxes.length}) entities: ${direction > 0 ? '+' : '-'}${delta} Action Points forced!`);
         }
 
-        // 🌟 新增：多選集體踢出
         function executeMultiTargetKick() {
             const grid = document.getElementById('multi-check-grid');
             const checkedBoxes = grid.querySelectorAll('input[type="checkbox"]:checked');
@@ -798,7 +819,6 @@
             }
         }
 
-        // 🌟 新增：單獨注入任意數值 AP 函數
         function bossInjectCustomAPToSelectedTarget() {
             const dropdown = document.getElementById('target-dropdown');
             const targetId = dropdown.value;
@@ -819,40 +839,7 @@
             sendGlobalLog(`👑⚡【TARGET POINT INJECTION】Teacher injected custom +${injectAmt} AP directly into elements for【${allPlayersData[targetId].name}】! (${currentAP} AP ➔ ${newAP} AP)`);
         }
 
-        function bossSubmitCustomMessage() {
-            if (myId !== 'teacher_boss' || !currentRoom) return;
-            const inputField = document.getElementById('boss-custom-chat-msg');
-            const msgText = inputField.value.trim();
-            if (!msgText) return;
-
-            sendGlobalLog(`👑【TEACHER ANNOUNCEMENT】Teacher Says: "${msgText}"`);
-            inputField.value = ""; 
-            inputField.focus();
-        }
-
-        function bossForceLogoutUser() {
-            const dropdown = document.getElementById('target-dropdown');
-            const targetId = dropdown.value;
-            if (!targetId || targetId === 'teacher_boss' || !allPlayersData[targetId]) return;
-
-            const studentName = allPlayersData[targetId].name || allPlayersData[targetId].userId;
-
-            if (confirm(`Are you sure you want to forcibly KICK student【${studentName}】out of this room arena? (Historical metadata will be preserved securely)`)) {
-                sendGlobalLog(`👑🛑【ADMIN BANISH】Teacher invoked supreme authorization to KICK student【${studentName}】out of this arena session! [Status: Disconnected & Removed from room, historical profile data preserved]`);
-                
-                database.ref(`rooms/${currentRoom}/players/${targetId}`).update({
-                    online: false,
-                    forceLogout: true
-                }).then(() => {
-                    database.ref(`rooms/${currentRoom}/players/${targetId}`).remove().then(() => {
-                        if (dropdown.value === targetId) dropdown.value = "";
-                        syncTargetCardEffects();
-                    });
-                });
-            }
-        }
-
-        // === MODAL CONTROL FUNCTIONS ===
+        // 🌟 完美修復與更新點：確保打開 Modal 視窗時執行 loadGlobalUsersMonitor() 同步渲染
         function openBossModal() {
             document.getElementById('boss-modal').style.display = 'flex';
             loadGlobalUsersMonitor();
@@ -882,8 +869,10 @@
             }
         });
 
+        // 🌟 完美修復點：補齊全域帳號即時控制台的數據流映射渲染程式碼
         function loadGlobalUsersMonitor() {
             const tbody = document.getElementById('monitor-tbody');
+            if (!tbody) return;
             tbody.innerHTML = `<tr><td colspan="6" style="color:#888; text-align:center;">Synchronizing database cloud streams...</td></tr>`;
             
             database.ref('secret_auth').once('value', (authSnap) => {
@@ -911,10 +900,10 @@
                             <td><input type="number" id="input-lv-${uid}" class="input-sm" value="${uInfo.level}"></td>
                             <td><b style="color:#3498db; font-size:13px;">${activeAp} AP</b></td>
                             <td>
-                                <button class="ap-mini-btn" style="background:#27ae60; padding:4px 8px;" onclick="bossSaveUserData('${uid}')">Save Changes</button>
-                                <button class="ap-mini-btn" style="background:#e67e22; padding:4px 6px;" onclick="bossTableAdjustAP('${uid}', 1)">+1 AP</button>
-                                <button class="ap-mini-btn" style="background:#555; padding:4px 6px;" onclick="bossTableAdjustAP('${uid}', -1)">-1 AP</button>
-                                <button onclick="bossResetUserLevel('${uid}')" style="display:inline-block; padding:2px 8px; font-size:11px; background:#e74c3c; border:none; color:white; border-radius:4px; cursor:pointer;">Reset Lv.1</button>
+                                <button class="ap-mini-btn" style="background:#27ae60; padding:4px 8px; border:none; border-radius:4px;" onclick="bossSaveUserData('${uid}')">Save Changes</button>
+                                <button class="ap-mini-btn" style="background:#e67e22; padding:4px 6px; border:none; border-radius:4px;" onclick="bossTableAdjustAP('${uid}', 1)">+1 AP</button>
+                                <button class="ap-mini-btn" style="background:#555; padding:4px 6px; border:none; border-radius:4px;" onclick="bossTableAdjustAP('${uid}', -1)">-1 AP</button>
+                                <button onclick="bossResetUserLevel('${uid}')" style="display:inline-block; padding:4px 8px; font-size:11px; background:#e74c3c; border:none; color:white; border-radius:4px; cursor:pointer;">Reset Lv.1</button>
                             </td>
                         `;
                         tbody.appendChild(tr);
@@ -947,7 +936,7 @@
         }
 
         function bossCardInlineAdjustAP(targetId, amount, event) {
-            if (event) event.stopPropagation(); // 阻止卡片點擊觸發選擇目標
+            if (event) event.stopPropagation();
             if (myId !== 'teacher_boss' || !allPlayersData[targetId]) return;
 
             const currentAP = allPlayersData[targetId].ap || 0;
@@ -1058,7 +1047,6 @@
                     }
                 };
 
-                // 🌟 新增：根據隊伍渲染特定的高亮徽章顏色
                 let teamBadgeHtml = '';
                 if (player.team && player.team !== 'unaligned' && player.id !== 'teacher_boss') {
                     let color = 'var(--primary)';
@@ -1379,7 +1367,7 @@
                     target.hp = Math.max(0, target.hp - result.dmg);
                     if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + 10);
                     
-                    logText = `${result.isCrit ? '💥💥【ARMOR CRIT DEVASTATION!!】' : '🛡️⚔️'}【${me.name}】executes [${skill.name}] on【${target.name}】, ignoring 50% DEF to hammer ${result.dmg} pierce damage!`;
+                    logText = `${result.isCrit ? '💥💥【ARMOR CRIT DEVASTATION!!】' : '🛡️⚔️'}【${me.name}】executes [${skill.name}] on【${target.name}術, ignoring 50% DEF to hammer ${result.dmg} pierce damage!`;
                     isDmgDealt = true;
                 }
                 else if (skill.type === 'warrior_ult') {
@@ -1469,7 +1457,7 @@
                         return;
                     } else {
                         target.hp = Math.min(targetScaled.hp, target.hp + skill.value);
-                        logText = `💖【${me.name}】applied [${skill.name}] upon【${target.name}】, restoring +${skill.value} Health Points.`;
+                        logText = `💖【${me.name}】applied [${skill.name}] upon【${target.name}術, restoring +${skill.value} Health Points.`;
                     }
                 } 
                 else if (skill.type === 'boss_capped_heal') {
@@ -1541,7 +1529,6 @@
             sendGlobalLog(`👑📢【BATCH AP INJECTION】Dark Lord granted +${inputVal} AP to all alive students in this arena!`);
         }
 
-        // 🌟 優化點：確保全體清空 AP 到 0 在新架構下完美執行
         function bossWipeAllAPToZero() {
             if (confirm("🚨 WARNING: Are you sure you want to forcibly clear ALL students Action Points (AP) down to 0?")) {
                 Object.values(allPlayersData).forEach(p => {
