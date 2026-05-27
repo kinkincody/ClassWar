@@ -187,7 +187,7 @@
         <div class="grid-4">
             <div class="form-group">
                 <label>🏠 Room Number (Must match whole class):</label>
-                <input type="text" id="room-id" class="form-control" value="101">
+                <input type="text" id="room-id" class="form-control" value="">
             </div>
             <div class="form-group">
                 <label>👤 Student ID / Username:</label>
@@ -320,7 +320,7 @@
         <div class="modal-content" id="boss-modal-content">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #f1c40f; padding-bottom:10px;">
                 <h3 style="color:#2ecc71;">📊 Global Accounts Database Dashboard (Real-time Sync)</h3>
-                <button class="btn" onclick="closeBossModal()" style="background:#7f8c8d; padding:5px 15px; border:none; color:white;">❌ Close Window</button>
+                <button class="btn" onclick="closeBossModal()" style="background:#7f8c8d; padding:5px 15px; border:none; color:white; font-size:12px;">❌ Close Window</button>
             </div>
             <p style="font-size:11px; color:#bbb; margin-top:5px;">Tip: Click "Save Changes" to update passwords, levels, or AP fields instantly in the cloud database.</p>
             <div style="overflow-x:auto; margin-top:10px;">
@@ -519,7 +519,7 @@
                 const myPlayerRef = database.ref(`rooms/${currentRoom}/players/${myId}`);
                 
                 if (inputId === 'Teacher') {
-                    // Dark Lord: No remove or offline update on disconnect
+                    // Dark Lord
                 } else {
                     myPlayerRef.onDisconnect().update({ online: false });
                 }
@@ -839,29 +839,34 @@
             sendGlobalLog(`👑⚡【TARGET POINT INJECTION】Teacher injected custom +${injectAmt} AP directly into elements for【${allPlayersData[targetId].name}】! (${currentAP} AP ➔ ${newAP} AP)`);
         }
 
-        // 🌟 完美修復與更新點：確保打開 Modal 視窗時執行 loadGlobalUsersMonitor() 同步渲染
+        // 🌟 徹底修復：雲端管理彈窗打開與關閉動作綁定函數
         function openBossModal() {
-            document.getElementById('boss-modal').style.display = 'flex';
-            loadGlobalUsersMonitor();
+            const modal = document.getElementById('boss-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+                loadGlobalUsersMonitor(); // 拉開的瞬間強行觸發高乾淨非同步渲染
+            }
         }
 
         function closeBossModal() {
-            document.getElementById('boss-modal').style.display = 'none';
+            const modal = document.getElementById('boss-modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
         }
 
+        // 🌟 徹底修復：為 Modal 加載鍵盤 Esc 與半透明黑色遮罩點擊關閉事件監聽器
         document.addEventListener('DOMContentLoaded', () => {
             document.addEventListener('keydown', (event) => {
                 if (event.key === 'Escape' || event.key === 'Esc') {
-                    const modal = document.getElementById('boss-modal');
-                    if (modal && modal.style.display === 'flex') {
-                        closeBossModal();
-                    }
+                    closeBossModal();
                 }
             });
 
             const bossModalOverlay = document.getElementById('boss-modal');
             if (bossModalOverlay) {
                 bossModalOverlay.addEventListener('click', (event) => {
+                    // 只有在精確點擊黑色半透明遮罩背景時才關閉，點選內部視窗主體不關閉
                     if (event.target === bossModalOverlay) {
                         closeBossModal();
                     }
@@ -869,46 +874,58 @@
             }
         });
 
-        // 🌟 完美修復點：補齊全域帳號即時控制台的數據流映射渲染程式碼
+        // 🌟 徹底修復：解決數據庫渲染失效漏洞。將獨立的秘密驗證目錄（secret_auth）與玩家目錄（global_users）安全分離並映射
         function loadGlobalUsersMonitor() {
             const tbody = document.getElementById('monitor-tbody');
             if (!tbody) return;
+            
             tbody.innerHTML = `<tr><td colspan="6" style="color:#888; text-align:center;">Synchronizing database cloud streams...</td></tr>`;
             
-            database.ref('secret_auth').once('value', (authSnap) => {
+            database.ref('secret_auth').once('value').then((authSnap) => {
                 const auths = authSnap.val() || {};
-                database.ref('global_users').once('value', (userSnap) => {
+                
+                database.ref('global_users').once('value').then((userSnap) => {
                     const users = userSnap.val() || {};
-                    tbody.innerHTML = '';
+                    tbody.innerHTML = ''; // 清空加載文字
                     
-                    Object.keys(auths).forEach(uid => {
-                        if (uid === 'Teacher') return;
+                    const sortedUserIds = Object.keys(auths).filter(uid => uid !== 'Teacher').sort();
+                    
+                    if (sortedUserIds.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="6" style="color:#aaa; text-align:center;">No students registered in database directory registry.</td></tr>`;
+                        return;
+                    }
+
+                    sortedUserIds.forEach(uid => {
                         const pwd = auths[uid] || 'N/A';
-                        const uInfo = users[uid] || { job:'Warrior', level:1, ap:0 };
+                        const uInfo = users[uid] || { job: 'Warrior', level: 1, ap: 0 };
                         
                         const sid = 'student_' + uid;
-                        let activeAp = uInfo.ap;
-                        if (allPlayersData[sid]) {
+                        let activeAp = uInfo.ap !== undefined ? uInfo.ap : 0;
+                        if (allPlayersData[sid] && allPlayersData[sid].ap !== undefined) {
                             activeAp = allPlayersData[sid].ap;
                         }
 
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-                            <td><b>${uid}</b></td>
+                            <td><b style="color:#fff;">${uid}</b></td>
                             <td><input type="text" id="input-pwd-${uid}" class="input-pwd" value="${pwd}"></td>
-                            <td><span style="color:#aaa;">${uInfo.job}</span></td>
-                            <td><input type="number" id="input-lv-${uid}" class="input-sm" value="${uInfo.level}"></td>
+                            <td><span style="color:#ccc;">${uInfo.job || 'Warrior'}</span></td>
+                            <td><input type="number" id="input-lv-${uid}" class="input-sm" value="${uInfo.level || 1}"></td>
                             <td><b style="color:#3498db; font-size:13px;">${activeAp} AP</b></td>
                             <td>
-                                <button class="ap-mini-btn" style="background:#27ae60; padding:4px 8px; border:none; border-radius:4px;" onclick="bossSaveUserData('${uid}')">Save Changes</button>
-                                <button class="ap-mini-btn" style="background:#e67e22; padding:4px 6px; border:none; border-radius:4px;" onclick="bossTableAdjustAP('${uid}', 1)">+1 AP</button>
-                                <button class="ap-mini-btn" style="background:#555; padding:4px 6px; border:none; border-radius:4px;" onclick="bossTableAdjustAP('${uid}', -1)">-1 AP</button>
-                                <button onclick="bossResetUserLevel('${uid}')" style="display:inline-block; padding:4px 8px; font-size:11px; background:#e74c3c; border:none; color:white; border-radius:4px; cursor:pointer;">Reset Lv.1</button>
+                                <button class="ap-mini-btn" style="background:#27ae60; padding:4px 8px; border:none; border-radius:4px; display:inline-block;" onclick="bossSaveUserData('${uid}')">Save Changes</button>
+                                <button class="ap-mini-btn" style="background:#e67e22; padding:4px 6px; border:none; border-radius:4px; display:inline-block;" onclick="bossTableAdjustAP('${uid}', 1)">+1 AP</button>
+                                <button class="ap-mini-btn" style="background:#555; padding:4px 6px; border:none; border-radius:4px; display:inline-block;" onclick="bossTableAdjustAP('${uid}', -1)">-1 AP</button>
+                                <button onclick="bossResetUserLevel('${uid}')" style="display:inline-block; padding:4px 8px; font-size:11px; background:#e74c3c; border:none; color:white; border-radius:4px; cursor:pointer; font-weight:bold;">Reset Lv.1</button>
                             </td>
                         `;
                         tbody.appendChild(tr);
                     });
+                }).catch(err => {
+                    tbody.innerHTML = `<tr><td colspan="6" style="color:#ff3333; text-align:center;">Error mapping global_users: ${err.message}</td></tr>`;
                 });
+            }).catch(err => {
+                tbody.innerHTML = `<tr><td colspan="6" style="color:#ff3333; text-align:center;">Error mapping secret_auth: ${err.message}</td></tr>`;
             });
         }
 
@@ -997,6 +1014,39 @@
                     }
                     sendGlobalLog(`👑 🛑【DATABASE WIPEOUT】Teacher hard-reset student metadata profile【${targetUserId}】 back to baseline Level 1.`);
                     loadGlobalUsersMonitor();
+                });
+            }
+        }
+
+        function bossSubmitCustomMessage() {
+            if (myId !== 'teacher_boss' || !currentRoom) return;
+            const inputField = document.getElementById('boss-custom-chat-msg');
+            const msgText = inputField.value.trim();
+            if (!msgText) return;
+
+            sendGlobalLog(`👑【TEACHER ANNOUNCEMENT】Teacher Says: "${msgText}"`);
+            inputField.value = ""; 
+            inputField.focus();
+        }
+
+        function bossForceLogoutUser() {
+            const dropdown = document.getElementById('target-dropdown');
+            const targetId = dropdown.value;
+            if (!targetId || targetId === 'teacher_boss' || !allPlayersData[targetId]) return;
+
+            const studentName = allPlayersData[targetId].name || allPlayersData[targetId].userId;
+
+            if (confirm(`Are you sure you want to forcibly KICK student【${studentName}】out of this room arena? (Historical metadata will be preserved securely)`)) {
+                sendGlobalLog(`👑🛑【ADMIN BANISH】Teacher invoked supreme authorization to KICK student【${studentName}】out of this arena session! [Status: Disconnected & Removed from room, historical profile data preserved]`);
+                
+                database.ref(`rooms/${currentRoom}/players/${targetId}`).update({
+                    online: false,
+                    forceLogout: true
+                }).then(() => {
+                    database.ref(`rooms/${currentRoom}/players/${targetId}`).remove().then(() => {
+                        if (dropdown.value === targetId) dropdown.value = "";
+                        syncTargetCardEffects();
+                    });
                 });
             }
         }
@@ -1399,7 +1449,7 @@
                     target.en = Math.max(0, targetOldEn - drainAmount);
                     me.en = Math.min(myScaled.en, me.en + skill.value);
                     
-                    logText = `🔮🌀【${me.name}】channeled [${skill.name}] on【${target.name}】, dealing ${result.dmg} magic stress and siphoned ${drainAmount} EN to feed own reserve by +${skill.value} EN!`;
+                    logText = `🔮🌀【${me.name}】channeled [${skill.name}] on【${target.name}術, dealing ${result.dmg} magic stress and siphoned ${drainAmount} EN to feed own reserve by +${skill.value} EN!`;
                     isDmgDealt = true;
                 }
                 else if (skill.type === 'mage_transfer') {
@@ -1457,7 +1507,7 @@
                         return;
                     } else {
                         target.hp = Math.min(targetScaled.hp, target.hp + skill.value);
-                        logText = `💖【${me.name}】applied [${skill.name}] upon【${target.name}術, restoring +${skill.value} Health Points.`;
+                        logText = `💖【${me.name}】applied [${skill.name}] upon【${target.name}】, restoring +${skill.value} Health Points.`;
                     }
                 } 
                 else if (skill.type === 'boss_capped_heal') {
