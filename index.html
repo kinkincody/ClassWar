@@ -2,1625 +2,1569 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClassWar - Multi-Device Network Battle System</title>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Chrono Arena RPG - God System</title>
     <style>
-        :root {
-            --primary: #3498db;
-            --warrior: #e74c3c;
-            --mage: #9b59b6;
-            --berserker: #d35400;
-            --archer: #2ecc71;
-            --boss: #2c3e50;
-            --dark: #1a1a1a;
-            --light: #f5f6fa;
-            --teamA: #e74c3c;
-            --teamB: #3498db;
-            --teamC: #9b59b6;
+        :root { 
+            --boy: #00d2ff; --girl: #ff007f; --accent: #f1c40f; 
+            --bg: #0a0b16; --card-bg: rgba(25, 28, 45, 0.95);
+            --event: #ff9f43; --heal: #2ecc71; --info: #00ffcc; --dmg: #ff4d4d;
+            --rock: #95a5a6;
+            --purple: #9b59b6;
+            --green: #2ecc71;
+            --blood: #bdc3c7;
         }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #121212; color: var(--light); padding: 15px; }
         
-        header {
-            text-align: center; padding: 10px; border-radius: 8px; margin-bottom: 15px;
-            background: linear-gradient(135deg, #2c3e50, #000); border: 1px solid #333;
-        }
-        h1 { font-size: 22px; color: #fff; }
-        .room-badge { background: #e67e22; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-left: 10px; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
-        /* Login Panel */
-        .login-panel { background: #1e1e1e; border: 2px solid #444; border-radius: 12px; padding: 20px; margin-bottom: 15px; }
-        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 13px; margin-bottom: 5px; color: #ccc; }
-        .form-control { width: 100%; padding: 10px; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg); color: white; margin: 0; padding: 0;
+            height: 100vh; width: 100vw; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* God System Layout */
+        #god-system {
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 20px; z-index: 1500; width: 95%; justify-content: center;
+        }
+        .god-group { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
+        .god-btn {
+            padding: 4px 2px; font-size: 0.6rem; font-weight: bold; border-radius: 4px;
+            border: 1px solid #777; background: #1a1c2c; color: #fff; cursor: pointer;
+            min-width: 70px; text-align: center;
+        }
+        .god-btn:active { transform: scale(0.95); }
+        .btn-fire { border-color: #ff4d4d; color: #ff4d4d; }
+        .btn-mercy { border-color: #2ecc71; color: #2ecc71; }
+        .btn-rage { border-color: #f1c40f; color: #f1c40f; }
+        .btn-hate { border-color: #9b59b6; color: #9b59b6; }
+
+        /* New Moon Event UI System */
+        #event-trigger-panel {
+            position: absolute; top: 10px; left: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 4px;
+        }
+        .event-btn {
+            font-size: 0.65rem; padding: 6px 10px; border-radius: 4px; border: 1px solid var(--event);
+            background: #1a1c2c; color: var(--event); font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .event-btn:active { transform: scale(0.9); }
         
-        /* Battlefield Layout */
-        .battlefield { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 220px; }
-        @media(min-width: 992px) { .battlefield { grid-template-columns: 2fr 1fr; } }
+        .info-panel-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+        }
+        .info-content {
+            background: var(--card-bg); border: 2px solid var(--event); border-radius: 15px; width: 100%; max-width: 600px; max-height: 85vh; overflow-y: auto; padding: 20px; box-shadow: 0 0 20px rgba(255, 159, 67, 0.3);
+        }
+        .info-content h2 { color: var(--event); margin-top: 0; text-align: center; font-size: 1.4rem; border-bottom: 2px solid var(--event); padding-bottom: 8px;}
+        .event-list-desc { list-style: none; padding: 0; margin: 0; font-size: 0.8rem; line-height: 1.5; }
+        .event-list-desc li { margin-bottom: 12px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+        .event-list-desc strong { color: var(--accent); display: block; font-size: 0.9rem; margin-bottom: 2px; }
+        .event-en-desc { color: #aaa; font-style: italic; font-size: 0.75rem; margin-top: 2px; display: block; }
 
-        /* Player Lists & Cards */
-        .players-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-        .card { background: #1e1e1e; border-radius: 12px; padding: 15px; border: 2px solid #333; position: relative; cursor: pointer; transition: transform 0.1s, border-color 0.2s; }
-        .card:hover { border-color: #555; transform: translateY(-2px); }
-        .card.is-me { border-color: var(--primary); box-shadow: 0 0 12px rgba(52, 152, 219, 0.3); }
-        .card.is-me::after { content: "🎯 MY CHARACTER"; position: absolute; top: -10px; right: 10px; background: var(--primary); font-size: 10px; padding: 2px 6px; border-radius: 4px; z-index: 10; }
-        .card.is-targeted { border-color: #f1c40f !important; box-shadow: 0 0 15px rgba(241, 196, 15, 0.6); }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; pointer-events: none; }
-        .role-tag { padding: 2px 6px; border-radius: 20px; font-size: 11px; font-weight: bold; color: #fff; }
-        .level-badge { background: #f1c40f; color: #000; font-weight: bold; padding: 2px 5px; border-radius: 4px; font-size: 11px; }
-        .team-badge-ui { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: #fff; text-transform: uppercase; margin-right: 4px; }
+        #save-system {
+            position: absolute; top: 10px; right: 10px; z-index: 4000;
+            display: flex; gap: 5px; flex-direction: column; align-items: flex-end;
+        }
+        .save-row { display: flex; gap: 4px; align-items: center; font-size: 0.7rem; }
+        .save-btn { 
+            font-size: 0.65rem; padding: 4px 8px; border-radius: 4px; border: 1px solid #555;
+            background: #1a1c2c; color: #fff; cursor: pointer; transition: 0.2s;
+        }
+        .save-btn:active { transform: scale(0.9); }
+        .btn-s { border-color: var(--heal); color: var(--heal); }
+        .btn-l { border-color: var(--info); color: var(--info); }
+
+        /* Action Counter UI */
+        .ap-container { 
+            display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 4px;
+        }
+        .ap-display { font-size: 1.8rem; font-weight: 900; color: var(--accent); min-width: 45px; text-align: center; }
+        .name-row { display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
         
-        .bg-warrior { background-color: var(--warrior); }
-        .bg-mage { background-color: var(--mage); }
-        .bg-berserker { background-color: var(--berserker); }
-        .bg-archer { background-color: var(--archer); }
-        .bg-boss { background-color: var(--boss); border: 1px solid #f1c40f; }
+        .ap-btn {
+            width: 42px !important; 
+            height: 12px !important; 
+            min-height: 12px !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: 1px solid #666 !important;
+            background: #2a2d3e;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .ap-btn:active { background: var(--accent); transform: scale(0.95); }
+        .ap-btn span { 
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1;
+            margin-top: -2px; 
+            pointer-events: none;
+            display: inline-block;
+        }
 
-        /* Card Inline Quick Action AP Buttons for Teacher */
-        .card-inline-ap-box { display: none; margin-top: 8px; gap: 6px; justify-content: flex-end; position: relative; z-index: 50; }
-        .inline-ap-btn { padding: 3px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; border: none; cursor: pointer; color: white; transition: background 0.1s; }
-
-        /* Status Bars */
-        .bar-container { margin: 6px 0; font-size: 11px; pointer-events: none; }
-        .bar-label { display: flex; justify-content: space-between; margin-bottom: 2px; }
-        .bar { height: 10px; background: #333; border-radius: 5px; overflow: hidden; }
-        .fill { height: 100%; transition: width 0.3s ease; }
-        .fill-hp { background: linear-gradient(90deg, #ff4d4d, #ff0000); }
-        .fill-en { background: linear-gradient(90deg, #f1c40f, #f39c12); }
-        .fill-exp { background: linear-gradient(90deg, #2ecc71, #27ae60); }
-        .ap-badge { background: #2980b9; color: white; padding: 1px 5px; border-radius: 4px; font-weight: bold; }
-
-        /* Control Panel */
-        .control-panel { background: #252525; border-radius: 12px; padding: 15px; border: 1px solid #444; position: relative; }
-        .section-title { font-size: 15px; margin-bottom: 10px; color: #fff; border-left: 4px solid var(--primary); padding-left: 8px; }
-        .skill-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 10px; margin-bottom: 15px; }
+        #fx-layer { position: absolute; inset: 0; pointer-events: none; z-index: 800; overflow: hidden; }
+        .fx-slash { position: absolute; width: 150px; height: 6px; background: white; box-shadow: 0 0 15px white; animation: slash 0.3s ease-out forwards; }
+        @keyframes slash { 0% { transform: scaleX(0) rotate(-45deg); opacity: 1; } 100% { transform: scaleX(1.5) rotate(-45deg); opacity: 0; } }
         
-        .btn { 
-            background: #333; color: #fff; border: 1px solid #555; padding: 12px; border-radius: 8px; 
-            cursor: pointer; font-size: 13px; font-weight: bold; transition: all 0.1s;
-            display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
-            text-align: left;
-        }
-        .btn:active { transform: scale(0.98); }
-        .btn:disabled { 
-            background: #151515; color: #444; border-color: #222; cursor: not-allowed; filter: grayscale(1) opacity(0.35); 
-        }
-        .btn-header { display: flex; justify-content: space-between; width: 100%; align-items: center; margin-bottom: 3px; }
-        .skill-desc { font-size: 11px; color: #aaa; font-weight: normal; margin-top: 2px; line-height: 1.3; }
-        .btn-ult { background: linear-gradient(135deg, #8e44ad, #c0392b); border: 1px solid #f1c40f; }
-        .target-select { width: 100%; padding: 8px; background: #333; color: white; border-radius: 8px; margin-bottom: 10px; }
+        .fx-bolt { position: absolute; width: 30px; height: 30px; background: #a29bfe; border-radius: 50%; box-shadow: 0 0 25px #6c5ce7; animation: bolt 0.4s ease-out forwards; }
+        @keyframes bolt { 0% { transform: scale(0); opacity: 1; } 100% { transform: scale(3.5); opacity: 0; } }
 
-        /* Team Selector Controls */
-        .team-selector-box { background: #1e1e1e; padding: 10px; border-radius: 8px; border: 1px solid #333; margin-bottom: 15px; }
-        .team-btn-row { display: flex; gap: 8px; margin-top: 6px; }
-        .team-select-btn { flex: 1; padding: 8px; font-size: 12px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; color: white; text-align: center; }
+        .fx-arrow { position: absolute; font-size: 2rem; z-index: 850; animation: arrowFly 0.3s linear forwards; }
+        @keyframes arrowFly { 0% { transform: translate(var(--sx), var(--sy)) rotate(var(--rot)); opacity: 1; } 100% { transform: translate(var(--ex), var(--ey)) rotate(var(--rot)); opacity: 0; } }
 
-        /* Logout Button Style */
-        .logout-btn {
-            position: absolute; top: 12px; right: 12px; background: #c0392b; border: 1px solid #e74c3c;
-            color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold;
-        }
-        .logout-btn:hover { background: #e74c3c; }
+        .shake { animation: shake 0.2s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(6px, 6px); } 50% { transform: translate(-6px, -6px); } 75% { transform: translate(6px, -6px); } }
 
-        /* Fixed Bottom Log Layout */
-        .fixed-bottom-log-panel {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 180px;
-            background: linear-gradient(0deg, #000 75%, #181818 100%);
-            border-top: 3px solid var(--primary); z-index: 999; padding: 12px 20px;
-            box-shadow: 0 -5px 25px rgba(0,0,0,0.8);
+        /* Interactive Split-Panel Selection Screen */
+        #selection-screen { 
+            position: absolute; inset: 0; background: var(--bg); z-index: 3000; 
+            display: flex; flex-direction: column; align-items: center; padding: 10px; padding-top: 50px;
         }
-        .log-box { 
-            background: transparent; height: 100%; overflow-y: auto; 
-            font-family: monospace; font-size: 12px; color: #00ff00; border: none; 
+        .select-layout {
+            display: flex; width: 100%; max-width: 950px; height: calc(100vh - 130px); 
+            gap: 15px; background: rgba(15, 17, 28, 0.9); border-radius: 15px; padding: 10px; border: 1px solid #333;
         }
-        .log-entry { margin-bottom: 4px; line-height: 1.4; }
-        .log-alert-red { color: #ff3333 !important; font-weight: bold; }
-        .log-teacher-msg { color: #ffff33 !important; font-weight: bold; } 
+        /* Left list column */
+        .job-list-sidebar {
+            width: 35%; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; 
+            padding-right: 5px; border-right: 1px solid #222;
+        }
+        .job-list-item {
+            background: #16192b; border: 1px solid #444; padding: 10px; border-radius: 8px;
+            text-align: left; cursor: pointer; transition: 0.2s; font-size: 0.9rem; font-weight: bold;
+            display: flex; align-items: center; gap: 8px; color: #fff;
+        }
+        .job-list-item:hover, .job-list-item.selected {
+            background: #232742; border-color: var(--accent); box-shadow: 0 0 5px rgba(241, 196, 15, 0.4);
+        }
+        /* Right detail column */
+        .job-detail-panel {
+            width: 65%; display: flex; flex-direction: column; overflow-y: auto; padding: 10px;
+            background: #0f111c; border-radius: 10px; border: 1px solid #222; position: relative;
+        }
+        .detail-header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 8px; margin-bottom: 12px; }
+        .detail-title { font-size: 1.5rem; color: var(--accent); margin: 0; font-weight: 900; }
+        .detail-stats { font-size: 0.9rem; color: var(--info); font-weight: bold; margin-top: 4px; }
+        .detail-section-title { font-size: 0.95rem; color: var(--event); font-weight: bold; margin: 8px 0 4px 0; border-left: 3px solid var(--event); padding-left: 6px; }
         
-        /* Teacher Admin Panel */
-        .boss-panel { background: #2c3e50; border: 2px solid #f1c40f; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; }
-        .boss-control-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
-        .input-ap-num { width: 60px; padding: 8px; background: #222; border: 1px solid #f1c40f; color: white; border-radius: 6px; font-weight: bold; text-align: center; }
+        .detail-passive { background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px; font-size: 0.8rem; color: #ddd; line-height: 1.4; border: 1px dashed #444; }
+        .detail-skills-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+        .detail-skill-item { background: rgba(255,255,255,0.01); border: 1px solid #2a2d3e; padding: 12px 6px; border-radius: 6px; font-size: 0.78rem; }
+        .detail-skill-item strong { color: #fff; font-size: 0.85rem; }
+        .detail-skill-cost { color: var(--info); font-weight: bold; float: right; }
+        .detail-skill-desc { color: #b1b5c4; margin-top: 4px; line-height: 1.4; font-size: 0.8rem; }
         
-        /* Teacher chat box */
-        .boss-chat-input-box { display: flex; gap: 8px; width: 100%; max-width: 600px; margin-top: 5px; }
-        .input-boss-msg { flex: 1; padding: 8px 12px; background: #111; border: 1px solid #2ecc71; color: white; border-radius: 6px; font-size: 13px; }
-
-        /* Multi-Select Panel Trigger Styles */
-        .multi-select-container { display: none; background: #1a1a1a; border: 1px solid #e67e22; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
-        .multi-grid-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin: 10px 0; }
-        .multi-check-label { display: flex; align-items: center; gap: 6px; font-size: 12px; background: #2b2b2b; padding: 6px; border-radius: 4px; cursor: pointer; overflow: hidden; text-overflow: ellipsis; }
-
-        /* Teacher Data Modal */
-        .boss-modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center;
+        .btn-confirm-selection {
+            width: 100%; margin-top: auto; padding: 12px; background: linear-gradient(90deg, #2ecc71, #27ae60);
+            color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3); transition: 0.2s;
         }
-        .modal-content {
-            background: #1a252f; border: 2px solid #f1c40f; border-radius: 15px;
-            width: 90%; max-width: 900px; max-height: 85vh; padding: 20px; overflow-y: auto; box-shadow: 0 0 30px rgba(0,0,0,0.5);
-        }
-        .monitor-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; margin-top: 10px; color: #fff; }
-        .monitor-table th, .monitor-table td { padding: 8px; border-bottom: 1px solid #34495e; }
-        .monitor-table th { background: #2c3e50; color: #f1c40f; position: sticky; top: 0; }
-        .input-sm { width: 55px; padding: 4px; background: #333; border: 1px solid #555; color: white; border-radius: 4px; text-align: center; font-weight: bold; }
-        .input-pwd { width: 90px; padding: 4px; background: #333; border: 1px solid #555; color: #2ecc71; border-radius: 4px; font-family: monospace; }
+        .btn-confirm-selection:active { transform: scale(0.98); filter: brightness(0.9); }
+
+        .arena { display: none; width: 100%; height: 100%; padding: 10px; gap: 10px; padding-top: 60px; }
+        .card { flex: 1; background: var(--card-bg); border-radius: 20px; padding: 10px; display: flex; flex-direction: column; position: relative; border: 1px solid #333; overflow: hidden; }
         
-        /* Fixed Bottom Death Lock Overlay */
-        .death-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.95); z-index: 99999; flex-direction: column;
-            align-items: center; justify-content: center; color: #ff3333; pointer-events: auto;
+        .hp-container { width: 100%; height: 45px; background: #000; border-radius: 12px; overflow: hidden; position: relative; margin: 8px 0; border: 2px solid #555; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        .hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff4d4d, #f9ca24); transition: 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+        .hp-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 2.2rem; text-shadow: 2px 2px 4px #000; letter-spacing: 1px; color: #fff; }
+        
+        .en-row { display: flex; gap: 4px; justify-content: center; margin-bottom: 10px; }
+        .en-dot { width: 12px; height: 12px; border-radius: 50%; background: #222; border: 1px solid #444; }
+        .en-dot.active { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+        /* Adjusted Layout for pure English Descriptions */
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex-grow: 1; overflow-y: auto; padding-right: 4px; }
+        
+        .card button { 
+            background: #2a2d3e; color: white; border: 1px solid #555; border-radius: 12px; 
+            padding: 12px 6px; display: flex; flex-direction: column; align-items: center; 
+            justify-content: flex-start; height: auto; min-height: 180px; transition: filter 0.2s, background 0.2s;
+            cursor: pointer;
         }
-        .death-text {
-            font-size: 56px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase;
-            text-shadow: 0 0 25px rgba(255, 0, 0, 0.8); animation: pulse 2s infinite;
-            font-family: 'Courier New', Courier, monospace;
+        .card button:active { background: #3d415e; }
+        .card button:disabled { filter: brightness(0.3) grayscale(0.8); opacity: 0.6; cursor: not-allowed; }
+
+        .btn-ult { grid-column: span 2; background: linear-gradient(45deg, #4834d4, #686de0); border: 1px solid #a29bfe; min-height: 200px !important; }
+        
+        .sk-name { font-size: 1.8rem; font-weight: 900; color: #fff; margin-bottom: 4px; text-shadow: 2px 2px 0px #000; line-height: 1.1; text-align: center; }
+        .sk-cost { font-size: 1.3rem; color: var(--info); font-weight: 800; margin-bottom: 4px; }
+        .sk-val { font-size: 1.45rem; color: var(--dmg); font-weight: 900; margin-bottom: 6px; }
+        .sk-effect { font-size: 1.05rem; color: #b1b5c4; text-align: center; line-height: 1.3; font-weight: 600; padding: 0 5px; width: 100%; word-break: break-word; }
+
+        /* Status view feature styling */
+        .status-tracker-row {
+            font-size: 0.75rem; color: var(--accent); height: 18px; text-align: center; font-weight: bold; cursor: pointer; transition: background 0.2s; border-radius: 4px;
         }
-        .death-subtext {
-            font-size: 14px; color: #888; margin-top: 15px; letter-spacing: 1px;
+        .status-tracker-row:hover { background: rgba(255, 255, 255, 0.1); }
+
+        .dmg-float { position: absolute; font-weight: 900; pointer-events: none; animation: pop 0.8s ease-out forwards; z-index: 900; font-size: 2.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        @keyframes pop { 0% { opacity: 0; transform: translateY(0) scale(0.5); } 20% { opacity: 1; transform: translateY(-20px) scale(1.1); } 100% { opacity: 0; transform: translateY(-100px) scale(1); } }
+        
+        .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; }
+
+        /* ---------------- 角力系統樣式（分離位置、移除 transition 改為 0 延遲） ---------------- */
+        #wrestling-system-panel {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 2100; display: none;
         }
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.9; }
-            50% { transform: scale(1.05); opacity: 1; text-shadow: 0 0 40px rgba(255, 0, 0, 1); }
-            100% { transform: scale(1); opacity: 0.9; }
+        .wrestle-main-btn {
+            font-size: 0.85rem; padding: 10px 20px; border-radius: 6px; border: 2px solid #e67e22;
+            background: #1a1c2c; color: #e67e22; font-weight: bold; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 0 12px rgba(230, 126, 34, 0.5);
+        }
+        .wrestle-main-btn:active { transform: scale(0.9); }
+
+        .wrestle-overlay {
+            position: absolute; inset: 0; background: rgba(10, 11, 22, 0.95); z-index: 8000; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+        }
+        .wrestle-box {
+            background: var(--card-bg); border: 2px solid #e67e22; border-radius: 15px; width: 100%; max-width: 650px; padding: 30px; box-shadow: 0 0 20px rgba(230, 126, 34, 0.4); text-align: center;
+        }
+        .wrestle-title { color: #e67e22; font-size: 1.8rem; margin: 0 0 15px 0; font-weight: 900; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .wrestle-timer { font-size: 2.5rem; font-weight: bold; color: #fff; margin-bottom: 20px; min-height: 60px; }
+        
+        /* 角力進度條容器 */
+        .wrestle-bar-container {
+            width: 100%; height: 35px; background: #222; border-radius: 10px; overflow: hidden; display: flex; border: 2px solid #555; margin-bottom: 30px; box-shadow: inset 0 0 5px #000;
+        }
+        /* 【重要更正】將 transition 設為 none，避免連續點擊時瀏覽器處理動畫隊列產生的嚴重卡頓與延遲 */
+        .wrestle-bar-boy {
+            width: 50%; height: 100%; background: linear-gradient(90deg, #0077ff, var(--boy)); transition: none !important;
+        }
+        .wrestle-bar-girl {
+            width: 50%; height: 100%; background: linear-gradient(90deg, var(--accent), #f39c12); transition: none !important;
+        }
+
+        /* 雙方按鈕佈局 */
+        .wrestle-btn-zone { display: flex; width: 100%; justify-content: space-between; gap: 30px; margin-top: 10px; }
+        .wrestle-press-btn {
+            flex: 1; padding: 25px 20px; font-size: 1.5rem; font-weight: 900; border-radius: 12px; border: 2px solid #fff; cursor: pointer; color: #fff; text-shadow: 1px 1px 2px #000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.05s;
+            touch-action: none; -webkit-user-select: none; user-select: none;
+        }
+        .wrestle-press-btn:active { transform: scale(0.92); }
+        .wrestle-btn-boy { background: linear-gradient(135deg, #0055cc, var(--boy)); border-color: var(--boy); }
+        .wrestle-btn-girl { background: linear-gradient(135deg, #d35400, var(--accent)); border-color: var(--accent); }
+        .wrestle-press-btn:disabled { filter: brightness(0.3) grayscale(0.8); opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+        .wrestle-start-btn {
+            padding: 12px 40px; font-size: 1.5rem; font-weight: bold; background: #e67e22; color: #fff; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 15px rgba(230,126,34,0.4); margin-bottom: 10px;
+        }
+        .wrestle-start-btn:active { transform: scale(0.95); }
+
+        /* 角力獨立獲勝彈窗 */
+        .wrestle-win-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; display: none; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .wrestle-continue-btn:disabled { filter: brightness(0.5); opacity: 0.6; cursor: not-allowed; }
+        /* ------------------------------------------------ */
+        
+        @media (max-width: 768px) { 
+            .arena { flex-direction: column; padding-top: 100px;} 
+            .card { height: 49.5%; } 
+            .hp-text { font-size: 1.8rem; }
+            .hp-container { height: 38px; }
+            .sk-name { font-size: 1.4rem; }
+            .sk-cost { font-size: 1.0rem; }
+            .sk-val { font-size: 1.1rem; }
+            .sk-effect { font-size: 0.85rem; }
+            .card button { min-height: 160px; padding: 8px 4px; }
+            .btn-ult { min-height: 180px !important; }
+            #god-system { flex-direction: row; gap: 5px; width: 100%; top: 5px; }
+            #event-trigger-panel { top: 38px; left: 5px; flex-direction: row; }
+            
+            /* Responsive Selection Screen for Mobile */
+            #selection-screen { padding-top: 45px; }
+            .select-layout { flex-direction: column; height: calc(100vh - 110px); gap: 10px; }
+            .job-list-sidebar { width: 100%; height: 35%; flex-direction: row; overflow-x: auto; overflow-y: hidden; border-right: none; border-bottom: 1px solid #222; padding-bottom: 5px; }
+            .job-list-item { min-width: 130px; justify-content: center; height: 100%; text-align: center; }
+            .job-detail-panel { width: 100%; height: 65%; }
+            .detail-title { font-size: 1.2rem; }
+
+            /* 角力開啟按鈕行動端適配 */
+            #wrestling-system-panel { bottom: 25px; left: 50%; transform: translateX(-50%); }
+            .wrestle-box { padding: 15px; width: 95%; }
+            .wrestle-press-btn { padding: 18px 5px; font-size: 1.1rem; }
         }
     </style>
 </head>
 <body>
 
-    <div id="death-screen" class="death-overlay">
-        <div class="death-text">You Are Dead</div>
-        <div class="death-subtext">Your level has been completely wiped back to Lv.1. Awaiting Dark Lord's resurrection elements...</div>
-    </div>
-
-    <header>
-        <h1>ClassWar Arena Platform <span id="room-display" class="room-badge">NOT CONNECTED</span></h1>
-    </header>
-
-    <div class="login-panel" id="login-panel">
-        <h2 class="section-title" style="border-left-color: #e67e22;">🌐 iPad Cloud Secure Battle Login</h2>
-        <div class="grid-4">
-            <div class="form-group">
-                <label>🏠 Room Number (Must match whole class):</label>
-                <input type="text" id="room-id" class="form-control" value="">
-            </div>
-            <div class="form-group">
-                <label>👤 Student ID / Username:</label>
-                <input type="text" id="player-id" class="form-control" placeholder="e.g. 1A01, Teacher enters 'Teacher'">
-            </div>
-            <div class="form-group">
-                <label>🔑 Verification Password / PWD:</label>
-                <input type="password" id="player-pwd" class="form-control" placeholder="Enter corresponding account PWD">
-            </div>
-            <div class="form-group">
-                <label>⚔️ Choose Class (Overwrites style but keeps Level data):</label>
-                <select id="player-job" class="form-control">
-                    <option value="Warrior">Warrior (Balanced / Shield & Survival)</option>
-                    <option value="Mage">Mage (Status Control / EN Recharge)</option>
-                    <option value="Berserker">Berserker (High Crit Rate / Burst DPS)</option>
-                    <option value="Archer">Archer (Multi-Hit Barrage / EN Burn)</option>
-                </select>
-            </div>
+    <div id="god-system">
+        <div class="god-group" id="god-boy">
+            <button id="god-btn-fire-boy" class="god-btn btn-fire" onclick="godIntervention('boy', 'fire')">Fire 10%</button>
+            <button class="god-btn btn-mercy" onclick="godIntervention('boy', 'mercy')">God Mercy</button>
+            <button class="god-btn btn-rage" onclick="godIntervention('boy', 'rage')">God Rage</button>
+            <button class="god-btn btn-hate" onclick="godIntervention('boy', 'hate')">God Hate</button>
         </div>
-        <button class="btn" onclick="connectToRoom()" style="background: #27ae60; border-color: #2ecc71; padding: 12px 25px; font-size: 14px;">📡 Secure Authenticate & Join Arena</button>
-    </div>
-
-    <div class="boss-panel" id="boss-panel">
-        <h3 style="color:#f1c40f; margin-bottom:5px;">😈 Teacher Management Backstage Console (ID: Teacher - Dark Lord)</h3>
-        <p style="font-size: 12px; color: #ddd; margin-bottom: 12px;">
-            Your Level: <b style="color:#f1c40f;">9999</b>, Initial HP: <b style="color:#ff4d4d;">99999</b>.
-            <span style="color:#2ecc71; font-weight:bold;">[Status: Unrestricted AP & Skills, Zero Cost, God-Slayer AoE, Secure Mode Enabled]</span>
-        </p>
-        
-        <div class="boss-control-row">
-            <button class="btn" onclick="bossDistributeAP()" style="background: #e67e22; border-color: #d35400; padding: 8px 15px;">📢 Distribute +2 AP to All Living Students</button>
-            <button class="btn" onclick="bossResetRoom()" style="background: #c0392b; border-color: #95a5a6; padding: 8px 15px;">🔄 Restore All HP/EN & Clear Logs</button>
-            <button class="btn" onclick="bossClearAllLogsOnly()" style="background: #7f8c8d; border-color: #555; padding: 8px 15px; color: #fff;">🧹 Clear Combat Logs</button>
-            <button class="btn" onclick="openBossModal()" style="background: #2980b9; border-color: #3498db; padding: 8px 20px; color: #fff; box-shadow: 0 0 10px rgba(52,152,219,0.5);">🔑 Open Cloud Management Console (Accounts/Levels)</button>
-        </div>
-
-        <div class="boss-control-row" style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px dashed #f1c40f;">
-            <label style="font-size: 12px; color: #f1c40f; font-weight: bold;">⚡ Custom AP Automation Tool:</label>
-            <input type="number" id="boss-custom-ap-input" class="input-ap-num" value="5" min="1" max="99">
-            <button class="btn" onclick="bossGrantCustomAP()" style="background: #27ae60; border-color: #2ecc71; padding: 6px 12px; font-size: 12px;">➕ Grant Custom AP</button>
-            <button class="btn" onclick="bossWipeAllAPToZero()" style="background: #d35400; border-color: #ba4a00; padding: 6px 12px; font-size: 12px; color: #fff;">🛑 Clear All Students AP to 0</button>
-        </div>
-
-        <div>
-            <label style="font-size: 12px; color: #2ecc71; font-weight: bold; display: block; margin-bottom: 2px;">💬 Teacher Cloud Announcement Message Channel (Press Enter to transmit):</label>
-            <div class="boss-chat-input-box">
-                <input type="text" id="boss-custom-chat-msg" class="input-boss-msg" placeholder="Type instructions or feedback here for the entire room to see...">
-                <button class="btn" onclick="bossSubmitCustomMessage()" style="background: #2ecc71; border-color: #27ae60; padding: 6px 18px; font-size: 12px;">📣 Broadcast</button>
-            </div>
+        <div class="god-group" id="god-girl">
+            <button id="god-btn-fire-girl" class="god-btn btn-fire" onclick="godIntervention('girl', 'fire')">Fire 10%</button>
+            <button class="god-btn btn-mercy" onclick="godIntervention('girl', 'mercy')">God Mercy</button>
+            <button class="god-btn btn-rage" onclick="godIntervention('girl', 'rage')">God Rage</button>
+            <button class="god-btn btn-hate" onclick="godIntervention('girl', 'hate')">God Hate</button>
         </div>
     </div>
 
-    <div id="teacher-multi-select-panel" class="multi-select-container">
-        <span style="font-size: 13px; color: #e67e22; font-weight: bold; display: block;">👑 🗹 Teacher Multi-Targeting Overwrite Console</span>
-        <p style="font-size: 11px; color: #bbb; margin-bottom: 5px;">Check multiple active student profiles below to mass execute global cloud interventions:</p>
-        
-        <div style="display:flex; gap:8px;">
-            <button class="ap-mini-btn" style="background:#555;" onclick="toggleSelectAllMultiCheck(true)">Select All</button>
-            <button class="ap-mini-btn" style="background:#444;" onclick="toggleSelectAllMultiCheck(false)">Clear All</button>
-        </div>
+    <div id="wrestling-system-panel">
+        <button class="wrestle-main-btn" onclick="openWrestlingMode()">角力模式 / Wrestle</button>
+    </div>
 
-        <div id="multi-check-grid" class="multi-grid-list"></div>
+    <div id="event-trigger-panel">
+        <button id="btn-draw-event" class="event-btn" style="display:none;" onclick="triggerRandomNewMoonEvent()">抽取新月事件</button>
+        <button class="event-btn" onclick="toggleEventInfo(true)">新月事件介紹 / Info</button>
+    </div>
 
-        <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:6px; border:1px solid #444; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-            <div style="display:flex; align-items:center; gap:5px;">
-                <label style="font-size:12px; color:#fff;">Modify AP:</label>
-                <input type="number" id="multi-ap-value" class="input-ap-num" style="border-color:#e67e22; height:32px; padding:2px;" value="1">
-            </div>
-            <button class="ap-mini-btn" style="background:#27ae60; height:32px;" onclick="executeMultiTargetAP(1)">➕ Bulk Add AP</button>
-            <button class="ap-mini-btn" style="background:#d35400; height:32px;" onclick="executeMultiTargetAP(-1)">➖ Bulk Deduct AP</button>
-            <button class="ap-mini-btn" style="background:#c0392b; height:32px; border:1px dashed #fff;" onclick="executeMultiTargetKick()">❌ Force Bulk Evict/Kick Selected</button>
+    <div id="save-system">
+        <div class="save-row"><span>S1</span><button class="save-btn btn-s" onclick="saveGame(1)">SAVE</button><button class="save-btn btn-l" onclick="loadGame(1)">LOAD</button></div>
+        <div class="save-row"><span>S2</span><button class="save-btn btn-s" onclick="saveGame(2)">SAVE</button><button class="save-btn btn-l" onclick="loadGame(2)">LOAD</button></div>
+        <div class="save-row"><span>S3</span><button class="save-btn btn-s" onclick="saveGame(3)">SAVE</button><button class="save-btn btn-l" onclick="loadGame(3)">LOAD</button></div>
+    </div>
+
+    <div id="fx-layer"></div>
+
+    <div id="selection-screen">
+        <h2 id="turn-title" style="color: var(--boy); font-weight: bold; margin: 0 0 10px 0; font-size: 1.2rem; text-shadow: 0 0 10px rgba(0,0,0,0.5);">BOY: SELECT YOUR CLASS</h2>
+        <div class="select-layout">
+            <div class="job-list-sidebar" id="job-sidebar-list"></div>
+            <div class="job-detail-panel" id="job-preview-panel"></div>
         </div>
     </div>
 
-    <div class="battlefield">
-        <div>
-            <h2 class="section-title">👥 All Players in This Room (👑 Teacher Always Top / Students Sorted)</h2>
-            <div id="players-container" class="players-list">
-                <p style="color:#888; font-style:italic;">Awaiting login verification parameters...</p>
+    <div class="arena" id="arena">
+        <div id="card-boy" class="card">
+            <div class="ap-container">
+                <button class="ap-btn" onclick="changeAP('boy', -1)"><span>-</span></button>
+                <div id="ap-boy" class="ap-display">0</div>
+                <button class="ap-btn" onclick="changeAP('boy', 1)"><span>+</span></button>
             </div>
+            <div class="name-row">
+                <h2 id="name-boy" style="color:var(--boy); text-align:center; margin:0; font-size: 1.1rem;">BOY</h2>
+            </div>
+            <div id="status-boy" class="status-tracker-row" onclick="checkStatusDetails('boy')"></div>
+            <div class="hp-container"><div id="bar-boy" class="hp-fill"></div><div class="hp-text" id="txt-boy"></div></div>
+            <div id="en-boy" class="en-row"></div>
+            <div class="btn-grid" id="btns-boy"></div>
         </div>
-
-        <div>
-            <div class="control-panel">
-                <button id="logout-button" class="logout-btn" onclick="userManualLogout()" style="display:none;">🚪 Logout Safely</button>
-                
-                <h2 class="section-title">🎮 My iPad Action Hub</h2>
-                <p style="font-size: 12px; margin-bottom: 10px; color: #aaa;">
-                    Current Identity: <span id="my-status-display" style="color:var(--primary); font-weight:bold;">Offline</span>
-                </p>
-
-                <div id="student-team-selector-box" class="team-selector-box" style="display:none;">
-                    <span style="font-size: 12px; color: #fff; font-weight: bold; display: block;">🛡️ Choose Faction Alliance (10-Min Change Lockout)</span>
-                    <span id="team-lock-timer-display" style="font-size: 11px; color:#aaa; display:block; margin-top:2px;">Status: Unaligned / Ready to register</span>
-                    <div class="team-btn-row">
-                        <button class="team-select-btn" style="background:var(--teamA); box-shadow: 0 0 4px var(--teamA);" onclick="userRequestChangeTeam('alpha')">Alpha [A]</button>
-                        <button class="team-select-btn" style="background:var(--teamB); box-shadow: 0 0 4px var(--teamB);" onclick="userRequestChangeTeam('beta')">Beta [B]</button>
-                        <button class="team-select-btn" style="background:var(--teamC); box-shadow: 0 0 4px var(--teamC);" onclick="userRequestChangeTeam('gamma')">Gamma [C]</button>
-                    </div>
-                </div>
-                
-                <label for="target-dropdown" style="font-size:11px; color:#ccc; display:block; margin-bottom:3px;">Active Target Selection:</label>
-                <div style="display:flex; gap:6px; margin-bottom:10px;">
-                    <select id="target-dropdown" class="target-select" style="margin-bottom:0;" onchange="syncTargetCardEffects()"><option value="">-- Please Login First --</option></select>
-                    <button id="btn-toggle-multi-select" class="ap-mini-btn" style="background:#e67e22; display:none; padding:0 10px; font-size:11px; white-space:nowrap;" onclick="toggleMultiSelectConsoleUI()">🗹 Multi-Select</button>
-                </div>
-
-                <div id="boss-quick-ap-panel" class="boss-quick-ap-box">
-                    <span style="font-size: 11px; color: #f1c40f; font-weight: bold;">⚡ Teacher Single Student Immediate Overwrite Override</span>
-                    <div class="ap-btn-group">
-                        <button class="ap-mini-btn" style="background:#e74c3c;" onclick="bossQuickAdjustAP(-1)">-1 AP</button>
-                        <button class="ap-mini-btn" style="background:#27ae60;" onclick="bossQuickAdjustAP(1)">+1 AP</button> 
-                        <button class="ap-mini-btn" style="background:#3498db;" onclick="bossQuickAdjustAP(2)">+2 AP</button>
-                        <button class="ap-mini-btn" style="background:#c0392b; border:1px solid #fff;" onclick="bossForceLogoutUser()">❌ Force Disconnect Student</button>
-                    </div>
-                    <div style="margin-top:8px; display:flex; align-items:center; gap:6px; border-top:1px dashed #444; padding-top:8px;">
-                        <label style="font-size:11px; color:#fff;">Inject Custom Points:</label>
-                        <input type="number" id="boss-single-inject-value" class="input-ap-num" style="height:26px; padding:2px; font-size:11px; width:55px;" value="5" min="1">
-                        <button class="ap-mini-btn" style="background:#2ecc71; padding:3px 8px; font-size:11px;" onclick="bossInjectCustomAPToSelectedTarget()">Inject AP</button>
-                    </div>
-                </div>
-
-                <label style="font-size:11px; color:#ccc; display:block; margin-bottom:3px;">✨ Skill Matrix Panel (All Student moves cost 1 AP / Intensity scales with EN cost):</label>
-                <div id="skills-container" class="skill-grid"></div>
+        <div id="card-girl" class="card">
+            <div class="ap-container">
+                <button class="ap-btn" onclick="changeAP('girl', -1)"><span>-</span></button>
+                <div id="ap-girl" class="ap-display">0</div>
+                <button class="ap-btn" onclick="changeAP('girl', 1)"><span>+</span></button>
             </div>
+            <div class="name-row">
+                <h2 id="name-girl" style="color:var(--girl); text-align:center; margin:0; font-size: 1.1rem;">GIRL</h2>
+            </div>
+            <div id="status-girl" class="status-tracker-row" onclick="checkStatusDetails('girl')"></div>
+            <div class="hp-container"><div id="bar-girl" class="hp-fill"></div><div class="hp-text" id="txt-girl"></div></div>
+            <div id="en-girl" class="en-row"></div>
+            <div class="btn-grid" id="btns-girl"></div>
         </div>
     </div>
 
-    <div class="boss-modal" id="boss-modal">
-        <div class="modal-content" id="boss-modal-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #f1c40f; padding-bottom:10px;">
-                <h3 style="color:#2ecc71;">📊 Global Accounts Database Dashboard (Real-time Sync)</h3>
-                <button class="btn" onclick="closeBossModal()" style="background:#7f8c8d; padding:5px 15px; border:none; color:white; font-size:12px;">❌ Close Window</button>
-            </div>
-            <p style="font-size:11px; color:#bbb; margin-top:5px;">Tip: Click "Save Changes" to update passwords, levels, or AP fields instantly in the cloud database.</p>
-            <div style="overflow-x:auto; margin-top:10px;">
-                <table class="monitor-table">
-                    <thead>
-                        <tr>
-                            <th>Student ID</th>
-                            <th>Cloud Password</th>
-                            <th>Current Class</th>
-                            <th>Current Level (Lv)</th>
-                            <th>Active Action Points (AP)</th>
-                            <th>Core Admin Control Operations</th>
-                        </tr>
-                    </thead>
-                    <tbody id="monitor-tbody">
-                        <tr><td colspan="6" style="color:#888; text-align:center;">Synchronizing online database cloud streams...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+    <div id="event-info-panel" class="info-panel-overlay">
+        <div class="info-content">
+            <h2>🌙 新月事件詳細介紹 / New Moon Events Info</h2>
+            <ul class="event-list-desc">
+                <li>
+                    <strong>1. 時之沙漏 / Hourglass of Time</strong>
+                    <span>時間倒流！雙方體力產生震盪，當前血量直接恢復/調整至各自最大生命值的 50%。</span>
+                    <span class="event-en-desc">Time flows backward! Directly sets both players' current HP to 50% of their maximum HP.</span>
+                </li>
+                <li>
+                    <strong>2. 破滅之咒 / Curse of Ruin</strong>
+                    <span>夜空中降下毀滅詛咒，使雙方同時失去當前生命值的 20%（無視防禦）。</span>
+                    <span class="event-en-desc">A destructive curse descends, causing both players to simultaneously lose 20% of their current HP (ignores defense).</span>
+                </li>
+                <li>
+                    <strong>3. 神聖新星 / Holy Nova</strong>
+                    <span>新月綻放溫暖的光芒，雙方同時恢復各自最大生命值的 30%。</span>
+                    <span class="event-en-desc">The new moon emits a warm glow, allowing both players to restore 30% of their maximum HP.</span>
+                </li>
+                <li>
+                    <strong>4. 狂暴之月 / Frenzied Moon</strong>
+                    <span>激發骨子裡的嗜血狂暴，雙方的能量（EN）直接全部補滿達 10 點。</span>
+                    <span class="event-en-desc">Ignites the bloodlust within, immediately filling both players' energy back to full (10 dots).</span>
+                </li>
+                <li>
+                    <strong>5. 枯竭風暴 / Depletion Storm</strong>
+                    <span>元素寂滅的風暴席捲戰場，使雙方當前的能量（EN）全部歸零。</span>
+                    <span class="event-en-desc">A storm of element annihilation sweeps the arena, draining both players' current energy to 0.</span>
+                </li>
+                <li>
+                    <strong>6. 命運天秤 / Scales of Fate</strong>
+                    <span>命運交織！當前生命值百分比較低者，將會與對手的生命值百分比直接對調。</span>
+                    <span class="event-en-desc">Destiny intertwined! The player with the lower HP percentage swaps their HP percentage with their opponent.</span>
+                </li>
+                <li>
+                    <strong>7. 極寒永夜 / Eternal Frost Night</strong>
+                    <span>絕對零度的永夜降臨，雙方同時獲得 2 層「深層凍結（Deep Frost）」狀態。</span>
+                    <span class="event-en-desc">An absolute-zero polar night falls, granting both players 2 stacks of Deep Frost status simultaneously.</span>
+                </li>
+                <li>
+                    <strong>8. 神明沉默 / Divine Silence</strong>
+                    <span>任何凡人不可稱聖，雙方身上所有的增益與減益狀態（護盾、反傷、標記、凍結、暈眩等）全部清除。</span>
+                    <span class="event-en-desc">No mortal shall be blessed. Clears all buffs and debuffs from both players.</span>
+                </li>
+                <li>
+                    <strong>9. 烈焰風暴 / Blaze Storm</strong>
+                    <span>混亂的烈焰席捲戰場，對雙方同時造成 25 點真實傷害（無視防禦）。</span>
+                    <span class="event-en-desc">Chaotic embers sweep the arena, dealing 25 pure damage to both players simultaneously.</span>
+                </li>
+            </ul>
+            <button class="btn-confirm-selection" style="margin-top:20px; background:#e74c3c;" onclick="toggleEventInfo(false)">關閉介紹 / Close</button>
         </div>
     </div>
 
-    <div class="fixed-bottom-log-panel">
-        <div style="font-size: 11px; color: #aaa; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">
-            📜 Live Combat & Classroom Management Feed Logs (Auto-Scrolling)
+    <div id="wrestle-overlay" class="wrestle-overlay">
+        <div class="wrestle-box">
+            <h2 class="wrestle-title">⚔️ 力量角力對決 / POWER WRESTLING ⚔</h2>
+            <div id="wrestle-timer" class="wrestle-timer">準備就緒</div>
+            
+            <div class="wrestle-bar-container">
+                <div id="wrestle-bar-boy" class="wrestle-bar-boy"></div>
+                <div id="wrestle-bar-girl" class="wrestle-bar-girl"></div>
+            </div>
+
+            <button id="wrestle-start-btn" class="wrestle-start-btn" onclick="startWrestlingCountdown()">START</button>
+
+            <div class="wrestle-btn-zone">
+                <button id="wrestle-press-boy" class="wrestle-press-btn wrestle-btn-boy" ontouchstart="wrestleTouch(event, 'boy')" onclick="wrestleClick('boy')" disabled>BOY<br>PRESS!</button>
+                <button id="wrestle-press-girl" class="wrestle-press-btn wrestle-btn-girl" ontouchstart="wrestleTouch(event, 'girl')" onclick="wrestleClick('girl')" disabled>GIRL<br>PRESS!</button>
+            </div>
+            
+            <button class="btn-confirm-selection" style="margin-top:20px; background:#7f8c8d; max-width:150px;" onclick="closeWrestlingMode()">退出 / Exit</button>
         </div>
-        <div id="log-box" class="log-box"></div>
+    </div>
+
+    <div id="wrestle-win-overlay" class="wrestle-win-overlay">
+        <h1 id="wrestle-win-title" style="font-size: 3rem; color: var(--accent); margin-bottom: 20px; text-shadow: 0 0 20px rgba(241,196,15,0.6); font-weight:900; text-align:center;">BOY WINS THE WRESTLING!</h1>
+        <button id="wrestle-continue-btn" class="wrestle-continue-btn" onclick="closeWrestleWinOverlay()" style="padding: 15px 40px; font-size: 1.3rem; font-weight: bold; background: white; color: black; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(255,255,255,0.3);">繼續戰鬥 / CONTINUE</button>
+    </div>
+
+    <div id="win-overlay" class="overlay">
+        <h1 id="win-title" style="font-size: 3.5rem; color: var(--accent); margin-bottom: 20px; text-shadow: 0 0 20px rgba(241,196,15,0.6); font-weight:900;">BOY WINS!</h1>
+        <button onclick="location.reload()" style="padding: 15px 40px; font-size: 1.5rem; font-weight: bold; background: white; color: black; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(255,255,255,0.3);">PLAY AGAIN</button>
     </div>
 
     <script>
-        // === 🛠️ FREE FIREBASE CLOUD DATABASE CONFIGURATION ===
-        const firebaseConfig = {
-            databaseURL: "https://classwar-91a0a-default-rtdb.asia-southeast1.firebasedatabase.app/" 
-        };
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // 【優化音效機制】將連點打擊的持續時間縮減為 0.05s，並優化記憶體釋放，防止 Web Audio 引擎超載導致 JavaScript 阻塞
+        function playSfx(type) {
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
 
-        // === 🎲 GAME STATS CONFIGURATIONS ===
-        const CLASS_CONFIGS = {
-            'Warrior':   { hp: 320, en: 100, def: 25, patk: 16, matk: 5,  colorClass: 'bg-warrior' }, 
-            'Mage':      { hp: 170, en: 160, def: 6,  patk: 4,  matk: 32, colorClass: 'bg-mage' },    
-            'Berserker': { hp: 240, en: 100, def: 12, patk: 24, matk: 0,  colorClass: 'bg-berserker' },
-            'Archer':    { hp: 200, en: 110, def: 10, patk: 18, matk: 12, colorClass: 'bg-archer' },   
-            'Dark Lord': { hp: 99999, en: 9999, def: 500, patk: 200, matk: 200, colorClass: 'bg-boss' }
-        };
-
-        const CRIT_CONFIGS = {
-            'Warrior':   { chance: 0.05, multiplier: 1.5 },
-            'Mage':      { chance: 0.05, multiplier: 1.5 },
-            'Berserker': { chance: 0.25, multiplier: 2.0 },
-            'Archer':    { chance: 0.05, multiplier: 1.5 },
-            'Dark Lord': { chance: 0.00, multiplier: 1.0 }
-        };
-
-        function getScaledStats(job, level) {
-            if (job === 'Dark Lord') {
-                return { hp: 99999, en: 9999, def: 500, patk: 200, matk: 200 };
+            if(type === 'hit') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.05);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                osc.start();
+                osc.stop(now + 0.05);
+            } else if(type === 'heal' || type === 'en') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.linearRampToValueAtTime(1046.5, now + 0.3);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start();
+                osc.stop(now + 0.3);
+            } else if(type === 'shake') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(60, now);
+                osc.frequency.exponentialRampToValueAtTime(30, now + 0.4);
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                osc.start();
+                osc.stop(now + 0.4);
             }
-            const base = CLASS_CONFIGS[job];
-            if (!base) return { hp: 200, en: 100, def: 10, patk: 10, matk: 10 };
-            const multiplier = 1 + (level - 1) * 0.1; 
-            return {
-                hp: Math.floor(base.hp * multiplier),
-                en: Math.floor(base.en * multiplier),
-                def: Math.floor(base.def * multiplier),
-                patk: Math.floor(base.patk * multiplier),
-                matk: Math.floor(base.matk * multiplier)
+        }
+
+        let selecting = 'boy', isOver = false, currentSelectedJobKey = 'Warrior';
+        let state = {
+            boy: { hp:0, max:0, en:0, job:'', def:0, ap: 0, stunned:false, guard:false, pandaGuard:false, reflect:false, dodge:0, weakened:false, frost:0, focused:false, marked:false, counter: false, hardened: 0, fireStep: 0, godAtk: 0, ultCount: 0, poison: 0, bleed: 0 },
+            girl: { hp:0, max:0, en:0, job:'', def:0, ap: 0, stunned:false, guard:false, pandaGuard:false, reflect:false, dodge:0, weakened:false, frost:0, focused:false, marked:false, counter: false, hardened: 0, fireStep: 0, godAtk: 0, ultCount: 0, poison: 0, bleed: 0 }
+        };
+
+        let wrestleScores = { boy: 0, girl: 0 };
+        let wrestleActive = false;
+        let wrestleTimerInterval = null;
+
+        function saveGame(slot) {
+            const data = {
+                state: state, selecting: selecting, isOver: isOver, godFireIndex: godFireIndex,
+                displayArena: document.getElementById('arena').style.display,
+                displaySelection: document.getElementById('selection-screen').style.display,
+                turnTitle: document.getElementById('turn-title').innerText,
+                turnColor: document.getElementById('turn-title').style.color,
+                btnDrawEvent: document.getElementById('btn-draw-event').style.display,
+                saveSystemDisplay: document.getElementById('save-system').style.display
             };
+            localStorage.setItem(`chrono_arena_save_${slot}`, JSON.stringify(data));
+            alert(`Slot ${slot} Saved!`);
         }
 
-        // 📜 SKILLS DATABASE
-        const SKILL_DATABASE = {
-            'General': [
-                { name: 'Meditation Focus', apCost: 1, enCost: 0, type: 'charge', value: 40, desc: 'Focus energy internally. Recharges 40 EN points directly to your pool.' }
-            ],
-            'Warrior': [
-                { name: 'Ground Strike', apCost: 1, enCost: 0, type: 'atk_p', value: 8, desc: 'Basic physical heavy swing. Deals (ATK + 8) Physical Damage.' },
-                { name: 'Iron Aegis Shield', apCost: 1, enCost: 20, type: 'heal', value: 25, desc: 'Costs 20 EN. Deploys defensive shield matrix, recovering 25 HP for self or ally.' },
-                { name: 'Sunder Armor', apCost: 1, enCost: 40, type: 'atk_p_pierce', value: 20, desc: 'Costs 40 EN. A piercing blow that completely bypasses 50% of the target\'s Physical DEF.' },
-                { name: '【ULTIMATE】Bastion Smash', apCost: 1, enCost: 80, type: 'warrior_ult', value: 55, desc: 'Costs 80 EN. Absolute Offense! Deals massive (ATK + 55) Physical Damage, shattering target defenses, and inspires the recipient to instantly gain 30 EN!' }
-            ],
-            'Mage': [
-                { name: 'Arcane Missile', apCost: 1, enCost: 0, type: 'atk_m', value: 12, desc: 'Basic magic spark. Deals (MATK + 12) Magic Damage.' },
-                { name: 'Energy Drain Feed', apCost: 1, enCost: 20, type: 'mage_drain', value: 15, desc: 'Costs 20 EN. Siphons up to 20 EN from target, rendering 15 EN back to self while dealing micro magic damage.' },
-                { name: 'Chrono Transfer', apCost: 1, enCost: 35, type: 'mage_transfer', value: 40, desc: 'Costs 35 EN. Warps space-time to donate 40 EN directly to a chosen teammate (cannot target self).' },
-                { name: '【ULTIMATE】Doomsday Verdict', apCost: 1, enCost: 90, type: 'mage_ult', value: 60, desc: 'Costs 90 EN. Summons a cosmic meteor strike dealing immense (MATK + 60) Magic Damage, evaporating 10 EN from target instantly.' }
-            ],
-            'Berserker': [
-                { name: 'Brutal Cleave', apCost: 1, enCost: 0, type: 'atk_p', value: 10, desc: 'Heavy swing. Synergizes exceptionally well with default 25% Critical Chance and 2x Critical Multiplier.' },
-                { name: 'Undying Rage Blood', apCost: 1, enCost: 25, type: 'heal', value: 20, desc: 'Costs 25 EN. Channels inner fury into adrenaline, forcing 20 HP recovery to self or ally.' },
-                { name: 'Furious Assault', apCost: 1, enCost: 45, type: 'atk_p', value: 35, desc: 'Costs 45 EN. Enraged execute, slicing down to deal (ATK + 35) high physical damage.' },
-                { name: '【ULTIMATE】Ragnarok Apocalypse', apCost: 1, enCost: 85, type: 'ult_berserk', value: 65, desc: 'Costs 85 EN. Berserker ultimate chaos! Deals overwhelming (ATK + 65) damage and life-steals 60% of final output directly back into self HP!' }
-            ],
-            'Archer': [
-                { name: 'Precision Double-Shot', apCost: 1, enCost: 0, type: 'archer_multi', hits: 2, value: 5, desc: 'Fires 2 rapid arrows. Each hits independently, calculates DEF separately, and has a discrete 5% crit check.' },
-                { name: 'Envenomed Arrow', apCost: 1, enCost: 30, type: 'archer_drain_en', value: 15, desc: 'Costs 30 EN. Fires a toxic arrowhead dealing damage while chemically dissolving 15 EN from target.' },
-                { name: '【ULTIMATE】Meteor Arrow Rain', apCost: 1, enCost: 80, type: 'archer_ult', hits: 4, value: 10, desc: 'Costs 80 EN. Rains down a vicious barrage of 4 sequential shots on a single target! Total output is extremely lethal if multiple arrows crit.' }
-            ],
-            'Dark Lord': [
-                { name: 'Surprise Roll-Call Attack', apCost: 0, enCost: 0, type: 'boss_pct_strike', value: 10, desc: 'Dark Lord authority call! Unleashes absolute decree, draining 10% of target\'s maximum health.' },
-                { name: 'Pop Quiz Flash Bomb (AoE)', apCost: 0, enCost: 0, type: 'boss_aoe_pct_strike', value: 10, desc: 'Sudden dynamic room quiz constraints! Inflicts 10% max health reduction on ALL alive students.' },
-                { name: 'Confiscate iPad Device',  apCost: 0, enCost: 0, type: 'debuff_ap', value: 2, desc: 'Seize device from student! Drains target student of 2 AP!' },
-                { name: 'Praise of Light (Max Heal Check)', apCost: 0, enCost: 0, type: 'boss_capped_heal', value: 0, desc: 'Sovereign Restoration Elements! Restores target to 100% max health without exceeding boundaries.' },
-                { name: '☠️ Absolute Name Erase (Insta-Kill)', apCost: 0, enCost: 0, type: 'boss_insta_kill', value: 0, desc: 'Supreme master command. 100% obliterates any single student entity.' },
-                { name: '⚡ Apocalypse Cataclysm (Room Wipe)', apCost: 0, enCost: 0, type: 'boss_stage_aoe', value: 0, desc: 'Phase 1 cuts health by 50%. Phase 2 triggers full instant wipeout.' }
-            ]
+        function loadGame(slot) {
+            const raw = localStorage.getItem(`chrono_arena_save_${slot}`);
+            if(!raw) { alert("No data found in this slot!"); return; }
+            const data = JSON.parse(raw);
+            state = data.state; selecting = data.selecting; isOver = data.isOver;
+            if (data.godFireIndex) godFireIndex = data.godFireIndex;
+            document.getElementById('arena').style.display = data.displayArena;
+            document.getElementById('selection-screen').style.display = data.displaySelection;
+            document.getElementById('turn-title').innerText = data.turnTitle;
+            document.getElementById('turn-title').style.color = data.turnColor;
+            document.getElementById('btn-draw-event').style.display = data.btnDrawEvent;
+            
+            if (data.saveSystemDisplay) {
+                document.getElementById('save-system').style.display = data.saveSystemDisplay;
+            } else {
+                document.getElementById('save-system').style.display = data.displaySelection === 'none' ? 'none' : 'flex';
+            }
+            
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            updateGodFireButtonsText();
+            update();
+            alert(`Slot ${slot} Loaded!`);
+        }
+
+        function updateGodFireButtonsText() {
+            let nextPctBoy = fireSequence[Math.min(godFireIndex.boy, 3)] * 100;
+            let nextPctGirl = fireSequence[Math.min(godFireIndex.girl, 3)] * 100;
+            document.getElementById('god-btn-fire-boy').innerText = `Fire ${nextPctBoy}%`;
+            document.getElementById('god-btn-fire-girl').innerText = `Fire ${nextPctGirl}%`;
+        }
+
+        function godIntervention(side, type) {
+            if(isOver) return;
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const targetPlayer = side; 
+            const oppPlayer = side === 'boy' ? 'girl' : 'boy';
+            
+            if(type === 'fire') {
+                let currentIdx = godFireIndex[targetPlayer];
+                let ratio = fireSequence[Math.min(currentIdx, 3)];
+                let dmg = Math.floor(state[targetPlayer].max * ratio);
+                
+                state[targetPlayer].hp = Math.max(0, state[targetPlayer].hp - dmg);
+                pop(targetPlayer, `-${Math.round(ratio * 100)}%`, 'var(--dmg)', 0);
+                triggerFX('bolt', oppPlayer, targetPlayer);
+                playSfx('hit');
+                
+                godFireIndex[targetPlayer]++;
+                updateGodFireButtonsText();
+            } else if(type === 'mercy') {
+                state[targetPlayer].hp = Math.min(state[targetPlayer].max, state[targetPlayer].hp + Math.floor(state[targetPlayer].max * 0.25));
+                pop(targetPlayer, '+25%', 'var(--heal)', 0);
+                playSfx('heal');
+            } else if(type === 'rage') {
+                state[targetPlayer].en = Math.min(10, state[targetPlayer].en + 3);
+                pop(targetPlayer, '+3 EN', 'var(--accent)', 0);
+                playSfx('en');
+            } else if(type === 'hate') {
+                state[targetPlayer].en = Math.max(0, state[targetPlayer].en - 3);
+                pop(targetPlayer, '-3 EN', 'var(--purple)', 0);
+                playSfx('shake');
+            }
+            checkWin();
+            update();
+        }
+
+        const jobs = {
+            Warrior: {
+                icon: "⚔️", hp: 150, def: 0.20,
+                desc: [
+                    "Passive: Gains 1 EN when hit.", 
+                    "Tactics: Control, block & stable recovery.", 
+                    "ULT: 100% Stun Execution Strike."
+                ],
+                skills: [
+                    { n: "Heavy Strike", c: 0, d: [11, 15], fx: "slash", e: "Basic Cut + 20% Weaken Target." },
+                    { n: "Charge", c: 0, v: 2, t: 'en_weak', e: "Gain 2 EN + Force Target to Weaken." },
+                    { n: "Shield Bash", c: 1, d: [12, 16], t: 'stun', v: 0.35, fx: "slash", e: "35% Stun Chance + Pierce Guard." },
+                    { n: "War Cry", c: 2, t: 'weak_self_focus', e: "Target damage -50% + Self Gain Focus." },
+                    { n: "Iron Guard", c: 1, t: 'def_draw_en', e: "80% Block (Once) + Draw 1 EN from opponent." },
+                    { n: "Recover", c: 2, v: [30, 45], t: 'heal_cleanse_weak', e: "Heal HP + Cleanse self Weaken status." },
+                    { n: "EARTHQUAKE", c: 9, d: [49, 66], t: 'stun', v: 1.0, fx: "shake", e: "ULT: Reduced DMG + 100% STUN 1 turn." }
+                ]
+            },
+            Mage: {
+                icon: "🔮", hp: 95, def: 0,
+                desc: [
+                    "Passive: 40% chance to refund 1 EN on spellcast.", 
+                    "Tactics: Reflect shield, frost & life siphon.", 
+                    "ULT: Multi-hit massive arcane blast."
+                ],
+                skills: [
+                    { n: "Energy Bolt", c: 0, d: [13, 17], t: 'frost_chance', v: 0.15, fx: "bolt", e: "Magic attack + 15% Chance to Frost target." },
+                    { n: "Meditate", c: 0, v: 3, t: 'en_cleanse_frost', e: "Gain 3 EN + Cleanse self Frost status." },
+                    { n: "Barrier", c: 2, t: 'reflect_gain_en', e: "100% Reflect Next Dmg + Gain 1 EN." },
+                    { n: "Frostbite", c: 2, d: [10, 15], t: 'frost', v: 1, fx: "bolt", e: "Spell DMG + Apply 1 Frost Layer to target." },
+                    { n: "Arcane Focus", c: 1, t: 'focus', e: "Next Action 100% Critical (200% DMG)." },
+                    { n: "Drain Life", c: 3, d: [18, 25], t: 'leech', v: 0.8, fx: "bolt", e: "Deals damage + Convert 80% of DMG into self HP." },
+                    { n: "METEOR BURST", c: 9, d: [66, 84], fx: "shake", e: "ULT: Reduced Massive Arcane Blast DMG." }
+                ]
+            },
+            Assassin: {
+                icon: "🥷", hp: 105, def: 0.05,
+                desc: [
+                    "Passive: After each action, there is a 5% chance to obtain 1 Dodge stack.", 
+                    "Tactics: Agile smoke dodging & armor piercing.", 
+                    "ULT: Apply Fatal Wounds (Frost x2 + Weaken)."
+                ],
+                skills: [
+                    { n: "Stab", c: 0, d: [12, 17], t: 'ignore_def_20', fx: "slash", e: "Vitals Poke + Automatically Ignores 20% Def." },
+                    { n: "Hide", c: 0, v: 2, t: 'en_dodge30', e: "Gain 2 EN + Get 30% Dodge (2 Acts)." },
+                    { n: "Smoke Bomb", c: 1, t: 'dodge_weak', v: 0.6, e: "Get 60% Dodge (2 Acts) + Target Weaken." },
+                    { n: "Shadow Cloak", c: 2, t: 'dodge_focus', v: 0.9, e: "Get 90% Dodge (2 Acts) + Focus Buff." },
+                    { n: "Vampiric Blade", c: 2, d: [15, 22], t: 'leech_poison', v: 0.6, fx: "slash", e: "Poison Strike + Convert 60% of DMG into self HP + Inflict Poison (3 stacks)." },
+                    { n: "Mark Vitals", c: 1, t: 'mark', e: "Mark target to bypass defense completely next turn." },
+                    { n: "CHRONO EXECUTE", c: 9, d: [59, 77], t: 'assassin_ult', fx: "slash", e: "ULT: Lower DMG + Apply Fatal Wound (Frost x2 + Weaken)." }
+                ]
+            },
+            Alchemist: {
+                icon: "🧪", hp: 125, def: 0.10,
+                desc: [
+                    "Passive: Heals are 30% more efficient.", 
+                    "Tactics: Control resources & brew powerful potions.", 
+                    "ULT: Wipe enemy EN entirely + Self Focus."
+                ],
+                skills: [
+                    { n: "Acid Flask", c: 0, d: [10, 14], t: 'perm_reduce_def', fx: "bolt", e: "Corrosive splash + Permanently decrease target DEF." },
+                    { n: "Catalyst", c: 0, v: 2, t: 'en_heal10', e: "Gain 2 EN + Heal self 10 HP." },
+                    { n: "Healing Elixir", c: 1, v: [25, 40], t: 'heal', e: "Brew potion to restore large amount of HP." },
+                    { n: "Chrono Potion", c: 2, v: [45, 65], t: 'heal', e: "Advanced Brew to massive Restore self HP." },
+                    { n: "Toxic Gas", c: 2, d: [8, 12], t: 'stun_poison', v: 0.3, fx: "bolt", e: "Gas cloud + 30% Stun Chance + Inflict Poison (3 stacks)." },
+                    { n: "Midas Touch", c: 2, d: [15, 20], t: 'steal_en', fx: "slash", e: "Deals DMG + Steal 1 EN from enemy into self." },
+                    { n: "TRANSMUTATION", c: 9, d: [45, 59], t: 'alchemist_ult', fx: "shake", e: "ULT: Lower DMG + Erase enemy EN to 0." }
+                ]
+            },
+            Berserker: {
+                icon: "🪓", hp: 140, def: 0.05,
+                desc: [
+                    "Passive: Base Critical chance is 30%.", 
+                    "Tactics: Sacrifices life for damage, lifesteal & execute.", 
+                    "ULT: Lifesteal strike + Instant Full EN."
+                ],
+                skills: [
+                    { n: "Wild Swing", c: 0, d: [12, 18], t: 'bleed_self', fx: "slash", e: "Slam strike + Self Gain 10% Crit + Inflict Bleed on Target." },
+                    { n: "Blood Rage", c: 0, v: 2, t: 'en_blood_rage', e: "Sacrifices 5 HP for 2 EN + Gain Focus." },
+                    { n: "Reckless Attack", c: 2, d: [22, 32], t: 'bleed_reckless', fx: "slash", e: "Heavy hits + Inflict Bleed on Target + Self Mark." },
+                    { n: "Enrage", c: 1, t: 'focus', e: "Roar to force next strike to be Critical." },
+                    { n: "Bloodthirst", c: 2, d: [12, 18], t: 'leech', v: 0.6, fx: "slash", e: "Strike with 60% Lifesteal to heal self." },
+                    { n: "Execute", c: 3, d: [20, 30], t: 'exec', fx: "slash", e: "Executes target under 50% HP (deals 1.5x DMG)." },
+                    { n: "DECIMATE", c: 9, d: [66, 84], t: 'berserk_ult', fx: "shake", e: "ULT: Lower DMG + 100% Lifesteal + Full EN." }
+                ]
+            },
+            Archer: {
+                icon: "🏹", hp: 110, def: 0.15,
+                desc: [
+                    "Passive: Basic attacks hit twice (calculates once).", 
+                    "Tactics: Long range kiting & 100% absolute evasion.", 
+                    "ULT: Multi-arrow barrage + Mark target."
+                ],
+                skills: [
+                    { n: "Aim Shot", c: 0, d: [11, 15], t: 'aim_shot_act', fx: "arrow", e: "Pierce armor dmg + 15% Focus chance." },
+                    { n: "Reload", c: 0, v: 2, t: 'en_focus', e: "Gain 2 EN + Focus Next Action." },
+                    { n: "First Aid", c: 1, v: [15, 25], t: 'heal_cleanse_mark', e: "Self Heal + Cleanse self Mark status." },
+                    { n: "Mark Target", c: 2, t: 'mark_weaken_opp', e: "Mark target to ignore armor + Apply Weaken." },
+                    { n: "Evasion", c: 1, t: 'en_dodge100', v: 1, e: "100% Dodge (2 Acts) + Gain 1 EN." },
+                    { n: "Crippling Arrow", c: 2, d: [14, 18], t: 'weak', fx: "arrow", e: "Slow arrow to heavily decrease enemy ATK." },
+                    { n: "VOLLEY STORM", c: 9, d: [63, 80], t: 'mark', fx: "arrow", e: "ULT: Lower DMG + Force Mark Target." }
+                ]
+            },
+            Paladin: {
+                icon: "⚖️", hp: 160, def: 0.25,
+                desc: [
+                    "Passive: 50% chance to gain 1 EN when hit.", 
+                    "Tactics: Holy shield, stun cleanse & self heal.", 
+                    "ULT: Holy strike + Heal + Auto Guard buff."
+                ],
+                skills: [
+                    { n: "Smite", c: 0, d: [10, 14], t: 'smite_heal', fx: "slash", e: "Holy damage + Restore self 5 HP." },
+                    { n: "Blessing", c: 0, v: 2, t: 'en_cleanse_weak', e: "Gain 2 EN + Clear self Weaken status." },
+                    { n: "Holy Light", c: 2, v: [20, 35], t: 'heal_cleanse_stun', e: "Heal + Cleanse Stun (Castable when Stunned)." },
+                    { n: "Thorns", c: 2, t: 'counter_guard', e: "Reflect 20 Dmg + Obtain Guard buff." },
+                    { n: "Iron Will", c: 1, t: 'en_def', v: 1, e: "80% Block (Once) + Gain 1 EN." },
+                    { n: "Judgment", c: 3, d: [25, 40], t: 'focus_attack', fx: "bolt", e: "High Holy Strike + Self Gain Focus." },
+                    { n: "HEAVEN GATE", c: 9, d: [59, 77], t: 'paladin_ult', fx: "bolt", e: "ULT: Lower DMG + Massive Heal + Obtain Guard." }
+                ]
+            },
+            Gunner: {
+                icon: "🔫", hp: 115, def: 0.10,
+                desc: [
+                    "Passive: 25% chance to inflict Stun on any damage.", 
+                    "Tactics: Strong suppression, clear enemy buffs & lifesteal.", 
+                    "ULT: Sure Hit Armor Piercer & Shield Breaker."
+                ],
+                skills: [
+                    { n: "Pistol Shot", c: 0, d: [12, 16], t: 'stun_chance_15', v: 0.15, fx: "arrow", e: "Quick shot + 15% Stun chance." },
+                    { n: "Lock & Load", c: 0, v: 2, t: 'en_focus', e: "Gain 2 EN + Gain Focus buff." },
+                    { n: "Cover Fire", c: 1, t: 'dodge70', v: 0.7, e: "70% Dodge (2 Acts) + Suppress attack." },
+                    { n: "Flashbang", c: 2, t: 'flashbang_act', v: 0.45, e: "45% Stun Chance + Clear Target all Buffs." },
+                    { n: "Life Bullet", c: 2, d: [16, 24], t: 'leech', v: 0.5, fx: "arrow", e: "Bullet shot + Convert 50% of DMG to self HP." },
+                    { n: "Headshot", c: 3, d: [25, 35], t: 'mark_ignore_def', fx: "arrow", e: "Heavy sniper shot + Ignore target Defense." },
+                    { n: "HELLFIRE BARRAGE", c: 9, d: [63, 84], t: 'shield_breaker', fx: "shake", e: "ULT: Lower DMG + Complete Shield Breaker." }
+                ]
+            },
+            Boxer: {
+                icon: "🥊", hp: 135, def: 0.12,
+                desc: [
+                    "Passive: Entirely IMMUNE to Stun.", 
+                    "Tactics: Quick evasion, steal EN, lifesteal & shield break.", 
+                    "ULT: Un-dodgeable Shield Breaker Punch."
+                ],
+                skills: [
+                    { n: "Jab", c: 0, d: [11, 14], t: 'steal_en_basic', fx: "slash", e: "Fast punch + Steal 1 EN from enemy." },
+                    { n: "Focus Breath", c: 0, v: 2, t: 'en_cleanse_weak', e: "Gain 2 EN + Cleanse self Weaken status." },
+                    { n: "Sway", c: 1, t: 'sway_act', v: 0.7, e: "70% Dodge (2 Acts) + Next hit 100% Focus." },
+                    { n: "Uppercut", c: 2, d: [12, 18], t: 'stun_pierce_guard', v: 0.3, fx: "slash", e: "30% Stun Chance + Pierce target Guard." },
+                    { n: "Body Blow", c: 2, d: [15, 22], t: 'body_blow_act', fx: "slash", e: "Deals Damage + Target overall ATK -30%." },
+                    { n: "Drain Punch", c: 2, d: [18, 26], t: 'leech', v: 0.5, fx: "slash", e: "Deals damage + Convert 50% of DMG to self HP." },
+                    { n: "K.O. PUNCH", c: 9, d: [59, 77], t: 'boxer_ult', fx: "shake", e: "ULT: Lower DMG + Sure Hit + Complete Shield Break." }
+                ]
+            },
+            RockQueen: {
+                icon: "👑", hp: 180, def: 0.30,
+                desc: [
+                    "Passive: IMMUNE to EN drain/loss events.", 
+                    "Tactics: High armor, permanent def stack & crystal tomb stun.", 
+                    "ULT: Sure Hit + 100% Stun 1 Turn."
+                ],
+                skills: [
+                    { n: "Rock Throw", c: 0, d: [8, 12], t: 'stun_chance_15', v: 0.15, fx: "slash", e: "Heavy rock toss + 15% Stun Chance." },
+                    { n: "Fortify", c: 0, v: 2, t: 'en_fortify', e: "Gain 2 EN + Permanently increase +2% DEF." },
+                    { n: "Earth Shield", c: 1, t: 'def_heal15', e: "80% Block (Once) + Self Restore 15 HP." },
+                    { n: "Crystal Spikes", c: 2, d: [12, 18], t: 'counter_thorns', e: "Deals DMG + Reflect 20 real Dmg back." },
+                    { n: "Granite Slam", c: 2, d: [14, 20], t: 'weak', fx: "shake", e: "Ground slam to severely Weaken enemy damage." },
+                    { n: "Obsidian Core", c: 2, t: 'harden', v: 0.05, e: "Permanently gain +5% base DEF scaling buff." },
+                    { n: "CRYSTAL TOMB", c: 9, d: [52, 70], t: 'rock_ult', fx: "shake", e: "ULT: Lower DMG + Sure Hit + 100% Stun." }
+                ]
+            },
+            Butcher: {
+                icon: "🥩", hp: 165, def: 0.08,
+                desc: [
+                    "Passive: Basic attack hits automatically heal 5 HP.", 
+                    "Tactics: Massive health pool, stack defense & high tier heal.", 
+                    "ULT: Massive strike + 100% Lifesteal."
+                ],
+                skills: [
+                    { n: "Meat Hook", c: 0, d: [11, 15], t: 'mark', fx: "slash", e: "Pull target + Mark them (Bypass all Defense)." },
+                    { n: "Sharpen", c: 0, v: 2, t: 'en_focus', e: "Gain 2 EN + Focus Next attack for Critical." },
+                    { n: "Cannibalize", c: 2, v: [25, 40], t: 'heal', e: "Devour meat to massive Restore self HP." },
+                    { n: "Flesh Shield", c: 1, t: 'harden_cleanse_mark', v: 0.05, e: "Permanently +5% DEF + Cleanse self Mark status." },
+                    { n: "Tenderize", c: 2, d: [14, 22], t: 'weak_pierce_guard', fx: "slash", e: "Slam target to Weaken + Completely Pierce Guard." },
+                    { n: "Carve", c: 2, d: [16, 22], t: 'leech', v: 0.5, fx: "slash", e: "Slice target + Convert 50% of DMG to self HP." },
+                    { n: "FRESH MEAT", c: 9, d: [59, 80], t: 'butcher_ult', fx: "shake", e: "ULT: Lower DMG + 100% Lifesteal to full." }
+                ]
+            },
+            Joker: {
+                icon: "🤡", hp: 100, def: 0.05,
+                desc: [
+                    "Passive: After each action, there is a 5% chance to obtain 1 Dodge stack.", 
+                    "Tactics: High RNG trick mastery, life siphon & EN drain.", 
+                    "ULT: Chaos reaction combo with 1 turn stun."
+                ],
+                skills: [
+                    { n: "Card Throw", c: 0, d: [9, 15], t: 'mark_chance_15', fx: "arrow", e: "Sharp cards + 15% chance to Mark target." },
+                    { n: "Juggling", c: 0, v: 3, t: 'en_dodge20', e: "Gain 3 EN + Obtain 20% Dodge rate." },
+                    { n: "Surprise Box", c: 1, d: [6, 10], t: 'steal_en', fx: "bolt", e: "Surprise box hit + Steal 1 EN from opponent." },
+                    { n: "Magic Feast", c: 2, v: [15, 30], t: 'heal', e: "Brew illusion magic show to restore self HP." },
+                    { n: "Jack In Box", c: 2, d: [11, 19], t: 'stun_drain_en', v: 0.45, fx: "bolt", e: "45% Stun Chance + Force Drain 1 EN from target." },
+                    { n: "Laughing Gas", c: 2, t: 'weaken_frost1', e: "Weaken target ATK + Induce 1 layer of Frost status." },
+                    { n: "🃏 JOKER GAME", c: 9, d: [63, 84], t: 'joker_ult', fx: "shake", e: "ULT: Lower DMG + Force Target Stun 1 turn." }
+                ]
+            },
+            DemonHunter: {
+                icon: "😈", hp: 112, def: 0.08,
+                desc: [
+                    "Passive: Attacks mark target with 30% chance.", 
+                    "Tactics: Chaos demon blood power, lifesteal & focus buffs.", 
+                    "ULT: Critical Chaos Beam + Gain Focus."
+                ],
+                skills: [
+                    { n: "Demon Slash", c: 0, d: [12, 17], t: 'leech_chance_15', v: 0.15, fx: "slash", e: "Dual cuts + 15% Chance of Lifesteal trigger." },
+                    { n: "Soul Feast", c: 0, v: 2, t: 'en_heal12', e: "Extract soul: Gain 2 EN + Heal self 12 HP." },
+                    { n: "Twin Glaives", c: 2, d: [8, 12], t: 'weak', fx: "slash", e: "Double fast slash combo + Weaken target ATK." },
+                    { n: "Vengeance Mark", c: 1, t: 'mark_gain_en', e: "Mark target to ignore all armor + Gain 1 EN." },
+                    { n: "Chaos Dodge", c: 1, t: 'dodge70_focus', v: 0.7, e: "70% Dodge (2 Acts) + Next turn Focus buff." },
+                    { n: "Soul Rip", c: 3, d: [20, 30], t: 'leech', v: 0.8, fx: "bolt", e: "Rip target soul + Convert 80% of DMG to self HP." },
+                    { n: "METAMORPHOSIS", c: 9, d: [70, 91], t: 'demon_ult', fx: "bolt", e: "ULT: Lower DMG + Gain 100% Focus Buff." }
+                ]
+            },
+            KungFuPanda: {
+                icon: "🐼", hp: 145, def: 0.15,
+                desc: [
+                    "Passive: 30% chance to convert received damage into 1 EN.",
+                    "Tactics: Taichi absorption, pinpoint counters & massive feast.",
+                    "ULT: True damage fatal Wuxi Finger Hold."
+                ],
+                skills: [
+                    { n: "Po Punch", c: 0, d: [10, 14], t: 'panda_punch', fx: "slash", e: "Heavy physical palm strike + 15% chance to Mark target." },
+                    { n: "Inner Peace", c: 0, v: 2, t: 'en_panda_peace', e: "Meditate for Chi: Gain 2 EN + Obtain Guard buff." },
+                    { n: "Taichi Counter", c: 1, t: 'counter_guard', e: "Prepare defensive stance: Obtain Guard + Active Thorns counter." },
+                    { n: "Soul Feast", c: 2, v: [30, 45], t: 'heal', e: "Devour secret dumplings to restore massive HP pool." },
+                    { n: "Pressure Point", c: 2, d: [14, 20], t: 'stun_pierce_guard', v: 0.4, fx: "bolt", e: "Accurate strike: 40% Stun Chance + Completely Pierce Guard." },
+                    { n: "Chi Blast", c: 3, d: [22, 30], t: 'weak_opp', fx: "shake", e: "Release inner energy flow: High DMG + Weaken Target's attack." },
+                    { n: "WUXI FINGER HOLD", c: 9, d: [60, 76], t: 'panda_ult', fx: "shake", e: "ULT: Unleash the legendary move. Bypasses all defense mechanisms." } // 【更正】大招攻擊力下降 20% (由 75-95 降至 60-76)
+                ]
+            }
         };
 
-        let currentRoom = null;
-        let myId = null;
-        let allPlayersData = {};
-        let bossAoeCount = 0;
+        let godFireIndex = { boy: 0, girl: 0 };
+        const fireSequence = [0.1, 0.2, 0.5, 1.0];
 
-        function connectToRoom() {
-            const roomNum = document.getElementById('room-id').value.trim();
-            const inputId = document.getElementById('player-id').value.trim();
-            const inputPwd = document.getElementById('player-pwd').value.trim();
-
-            if (!roomNum || !inputId || !inputPwd) {
-                return alert('Please completely fill out the Room ID, User ID, and Password fields!');
-            }
-
-            currentRoom = roomNum;
-
-            database.ref(`secret_auth/${inputId}`).once('value', (authSnap) => {
-                let validPassword = authSnap.val();
-                if (!validPassword) {
-                    return alert('❌ Login Failed: ID not found in security directory registry database.');
+        const events = [
+            { name: "時之沙漏", run: () => { ['boy','girl'].forEach(p => state[p].hp = Math.floor(state[p].max * 0.5)); } },
+            { name: "破滅之咒", run: () => { ['boy','girl'].forEach(p => { let d = Math.floor(state[p].hp * 0.2); state[p].hp = Math.max(0, state[p].hp - d); pop(p, `-${d}`, 'var(--dmg)'); }); } },
+            { name: "神聖新星", run: () => { ['boy','girl'].forEach(p => { let h = Math.floor(state[p].max * 0.3); state[p].hp = Math.min(state[p].max, state[p].hp + h); pop(p, `+${h}`, 'var(--heal)'); }); } },
+            { name: "狂暴之月", run: () => { ['boy','girl'].forEach(p => state[p].en = 10); } },
+            { name: "枯竭風暴", run: () => { if(state.boy.job !== 'RockQueen') state.boy.en = 0; if(state.girl.job !== 'RockQueen') state.girl.en = 0; } },
+            { name: "命運天秤", run: () => {
+                let pB = state.boy.hp / state.boy.max;
+                let pG = state.girl.hp / state.girl.max;
+                if(pB !== pG) {
+                    let temp = pB;
+                    state.boy.hp = Math.floor(state.boy.max * pG);
+                    state.girl.hp = Math.floor(state.girl.max * temp);
                 }
-                if (validPassword !== inputPwd) {
-                    return alert('❌ Login Failed: Verification credentials password mismatch!');
-                }
+            }},
+            { name: "極寒永夜", run: () => { ['boy','girl'].forEach(p => state[p].frost = 2); } },
+            { name: "神明沉默", run: () => { ['boy','girl'].forEach(p => { state[p].stunned=false; state[p].guard=false; state[p].pandaGuard=false; state[p].reflect=false; state[p].dodge=0; state[p].weakened=false; state[p].frost=0; state[p].focused=false; state[p].marked=false; state[p].counter=false; state[p].poison=0; state[p].bleed=0; }); } },
+            { name: "烈焰風暴", run: () => { ['boy','girl'].forEach(p => { state[p].hp = Math.max(0, state[p].hp - 25); pop(p, '-25', 'var(--dmg)'); }); } }
+        ];
 
-                const isBoss = (inputId === 'Teacher');
-                if (isBoss) {
-                    myId = 'teacher_boss';
-                    proceedLogin(inputId, 'Dark Lord');
-                } else {
-                    database.ref(`rooms/${currentRoom}/players/teacher_boss`).once('value', (bossSnap) => {
-                        const bossData = bossSnap.val();
-                        if (!bossSnap.exists() || !bossData || bossData.online === false || bossData.hp <= 0) {
-                            alert('❌ Failed: No active Dark Lord detected in this room! Please wait for your instructor to launch the room session.');
-                        } else {
-                            myId = 'student_' + inputId;
-                            const studentJob = document.getElementById('player-job').value;
-                            proceedLogin(inputId, studentJob);
-                        }
-                    });
-                }
-            }).catch(err => {
-                alert('Network stream error connecting to auth cloud module: ' + err.message);
-            });
-        }
-
-        function proceedLogin(inputId, job) {
-            database.ref(`global_users/${inputId}`).once('value', (snapshot) => {
-                let userData = snapshot.val();
-                
-                if (!userData) {
-                    userData = { level: (inputId === 'Teacher') ? 9999 : 1, exp: 0, job: job, hp: null, en: 0, ap: 0, team: 'unaligned', lastTeamChange: 0 };
-                } else {
-                    if (inputId !== 'Teacher') {
-                        userData.job = job; 
-                        userData.hp = null; 
-                    }
-                }
-
-                if (inputId === 'Teacher') {
-                    userData.level = 9999;
-                    userData.job = 'Dark Lord';
-                    userData.hp = 99999;
-                    userData.en = 9999;
-                    userData.ap = 99999;
-                    userData.team = 'boss';
-                    bossAoeCount = 0;
-                }
-
-                const scaledStats = getScaledStats(userData.job, userData.level);
-
-                const sessionData = {
-                    id: myId,
-                    userId: inputId,
-                    name: inputId,
-                    job: userData.job,
-                    level: userData.level,
-                    exp: userData.exp || 0,
-                    hp: (userData.hp !== undefined && userData.hp !== null) ? userData.hp : scaledStats.hp,
-                    en: (userData.en !== undefined && userData.en !== null) ? userData.en : 0,
-                    ap: (userData.ap !== undefined && userData.ap !== null) ? userData.ap : 0, 
-                    team: userData.team || 'unaligned',
-                    lastTeamChange: userData.lastTeamChange || 0,
-                    online: true,
-                    forceLogout: false
-                };
-
-                const myPlayerRef = database.ref(`rooms/${currentRoom}/players/${myId}`);
-                
-                if (inputId === 'Teacher') {
-                    // Dark Lord
-                } else {
-                    myPlayerRef.onDisconnect().update({ online: false });
-                }
-
-                myPlayerRef.set(sessionData).then(() => {
-                    if (inputId !== 'Teacher') {
-                        saveToGlobalUser(inputId, sessionData);
-                    }
-                    
-                    document.getElementById('login-panel').style.display = 'none';
-                    document.getElementById('room-display').innerText = `ROOM: ${currentRoom}`;
-                    document.getElementById('logout-button').style.display = 'block';
-                    
-                    document.getElementById('my-status-display').innerText = `${sessionData.name} (${sessionData.job})`;
-                    
-                    if(inputId === 'Teacher') {
-                        document.getElementById('boss-panel').style.display = 'block';
-                        document.getElementById('btn-toggle-multi-select').style.display = 'block';
-                        
-                        document.getElementById('boss-custom-chat-msg').addEventListener('keydown', (e) => {
-                            if (e.key === 'Enter') bossSubmitCustomMessage();
-                        });
-                    } else {
-                        document.getElementById('student-team-selector-box').style.display = 'block';
-                    }
-                    
-                    initRealtimeSync();
-                });
-            });
-        }
-
-        function userManualLogout() {
-            if (!currentRoom || !myId) return;
-            if (confirm("Are you sure you want to log out safely from this arena session?")) {
-                database.ref(`rooms/${currentRoom}/players`).off();
-                database.ref(`rooms/${currentRoom}/logs`).off();
-                
-                const logoutRef = database.ref(`rooms/${currentRoom}/players/${myId}`);
-                myId = null; 
-                
-                logoutRef.remove().then(() => {
-                    location.reload();
-                });
-            }
-        }
-
-        function initRealtimeSync() {
-            database.ref(`rooms/${currentRoom}/players`).on('value', (snapshot) => {
-                if (myId === null) return;
-                allPlayersData = snapshot.val() || {};
-                
-                if (myId && !allPlayersData[myId]) {
-                    alert("🛑 You have been disconnected or removed from this room arena!");
-                    location.reload();
-                    return;
-                }
-
-                if (myId && allPlayersData[myId] && allPlayersData[myId].forceLogout) {
-                    alert("🛑 You have been disconnected or removed from this room arena!");
-                    location.reload();
-                    return;
-                }
-
-                if (myId !== 'teacher_boss' && !allPlayersData['teacher_boss']) {
-                    alert("📢 Dark Lord closed the app or left the session. Room terminated!");
-                    location.reload();
-                    return;
-                }
-
-                const dScreen = document.getElementById('death-screen');
-                if (dScreen && myId && myId !== 'teacher_boss' && allPlayersData[myId]) {
-                    if (parseInt(allPlayersData[myId].hp) <= 0) {
-                        dScreen.style.display = 'flex'; 
-                    } else {
-                        dScreen.style.display = 'none';  
-                    }
-                }
-
-                if (myId && myId !== 'teacher_boss' && allPlayersData[myId]) {
-                    updateTeamTimerUIElement(allPlayersData[myId]);
-                }
-
-                renderPlayers();
-                populateTargets();
-                renderSkills();
-                renderTeacherMultiSelectGrid();
-            });
-
-            database.ref(`rooms/${currentRoom}/logs`).limitToLast(40).on('value', (snapshot) => {
-                if (myId === null) return;
-                const logs = snapshot.val() || {};
-                const logBox = document.getElementById('log-box');
-                logBox.innerHTML = '';
-                Object.values(logs).forEach(l => {
-                    const entry = document.createElement('div');
-                    entry.className = 'log-entry';
-                    
-                    if (l.includes('👑【TEACHER ANNOUNCEMENT】')) {
-                        entry.className += ' log-teacher-msg';
-                    } else if (l.includes('[⚠️WARNING]') || l.includes('🌟') || l.includes('👑') || l.includes('💥') || l.includes('☠️') || l.includes('💥CRITICAL') || l.includes('🛑【WINDOW_PUNISHMENT】') || l.includes('😇') || l.includes('⭐LEVEL UP')) {
-                        entry.className += ' log-alert-red';
-                    }
-                    
-                    entry.innerText = l;
-                    logBox.appendChild(entry);
-                });
-                logBox.scrollTop = logBox.scrollHeight;
-            });
-
-            const currentMe = allPlayersData[myId];
-            if (currentMe) {
-                sendGlobalLog(`🚀【${currentMe.name}】(Lv.${currentMe.level} ${currentMe.job}) successfully synchronized profile and spawned into battle!`);
-            }
-            initVisibilityMonitor();
-        }
-
-        function saveToGlobalUser(userId, playerObj) {
-            if (userId === 'Teacher') return;
-            database.ref(`global_users/${userId}`).update({
-                level: playerObj.level,
-                exp: playerObj.exp,
-                hp: playerObj.hp,
-                en: playerObj.en,
-                ap: playerObj.ap,
-                job: playerObj.job,
-                team: playerObj.team || 'unaligned',
-                lastTeamChange: playerObj.lastTeamChange || 0
-            });
-        }
-
-        function initVisibilityMonitor() {
-            if (myId === 'teacher_boss') return; 
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden && myId) {
-                    database.ref(`rooms/${currentRoom}/players/${myId}`).once('value', (snapshot) => {
-                        let me = snapshot.val();
-                        if (me && me.hp > 0) {
-                            const punishDmg = 50; 
-                            me.hp = Math.max(0, me.hp - punishDmg);
-                            
-                            if (me.hp <= 0) {
-                                me.level = 1;
-                                me.exp = 0;
-                                me.en = 0;
-                            }
-                            
-                            database.ref(`rooms/${currentRoom}/players/${me.id}`).set(me);
-                            saveToGlobalUser(me.userId, me);
-                            
-                            let logMsg = `🛑【WINDOW_PUNISHMENT】Student【${me.name}】triggered iPad split-screen/window-mode or switched apps! System enforced immediate penalization: -${punishDmg} HP!`;
-                            if (me.hp <= 0) {
-                                logMsg += ` 💀 Banishment complete: Entity Perished! Level completely hard-reset back to Lv.1!`;
-                            }
-                            sendGlobalLog(logMsg);
-                        }
-                    });
-                }
-            });
-        }
-
-        function updateTeamTimerUIElement(me) {
-            const display = document.getElementById('team-lock-timer-display');
-            if (!display) return;
+        function triggerRandomNewMoonEvent() {
+            if(isOver) return;
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            let ev = events[Math.floor(Math.random() * events.length)];
             
-            const currentTeamName = me.team || 'unaligned';
-            if (currentTeamName === 'unaligned') {
-                display.innerHTML = `Status: <b style="color:#aaa;">Unaligned</b> / Ready to join any squad.`;
+            alert(`🌙 新月事件觸發 / New Moon Event Triggered:\n\n${eventIntroductions[ev.name]}`);
+            
+            ev.run();
+            checkWin();
+            update();
+        }
+
+        function toggleEventInfo(show) {
+            document.getElementById('event-info-panel').style.display = show ? 'flex' : 'none';
+        }
+
+        function checkStatusDetails(player) {
+            let activeBuffs = [];
+            let pState = state[player];
+
+            if(pState.stunned) activeBuffs.push("【暈眩 / STUN】: 無法行動（可施展解控技或以基礎攻擊、充能來度過回合）。\n(Cannot act. Basic attacks or energy charge will advance the turn count to melt this.)");
+            if(pState.guard) activeBuffs.push("【完美護盾 / GUARD】: 抵擋下一次受到的攻擊傷害高達 80%。\n(Reduces the damage of the next incoming attack by 80%.)");
+            if(pState.pandaGuard) activeBuffs.push("【熊貓護盾 / PANDA GUARD】: 功夫熊貓以靜制動的防禦氣場，抵擋下一次受到的攻擊傷害 5%。\n(Reduces the damage of the next incoming attack by 5%.)"); // 【更正】文字同步修正為 5%
+            if(pState.reflect) activeBuffs.push("【鏡面反射 / REFLECT】: 100% 將下一次受到的技能傷害全額回彈給對手。\n(Bounces 100% of the next incoming skill damage directly back to the attacker.)");
+            if(pState.counter) activeBuffs.push("【反傷荊棘 / THORNS】: 受到敵方攻擊傷害時，將對進攻方進行 20 點真實傷害反彈。");
+            if(pState.dodge > 0) activeBuffs.push(`【迴避中 / DODGE x${pState.dodge}】: 處於高機率閃避敵方攻擊的狀態中，只有受到真正攻擊後才會取消層數。`);
+            if(pState.weakened) activeBuffs.push("【虛弱 / WEAK】: 自身輸出的攻擊技能傷害降低。\n(The damage dealt by your next attacking skills will be heavily reduced.)");
+            if(pState.frost > 0) activeBuffs.push(`【凍結 / FROST x${pState.frost}】: 冰霜覆蓋！下一次施展消耗能量技能時，能量消耗量加倍。\n(Frost cover! Your next EN-consuming skill will cost double/triple EN.)`);
+            if(pState.focused) activeBuffs.push("【暴擊蓄力 / FOCUS】: 專注狀態，下一次輸出的傷害技能必定觸發 200% 暴擊。\n(Your next offensive action will guarantee a 100% critical strike.)");
+            if(pState.marked) activeBuffs.push("【破甲標記 / MARK】: 護甲被完全撕裂，防禦歸零，受到傷害時無法享有減傷。\n(Defense armor becomes 0. Automatically takes unmitigated raw damage.)");
+            if(pState.poison > 0) activeBuffs.push(`【中毒 / POISON x${pState.poison}】: 每當增加 or 減少 AP 時，將受到 3 點真實傷害。`);
+            if(pState.bleed > 0) activeBuffs.push(`【出血 / BLEED x${pState.bleed}】: 每當施展需要消耗能量的招式時，將受到 8 點真實傷害。`);
+
+            if(activeBuffs.length === 0) {
+                alert(`ℹ️ ${player.toUpperCase()} 當前沒有任何異常 or 增益狀態。\n(${player.toUpperCase()} currently has no active buffs or debuffs.)`);
+            } else {
+                alert(`📋 ${player.toUpperCase()} 當前狀態詳情 / Status Details:\n\n` + activeBuffs.join("\n\n"));
+            }
+        }
+
+        function changeAP(player, amt) {
+            state[player].ap = Math.max(0, state[player].ap + amt);
+            
+            if (state[player].poison > 0) {
+                state[player].hp = Math.max(0, state[player].hp - 3);
+                pop(player, "-3 (POISON)", "var(--green)", 0);
+                state[player].poison = Math.max(0, state[player].poison - 1);
+            }
+            
+            checkWin();
+            update();
+        }
+
+        const r = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+        function triggerFX(type, attacker, target) {
+            const layer = document.getElementById('fx-layer');
+            const tCard = document.getElementById(`card-${target}`).getBoundingClientRect();
+            const sCard = document.getElementById(`card-${attacker}`).getBoundingClientRect();
+            
+            const tx = tCard.left + tCard.width / 2;
+            const ty = tCard.top + tCard.height / 2;
+            const sx = sCard.left + sCard.width / 2;
+            const sy = sCard.top + sCard.height / 2;
+
+            if(type === 'slash') {
+                const fx = document.createElement('div');
+                fx.className = 'fx-slash';
+                fx.style.left = `${tx - 75}px`;
+                fx.style.top = `${ty - 3}px`;
+                layer.appendChild(fx);
+                setTimeout(() => fx.remove(), 300);
+            } else if(type === 'bolt') {
+                const fx = document.createElement('div');
+                fx.className = 'fx-bolt';
+                fx.style.left = `${tx - 15}px`;
+                fx.style.top = `${ty - 15}px`;
+                layer.appendChild(fx);
+                setTimeout(() => fx.remove(), 400);
+            } else if(type === 'arrow') {
+                const fx = document.createElement('div');
+                fx.className = 'fx-arrow';
+                fx.innerText = '🏹';
+                fx.style.left = '0px'; fx.style.top = '0px';
+                fx.style.setProperty('--sx', sx + 'px');
+                fx.style.setProperty('--sy', sy + 'px');
+                fx.style.setProperty('--ex', tx + 'px');
+                fx.style.setProperty('--ey', ty + 'px');
+                fx.style.setProperty('--rot', attacker === 'boy' ? '45deg' : '-135deg');
+                layer.appendChild(fx);
+                setTimeout(() => fx.remove(), 300);
+            } else if(type === 'shake') {
+                document.body.classList.add('shake');
+                setTimeout(() => document.body.classList.remove('shake'), 200);
+            }
+        }
+
+        function act(p, i) {
+            if(isOver || state[p].ap <= 0) return;
+            const s = jobs[state[p].job].skills[i], opp = p === 'boy' ? 'girl' : 'boy';
+            
+            const canIgnoreStun = (state[p].job === 'Paladin' && s.n === 'Holy Light');
+            const isBasicOrEn = (i === 0 || i === 1);
+
+            if(state[p].stunned && !canIgnoreStun) {
+                if (isBasicOrEn) {
+                    if(typeof state[p].stunned === 'number' && state[p].stunned > 1) state[p].stunned--;
+                    else state[p].stunned = false;
+                    state[p].ap--;
+                    pop(p, "CLEANSED!", "var(--info)", 0);
+                    update();
+                }
                 return;
             }
 
-            const now = Date.now();
-            const elapsed = now - (me.lastTeamChange || 0);
-            const cooldownWindow = 10 * 60 * 1000;
+            let cost = (state[p].frost > 0 && s.c > 0) ? s.c * (state[p].frost === 2 ? 3 : 2) : s.c;
+            if(state[p].en < cost) return;
 
-            if (elapsed < cooldownWindow) {
-                const remainingSecs = Math.ceil((cooldownWindow - elapsed) / 1000);
-                const mins = Math.floor(remainingSecs / 60);
-                const secs = remainingSecs % 60;
-                display.innerHTML = `Current Faction: <b style="color:#f1c40f;">${currentTeamName.toUpperCase()}</b> | ⏳ Change Lockout: <b>${mins}m ${secs}s</b>`;
-            } else {
-                display.innerHTML = `Current Faction: <b style="color:#2ecc71;">${currentTeamName.toUpperCase()}</b> | ✅ Roster choice unlocked.`;
-            }
-        }
+            const isUlt = (i === jobs[state[p].job].skills.length - 1);
+            if(isUlt && (state[p].ultCount >= 3)) return;
 
-        function userRequestChangeTeam(selectedTeam) {
-            if (!myId || myId === 'teacher_boss') return;
-            const me = allPlayersData[myId];
-            if (!me) return;
-
-            if (me.team === selectedTeam) {
-                return alert(`You are already assigned to Team ${selectedTeam.toUpperCase()}!`);
+            if (cost > 0 && state[p].bleed > 0) {
+                state[p].hp = Math.max(0, state[p].hp - 8);
+                pop(p, "-8 (BLEED)", "var(--dmg)", 0);
+                state[p].bleed = Math.max(0, state[p].bleed - 1);
             }
 
-            const now = Date.now();
-            const elapsed = now - (me.lastTeamChange || 0);
-            const cooldownWindow = 10 * 60 * 1000;
+            state[p].en -= cost;
+            state[p].ap--;
+            if(cost > 0) state[p].frost = 0;
 
-            if (me.team && me.team !== 'unaligned' && elapsed < cooldownWindow) {
-                const remainingSecs = Math.ceil((cooldownWindow - elapsed) / 1000);
-                return alert(`🛡️ Alignment Locked: You cannot change teams for another ${Math.floor(remainingSecs/60)}m ${remainingSecs%60}s due to technical battle sync parameters!`);
-            }
-
-            me.team = selectedTeam;
-            me.lastTeamChange = now;
-
-            database.ref(`rooms/${currentRoom}/players/${myId}`).set(me);
-            saveToGlobalUser(me.userId, me);
-            sendGlobalLog(`🛡️【TEAM ALIGNMENT】Student【${me.name}】has registered and deployed under the [${selectedTeam.toUpperCase()}] Alliance command framework!`);
-        }
-
-        function toggleMultiSelectConsoleUI() {
-            const p = document.getElementById('teacher-multi-select-panel');
-            if (p.style.display === 'block') {
-                p.style.display = 'none';
-            } else {
-                p.style.display = 'block';
-                renderTeacherMultiSelectGrid();
-            }
-        }
-
-        function renderTeacherMultiSelectGrid() {
-            const grid = document.getElementById('multi-check-grid');
-            if (!grid) return;
+            // 暫存防禦者的反射狀態
+            let isReflect = jobs[state[opp].job].skills.some(sk => sk.n === 'Barrier') && state[opp].reflect;
             
-            const savedCheckedIds = [];
-            grid.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
-                savedCheckedIds.push(cb.value);
+            // 使用完招式後清除自身的鏡面反射狀態
+            state[p].reflect = false; 
+
+            if(isUlt) {
+                state[p].ultCount = (state[p].ultCount || 0) + 1;
+            }
+
+            let attackIsFocused = state[p].focused;
+
+            // --- EXECUTE SKILL INDEPENDENT ACTIONS ---
+            if(s.t === 'en_weak') { state[opp].weakened = true; pop(opp, "WEAKEN!", "var(--purple)", 0); }
+            if(s.t === 'weak_self_focus') { state[opp].weakened = true; pop(opp, "WEAKEN!", "var(--purple)", 0); state[p].focused = true; pop(p, "FOCUS蓄力!", "var(--accent)", 0); }
+            if(s.t === 'def_draw_en') { if(state[opp].en > 0) { state[opp].en--; state[p].en = Math.min(10, state[p].en + 1); pop(opp, "-1 EN", "var(--purple)", 0); pop(p, "+1 EN", "var(--info)", 0); } }
+            
+            if(s.t === 'en_cleanse_frost') { state[p].frost = 0; pop(p, "FROST CLEANSED", "var(--info)", 0); }
+            if(s.t === 'reflect_gain_en') { state[p].reflect = true; pop(p, "REFLECT ACTION", "var(--info)", 0); }
+            
+            if(s.t === 'en_dodge30') { state[p].dodge = 2; pop(p, "30% DODGE", "var(--info)", 0); }
+            if(s.t === 'dodge_weak') { state[p].dodge = 2; state[opp].weakened = true; pop(opp, "WEAKEN!", "var(--purple)", 0); }
+            if(s.t === 'dodge_focus') { state[p].dodge = 2; state[p].focused = true; pop(p, "FOCUS蓄力!", "var(--accent)", 0); }
+            
+            if(s.t === 'perm_reduce_def') { jobs[state[opp].job].def = Math.max(0, jobs[state[opp].job].def - 0.04); pop(opp, "DEF DECREASED", "var(--purple)", 0); }
+            if(s.t === 'en_heal10') { state[p].hp = Math.min(state[p].max, state[p].hp + 10); pop(p, "+10", "var(--heal)", 0); }
+            
+            if(s.t === 'en_blood_rage') { state[p].hp = Math.max(1, state[p].hp - 5); pop(p, "-5 HP", "var(--dmg)", 0); state[p].focused = true; pop(p, "FOCUS蓄力!", "var(--accent)", 0); }
+            
+            if(s.t === 'en_focus') { state[p].focused = true; pop(p, "FOCUS蓄力!", "var(--accent)", 0); }
+            if(s.t === 'heal_cleanse_mark') { state[p].marked = false; pop(p, "MARK CLEANSED", "var(--info)", 0); }
+            if(s.t === 'mark_weaken_opp') { state[opp].marked = true; state[opp].weakened = true; pop(opp, "MARKED & WEAKENED", "var(--purple)", 0); }
+            if(s.t === 'en_dodge100') { state[p].dodge = 2; pop(p, "100% DODGE", "var(--info)", 0); }
+            
+            if(s.t === 'en_cleanse_weak') { state[p].weakened = false; pop(p, "WEAK CLEANSED", "var(--info)", 0); }
+            if(s.t === 'heal_cleanse_stun') { if(typeof state[p].stunned !== 'undefined') state[p].stunned = false; }
+            if(s.t === 'counter_guard') { state[p].guard = true; state[p].counter = true; pop(p, "GUARD & THORNS READY", "var(--info)", 0); }
+            
+            if(s.t === 'flashbang_act') { state[opp].guard = false; state[opp].reflect = false; state[opp].focused = false; pop(opp, "BUFF CLEARED!", "var(--rock)", 0); }
+            if(s.t === 'dodge70') { state[p].dodge = 2; pop(p, "70% DODGE", "var(--info)", 0); }
+            
+            if(s.t === 'sway_act') { state[p].dodge = 2; state[p].focused = true; pop(p, "DODGE & FOCUS", "var(--info)", 0); }
+            
+            if(s.t === 'en_fortify') { jobs[state[p].job].def = Math.min(0.75, jobs[state[p].job].def + 0.02); pop(p, "+2% DEF STACK", "var(--info)", 0); }
+            if(s.t === 'def_heal15') { state[p].hp = Math.min(state[p].max, state[p].hp + 15); pop(p, "+15", "var(--heal)", 0); }
+            if(s.t === 'counter_thorns') { state[p].counter = true; pop(p, "THORNS ACTIVE", "var(--info)", 0); }
+            
+            if(s.t === 'harden_cleanse_mark') { state[p].marked = false; pop(p, "MARK CLEANSED", "var(--info)", 0); }
+            
+            if(s.t === 'en_dodge20') { state[p].dodge = 2; pop(p, "20% DODGE", "var(--info)", 0); }
+            if(s.t === 'weaken_frost1') { state[opp].weakened = true; state[opp].frost = 1; pop(opp, "WEAK & FROST LAYER", "var(--purple)", 0); }
+            
+            if(s.t === 'en_heal12') { state[p].hp = Math.min(state[p].max, state[p].hp + 12); pop(p, "+12", "var(--heal)", 0); }
+            if(s.t === 'mark_gain_en') { state[opp].marked = true; state[p].en = Math.min(10, state[p].en + 1); pop(opp, "MARKED!", "var(--purple)", 0); pop(p, "+1 EN", "var(--info)", 0); }
+            if(s.t === 'dodge70_focus') { state[p].dodge = 2; state[p].focused = true; pop(p, "DODGE & FOCUS", "var(--info)", 0); }
+            
+            if(s.t === 'en_panda_peace') { state[p].pandaGuard = true; pop(p, "PANDA SHIELD READY", "var(--info)", 0); }
+            if(s.t === 'weak_opp') { state[opp].weakened = true; pop(opp, "WEAKENED", "var(--purple)", 0); }
+
+            if(s.t === 'berserk_ult') {
+                state[p].en = 10;
+                pop(p, "FULL EN (10)", "var(--accent)", 0);
+            }
+
+            if(s.t && s.t.startsWith('en') && typeof s.v === 'number') {
+                state[p].en = Math.min(10, state[p].en + s.v);
+                playSfx('en');
+            }
+
+            if(s.fx) triggerFX(s.fx, p, opp);
+
+            // --- DAMAGE CALCULATION ---
+            let baseD = s.d ? r(s.d[0], s.d[1]) : 0;
+            baseD *= 1 + ((state[p].godAtk || 0) * 0.1);
+
+            let isCrit = false;
+            let critChance = (state[p].job === 'Berserker' ? 0.3 : (state[p].job === 'Assassin' ? 0.4 : 0.10));
+            
+            if(attackIsFocused) { 
+                isCrit = true; 
+                baseD *= 2.0; 
+            } else if(Math.random() < critChance) { 
+                isCrit = true; 
+                baseD *= 1.5; 
+            }
+
+            if(state[p].weakened) {
+                baseD *= (state[p].job === 'Warrior' || state[p].job === 'Assassin' || state[p].job === 'Butcher') ? 0.5 : 0.7;
+                state[p].weakened = false;
+            }
+
+            if(s.t === 'exec' && state[opp].hp < (state[opp].max * 0.5)) { baseD *= 1.5; }
+
+            // --- DODGE framework ---
+            if(baseD > 0 && s.t !== 'boxer_ult' && s.t !== 'rock_ult' && s.t !== 'panda_ult') {
+                let dodgeChance = 0.10; 
+                if(state[opp].dodge > 0) {
+                    const oppJob = state[opp].job;
+                    if(oppJob === 'Assassin') {
+                        dodgeChance = state[opp].focused ? 0.90 : 0.60;
+                        if(state[opp].dodge === 2 && state[opp].hp < state[opp].max) dodgeChance = 0.30; 
+                    } else if(oppJob === 'Archer') { dodgeChance = 1.0; } 
+                    else if(oppJob === 'Gunner') { dodgeChance = 0.70; } 
+                    else if(oppJob === 'Boxer') { dodgeChance = 0.70; } 
+                    else if(oppJob === 'Demon Hunter') { dodgeChance = 0.70; } 
+                    else if(oppJob === 'Joker') { dodgeChance = 0.75; }
+                    else if(oppJob === 'KungFuPanda') { dodgeChance = 0.10; }
+                    
+                    state[opp].dodge--;
+                } else if(state[opp].job === 'Joker') {
+                    dodgeChance = 0.25; 
+                }
+
+                if(Math.random() < dodgeChance) {
+                    pop(opp, "DODGED!", "var(--info)", 0);
+                    playSfx('en');
+                    checkWin();
+                    update();
+                    return;
+                }
+            }
+
+            // --- APPLY DAMAGE ---
+            if(baseD > 0) {
+                if(s.t === 'ignore_def_20') {
+                    let armor = jobs[state[opp].job].def * 0.8; 
+                    if(state[opp].marked) armor = 0;
+                    baseD = Math.max(1, Math.floor(baseD * (1 - armor)));
+                } else if(s.t === 'mark_ignore_def' || s.t === 'weak_pierce_guard' || s.t === 'stun_pierce_guard' || s.t === 'panda_ult') {
+                    baseD = Math.max(1, Math.floor(baseD)); 
+                } else if(!s.t || (s.t !== 'mark' && s.t !== 'bleed_reckless')) {
+                    let armor = jobs[state[opp].job].def;
+                    if(state[opp].marked) armor = 0;
+                    baseD = Math.max(1, Math.floor(baseD * (1 - armor)));
+                }
+
+                // 【更正】護盾減傷修改：熊貓護盾減傷改為 5% (承受 95% 傷害)
+                if (s.t !== 'panda_ult') {
+                    if (state[opp].pandaGuard) {
+                        baseD = Math.floor(baseD * 0.95); // 減傷 5%
+                        state[opp].pandaGuard = false;
+                    } else if (state[opp].guard) {
+                        baseD = Math.floor(baseD * 0.2); // 減傷 80%
+                        state[opp].guard = false;
+                    }
+                }
+
+                // 反射機制與荊棘傷害
+                if(isReflect && s.t !== 'panda_ult') {
+                    state[p].hp = Math.max(0, state[p].hp - baseD);
+                    pop(p, `${baseD} (REFLECT)`, "var(--purple)", 0);
+                    playSfx('hit');
+                } else {
+                    state[opp].hp = Math.max(0, state[opp].hp - baseD);
+                    
+                    let hI = attackIsFocused ? 1 : (isCrit ? 1 : 0);
+                    let floatMsg = attackIsFocused ? `-${baseD} 💥 (FOCUS)` : (isCrit ? `-${baseD} 💥` : `-${baseD}`);
+                    pop(opp, floatMsg, "var(--dmg)", hI);
+                    playSfx('hit');
+
+                    if(state[opp].job === 'KungFuPanda' && Math.random() < 0.30) {
+                        state[opp].en = Math.min(10, state[opp].en + 1);
+                        pop(opp, "+1 EN (CHI)", "var(--info)", 0);
+                    }
+                    if(state[opp].job === 'Warrior') state[opp].en = Math.min(10, state[opp].en + 1);
+                    if(state[opp].job === 'Paladin' && Math.random() < 0.5) state[opp].en = Math.min(10, state[opp].en + 1);
+
+                    let hasThorns = state[opp].counter;
+                    if(hasThorns) {
+                        state[p].hp = Math.max(0, state[p].hp - 20);
+                        pop(p, `-20 (THORNS)`, "var(--purple)", 0);
+                    }
+                }
+            }
+
+            if (attackIsFocused) {
+                state[p].focused = false;
+            }
+
+            // --- AFTER EFFECT BUFFS & DEBUFFS ---
+            if(s.t === 'focus' || s.t === 'focus_attack') { state[p].focused = true; pop(p, "FOCUS蓄力!", "var(--accent)", 0); }
+            if(s.t === 'mark') state[opp].marked = true;
+            if(s.t === 'harden' && s.v) state[p].hardened = (state[p].hardened || 0) + s.v;
+
+            if(s.t === 'leech_poison') {
+                state[opp].poison = (state[opp].poison || 0) + 3;
+                pop(opp, "POISONED!", "var(--green)", 0);
+            }
+            if(s.t === 'stun_poison') {
+                state[opp].poison = (state[opp].poison || 0) + 3;
+                pop(opp, "POISONED!", "var(--green)", 0);
+                if(Math.random() <= s.v) state[opp].stunned = true;
+            }
+
+            if(s.t === 'bleed_self') {
+                state[opp].bleed = (state[opp].bleed || 0) + 3;
+                pop(opp, "BLEEDING!", "var(--dmg)", 0);
+            }
+            if(s.t === 'bleed_reckless') {
+                state[opp].bleed = (state[opp].bleed || 0) + 3;
+                pop(opp, "BLEEDING!", "var(--dmg)", 0);
+                state[p].marked = true;
+                pop(p, "MARKED!", "var(--purple)", 0);
+            }
+
+            if((s.t === 'heal' || s.t === 'leech_poison') && s.v) {
+                let f = Array.isArray(s.v) ? r(s.v[0], s.v[1]) : s.v;
+                let ratio = (state[p].job === 'Alchemist') ? 1.3 : 1.0;
+                let healVal = Math.floor(f * ratio);
+                state[p].hp = Math.min(state[p].max, state[p].hp + healVal);
+                if(healVal > 0) pop(p, `+${healVal}`, 'var(--heal)', 0);
+            }
+            if(s.t === 'leech' || s.t === 'berserk_ult') {
+                let ratio = (s.t === 'butcher_ult' || s.t === 'berserk_ult') ? 1.0 : (s.v || 0.5);
+                if(baseD > 0) {
+                    let healVal = Math.floor(baseD * ratio);
+                    state[p].hp = Math.min(state[p].max, state[p].hp + healVal);
+                    if(healVal > 0) pop(p, `+${healVal} (吸血恢復)`, 'var(--heal)', 0);
+                }
+            }
+
+            if(s.t === 'stun' && Math.random() <= s.v) state[opp].stunned = true;
+            if(s.t === 'stun_chance_15' && Math.random() <= s.v) state[opp].stunned = true;
+            if(s.t === 'panda_punch' && Math.random() <= 0.15) state[opp].marked = true;
+            if(s.t === 'stun_pierce_guard' && Math.random() <= s.v) state[opp].stunned = true;
+            if(s.t === 'frost_chance' && Math.random() <= s.v) state[opp].frost = 1;
+            if(s.t === 'mark_chance_15' && Math.random() <= 0.15) state[opp].marked = true;
+            if(s.t === 'leech_chance_15' && Math.random() <= 0.15) {
+                let healVal = Math.floor(baseD * 0.5);
+                state[p].hp = Math.min(state[p].max, state[p].hp + healVal);
+                if(healVal > 0) pop(p, `+${healVal}`, 'var(--heal)', 0);
+            }
+            
+            if(s.t === 'stun_drain_en') {
+                state[opp].en = Math.max(0, state[opp].en - 1);
+                pop(opp, "-1 EN", "var(--purple)", 0);
+                if(Math.random() <= s.v) state[opp].stunned = true;
+            }
+            if(s.t === 'weak_pierce_guard') { state[opp].weakened = true; pop(opp, "WEAKEN!", "var(--purple)", 0); }
+            if(s.t === 'body_blow_act') { state[opp].weakened = true; pop(opp, "ATK REDUCED!", "var(--purple)", 0); }
+            if(s.t === 'steal_en' || s.t === 'steal_en_basic') { if(state[opp].en > 0){ state[opp].en--; state[p].en = Math.min(10, state[p].en + 1); pop(opp, "-1 EN", "var(--purple)", 0); pop(p, "+1 EN", "var(--info)", 0); } }
+
+            if(s.t === 'rock_ult' || s.t === 'joker_ult') state[opp].stunned = true;
+            if(s.t === 'frost') state[opp].frost = s.v;
+            if(s.t === 'weak' && s.d) state[opp].weakened = true;
+
+            if(s.t === 'assassin_ult') {
+                state[opp].frost = 2;
+                state[opp].weakened = true;
+                pop(opp, "FATAL WOUND!", "var(--purple)", 0);
+            }
+            if(s.t === 'paladin_ult') {
+                let heal = Math.floor(state[p].max * 0.3);
+                state[p].hp = Math.min(state[p].max, state[p].hp + heal);
+                state[p].guard = true;
+                pop(p, `+${heal}`, 'var(--heal)', 0);
+            }
+            if(s.t === 'alchemist_ult') {
+                state[opp].en = 0;
+                state[p].focused = true;
+                pop(opp, "EN WIPE", "var(--info)", 0);
+            }
+            if(s.t === 'demon_ult') {
+                state[p].focused = true;
+            }
+            if(s.t === 'shield_breaker') {
+                state[opp].guard = false;
+                state[opp].pandaGuard = false;
+                pop(opp, "SHIELD BROKEN", "var(--rock)", 0);
+            }
+
+            if(state[p].job === 'Mage' && Math.random() < 0.4) { state[p].en = Math.min(10, state[p].en + 1); pop(p, "REFUND 1 EN", "var(--info)", 0); }
+            if(state[p].job === 'Butcher' && baseD > 0) { state[p].hp = Math.min(state[p].max, state[p].hp + 5); pop(p, "+5 (PASSIVE)", "var(--heal)", 0); }
+            if(state[p].job === 'Joker' && Math.random() < 0.05) { state[p].dodge = 2; pop(p, "PASSIVE DODGE!", "var(--info)", 0); }
+
+            checkWin();
+            update();
+        }
+
+        function initSelection() {
+            document.getElementById('save-system').style.display = 'flex';
+
+            const sidebar = document.getElementById('job-sidebar-list');
+            sidebar.innerHTML = '';
+            Object.keys(jobs).forEach(k => {
+                const item = document.createElement('div');
+                item.className = `job-list-item ${k === currentSelectedJobKey ? 'selected' : ''}`;
+                item.innerHTML = `<span>${jobs[k].icon}</span> <span>${k}</span>`;
+                item.onclick = () => {
+                    currentSelectedJobKey = k;
+                    initSelection();
+                };
+                sidebar.appendChild(item);
             });
 
-            grid.innerHTML = '';
+            const preview = document.getElementById('job-preview-panel');
+            const j = jobs[currentSelectedJobKey];
             
-            Object.values(allPlayersData).forEach(p => {
-                if (!p || p.id === 'teacher_boss' || p.forceLogout === true) return;
-                
-                const label = document.createElement('label');
-                label.className = 'multi-check-label';
-                
-                const isChecked = savedCheckedIds.includes(p.id);
-                const teamTag = p.team && p.team !== 'unaligned' ? `[${p.team.substring(0,1).toUpperCase()}] ` : '';
-                
-                label.innerHTML = `
-                    <input type="checkbox" value="${p.id}" ${isChecked ? 'checked' : ''}>
-                    <span>${teamTag}${p.name}</span>
+            let passivesHtml = '';
+            j.desc.forEach(d => { passivesHtml += `<div style="margin-bottom:4px;">• ${d}</div>`; });
+
+            let skillsHtml = '';
+            j.skills.forEach(s => {
+                skillsHtml += `
+                    <li class="detail-skill-item">
+                        <span class="detail-skill-cost">EN: ${s.c}</span>
+                        <strong>${s.n}</strong>
+                        <div class="detail-skill-desc">
+                            <div>Effect: ${s.e}</div>
+                            ${s.d ? `<div style="color: var(--dmg); font-weight:bold; margin-top:2px;">DMG: ${s.d[0]}-${s.d[1]}</div>` : ''}
+                        </div>
+                    </li>
                 `;
-                grid.appendChild(label);
-            });
-        }
-
-        function toggleSelectAllMultiCheck(status) {
-            const grid = document.getElementById('multi-check-grid');
-            if (!grid) return;
-            grid.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = status);
-        }
-
-        function executeMultiTargetAP(direction) {
-            const grid = document.getElementById('multi-check-grid');
-            const valInput = document.getElementById('multi-ap-value');
-            const delta = parseInt(valInput.value);
-            if (isNaN(delta) || delta <= 0) return alert("Please enter a valid numeric value.");
-
-            const checkedBoxes = grid.querySelectorAll('input[type="checkbox"]:checked');
-            if (checkedBoxes.length === 0) return alert("No active student selected in checkboxes!");
-
-            checkedBoxes.forEach(cb => {
-                const targetId = cb.value;
-                const target = allPlayersData[targetId];
-                if (target) {
-                    const oldAp = target.ap || 0;
-                    const newAp = Math.max(0, oldAp + (delta * direction));
-                    database.ref(`rooms/${currentRoom}/players/${targetId}/ap`).set(newAp);
-                    saveToGlobalUser(target.userId, { ...target, ap: newAp });
-                }
             });
 
-            sendGlobalLog(`👑📢【MULTICAST AP INTERVENTION】Teacher executed mass modification on (${checkedBoxes.length}) entities: ${direction > 0 ? '+' : '-'}${delta} Action Points forced!`);
+            preview.innerHTML = `
+                <div class="detail-header">
+                    <h3 class="detail-title">${currentSelectedJobKey.toUpperCase()}</h3>
+                    <div class="detail-stats">HP: ${j.hp} | DEF: ${Math.floor(j.def*100)}%</div>
+                </div>
+                <div class="detail-section-title">職業天賦 / Passives</div>
+                <div class="detail-passive">${passivesHtml}</div>
+                <div class="detail-section-title">技能列表 / Skills</div>
+                <ul class="detail-skills-list">${skillsHtml}</ul>
+                <button class="btn-confirm-selection" style="margin-top:15px;" onclick="confirmJobSelection('${currentSelectedJobKey}')">鎖定角色 / LOCK IN ${currentSelectedJobKey.toUpperCase()}</button>
+            `;
         }
 
-        function executeMultiTargetKick() {
-            const grid = document.getElementById('multi-check-grid');
-            const checkedBoxes = grid.querySelectorAll('input[type="checkbox"]:checked');
-            if (checkedBoxes.length === 0) return alert("No targets chosen to banish.");
-
-            if (confirm(`Supreme Master Decree: Are you absolutely sure you want to simultaneously EVICT/KICK all (${checkedBoxes.length}) chosen entities out of the active room?`)) {
-                checkedBoxes.forEach(cb => {
-                    const targetId = cb.value;
-                    const target = allPlayersData[targetId];
-                    if (target) {
-                        database.ref(`rooms/${currentRoom}/players/${targetId}`).update({
-                            online: false,
-                            forceLogout: true
-                        }).then(() => {
-                            database.ref(`rooms/${currentRoom}/players/${targetId}`).remove();
-                        });
-                    }
-                });
-                sendGlobalLog(`👑🛑【MASS BULK BANISHMENT】Teacher triggered clean multi-eviction sweeps! (${checkedBoxes.length}) students removed into hyperspace servers.`);
-            }
-        }
-
-        function bossInjectCustomAPToSelectedTarget() {
-            const dropdown = document.getElementById('target-dropdown');
-            const targetId = dropdown.value;
-            if (!targetId || targetId === 'teacher_boss' || !allPlayersData[targetId]) {
-                return alert("Please select a valid single targeted student from the dropdown menu first.");
-            }
-
-            const injectAmt = parseInt(document.getElementById('boss-single-inject-value').value);
-            if (isNaN(injectAmt) || injectAmt <= 0) {
-                return alert("Please specify a valid logical positive integer to inject.");
-            }
-
-            const currentAP = allPlayersData[targetId].ap || 0;
-            const newAP = currentAP + injectAmt;
-
-            database.ref(`rooms/${currentRoom}/players/${targetId}/ap`).set(newAP);
-            saveToGlobalUser(allPlayersData[targetId].userId, { ...allPlayersData[targetId], ap: newAP });
-            sendGlobalLog(`👑⚡【TARGET POINT INJECTION】Teacher injected custom +${injectAmt} AP directly into elements for【${allPlayersData[targetId].name}】! (${currentAP} AP ➔ ${newAP} AP)`);
-        }
-
-        // 🌟 徹底修復：雲端管理彈窗打開與關閉動作綁定函數
-        function openBossModal() {
-            const modal = document.getElementById('boss-modal');
-            if (modal) {
-                modal.style.display = 'flex';
-                loadGlobalUsersMonitor(); // 拉開的瞬間強行觸發高乾淨非同步渲染
-            }
-        }
-
-        function closeBossModal() {
-            const modal = document.getElementById('boss-modal');
-            if (modal) {
-                modal.style.display = 'none';
-            }
-        }
-
-        // 🌟 徹底修復：為 Modal 加載鍵盤 Esc 與半透明黑色遮罩點擊關閉事件監聽器
-        document.addEventListener('DOMContentLoaded', () => {
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape' || event.key === 'Esc') {
-                    closeBossModal();
-                }
-            });
-
-            const bossModalOverlay = document.getElementById('boss-modal');
-            if (bossModalOverlay) {
-                bossModalOverlay.addEventListener('click', (event) => {
-                    // 只有在精確點擊黑色半透明遮罩背景時才關閉，點選內部視窗主體不關閉
-                    if (event.target === bossModalOverlay) {
-                        closeBossModal();
-                    }
-                });
-            }
-        });
-
-        // 🌟 徹底修復：解決數據庫渲染失效漏洞。將獨立的秘密驗證目錄（secret_auth）與玩家目錄（global_users）安全分離並映射
-        function loadGlobalUsersMonitor() {
-            const tbody = document.getElementById('monitor-tbody');
-            if (!tbody) return;
+        function confirmJobSelection(j) {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            state[selecting].job = j; 
+            state[selecting].max = jobs[j].hp; 
+            state[selecting].hp = jobs[j].hp; 
+            state[selecting].def = jobs[j].def; 
+            state[selecting].ultCount = 0; 
             
-            tbody.innerHTML = `<tr><td colspan="6" style="color:#888; text-align:center;">Synchronizing database cloud streams...</td></tr>`;
-            
-            database.ref('secret_auth').once('value').then((authSnap) => {
-                const auths = authSnap.val() || {};
+            if(selecting === 'boy') { 
+                selecting = 'girl'; 
+                document.getElementById('turn-title').innerText = "GIRL: SELECT YOUR CLASS"; 
+                document.getElementById('turn-title').style.color = "var(--girl)";
+                currentSelectedJobKey = 'Mage';
+                initSelection();
+            } else { 
+                document.getElementById('selection-screen').style.display = 'none'; 
+                document.getElementById('arena').style.display = 'flex'; 
+                document.getElementById('btn-draw-event').style.display = 'block'; 
+                document.getElementById('wrestling-system-panel').style.display = 'block'; 
+                update(); 
+            }
+        }
+
+        function checkWin() {
+            let w = state.boy.hp <= 0 ? 'GIRL' : (state.girl.hp <= 0 ? 'BOY' : null);
+            if(w && !isOver) {
+                isOver = true;
+                document.getElementById('win-title').innerText = `${w} WINS!`;
+                document.getElementById('win-overlay').style.display = 'flex';
+                playSfx('shake');
+                return true;
+            }
+            return false;
+        }
+
+        function update() {
+            ['boy','girl'].forEach(p => {
+                document.getElementById(`ap-${p}`).innerText = state[p].ap;
+                document.getElementById(`name-${p}`).innerText = `${p.toUpperCase()} (${state[p].job})`;
                 
-                database.ref('global_users').once('value').then((userSnap) => {
-                    const users = userSnap.val() || {};
-                    tbody.innerHTML = ''; // 清空加載文字
-                    
-                    const sortedUserIds = Object.keys(auths).filter(uid => uid !== 'Teacher').sort();
-                    
-                    if (sortedUserIds.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="6" style="color:#aaa; text-align:center;">No students registered in database directory registry.</td></tr>`;
-                        return;
-                    }
+                let pct = (state[p].hp / state[p].max) * 100;
+                document.getElementById(`bar-${p}`).style.width = `${pct}%`;
+                document.getElementById(`txt-${p}`).innerText = `${state[p].hp}/${state[p].max}`;
+                
+                let enBox = document.getElementById(`en-${p}`);
+                enBox.innerHTML = '';
+                for(let dot=1; dot<=10; dot++) {
+                    let d = document.createElement('div');
+                    d.className = `en-dot ${dot <= state[p].en ? 'active' : ''}`;
+                    enBox.appendChild(d);
+                }
 
-                    sortedUserIds.forEach(uid => {
-                        const pwd = auths[uid] || 'N/A';
-                        const uInfo = users[uid] || { job: 'Warrior', level: 1, ap: 0 };
+                let statusText = [];
+                if(state[p].stunned) statusText.push("暈眩 (STUN)");
+                if(state[p].guard) statusText.push("完美護盾 (GUARD)");
+                if(state[p].pandaGuard) statusText.push("熊貓護盾-減傷5% (PANDA GUARD)"); // 【更正】明確標示為減傷 5%
+                if(state[p].reflect) statusText.push("鏡面反射 (REFLECT)");
+                if(state[p].counter) statusText.push("反傷 (THORNS)");
+                if(state[p].dodge > 0) statusText.push(`迴避中 (DODGE x${state[p].dodge})`);
+                if(state[p].weakened) statusText.push("虛弱 (WEAK)");
+                if(state[p].frost > 0) statusText.push(`凍結 (FROST x${state[p].frost})`);
+                if(state[p].focused) statusText.push("暴擊蓄力 (FOCUS)");
+                if(state[p].marked) statusText.push("破甲標記 (MARK)");
+                if(state[p].poison > 0) statusText.push(`中毒 (POISON x${state[p].poison})`);
+                if(state[p].bleed > 0) statusText.push(`出血 (BLEED x${state[p].bleed})`);
+                
+                document.getElementById(`status-${p}`).innerText = statusText.length > 0 ? statusText.join(" | ") + " (點擊查看效果 / Click to view)" : "無狀態 / No Status";
+
+                if(state[p].job) {
+                    let btnBox = document.getElementById(`btns-${p}`);
+                    btnBox.innerHTML = '';
+                    jobs[state[p].job].skills.forEach((sk, idx) => {
+                        let b = document.createElement('button');
+                        const isUltBtn = (idx === jobs[state[p].job].skills.length - 1);
+                        if(isUltBtn) b.className = 'btn-ult';
                         
-                        const sid = 'student_' + uid;
-                        let activeAp = uInfo.ap !== undefined ? uInfo.ap : 0;
-                        if (allPlayersData[sid] && allPlayersData[sid].ap !== undefined) {
-                            activeAp = allPlayersData[sid].ap;
-                        }
+                        let cost = (state[p].frost > 0 && sk.c > 0) ? sk.c * (state[p].frost === 2 ? 3 : 2) : sk.c;
+                        const canIgnoreStun = (state[p].job === 'Paladin' && sk.n === 'Holy Light');
+                        const isStunned = state[p].stunned;
+                        const isBasicOrEn = (idx === 0 || idx === 1);
 
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td><b style="color:#fff;">${uid}</b></td>
-                            <td><input type="text" id="input-pwd-${uid}" class="input-pwd" value="${pwd}"></td>
-                            <td><span style="color:#ccc;">${uInfo.job || 'Warrior'}</span></td>
-                            <td><input type="number" id="input-lv-${uid}" class="input-sm" value="${uInfo.level || 1}"></td>
-                            <td><b style="color:#3498db; font-size:13px;">${activeAp} AP</b></td>
-                            <td>
-                                <button class="ap-mini-btn" style="background:#27ae60; padding:4px 8px; border:none; border-radius:4px; display:inline-block;" onclick="bossSaveUserData('${uid}')">Save Changes</button>
-                                <button class="ap-mini-btn" style="background:#e67e22; padding:4px 6px; border:none; border-radius:4px; display:inline-block;" onclick="bossTableAdjustAP('${uid}', 1)">+1 AP</button>
-                                <button class="ap-mini-btn" style="background:#555; padding:4px 6px; border:none; border-radius:4px; display:inline-block;" onclick="bossTableAdjustAP('${uid}', -1)">-1 AP</button>
-                                <button onclick="bossResetUserLevel('${uid}')" style="display:inline-block; padding:4px 8px; font-size:11px; background:#e74c3c; border:none; color:white; border-radius:4px; cursor:pointer; font-weight:bold;">Reset Lv.1</button>
-                            </td>
+                        b.disabled = state[p].en < cost || isOver || state[p].ap <= 0 || (isStunned && !isBasicOrEn && !canIgnoreStun) || (isUltBtn && state[p].ultCount >= 3);
+                        
+                        let ultDisplaySuffix = isUltBtn ? ` <span style="font-size:1rem; color:var(--accent); font-weight:bold;">[Used: ${state[p].ultCount || 0}/3]</span>` : '';
+
+                        b.innerHTML = `
+                            <span class="sk-name">${sk.n}${ultDisplaySuffix}</span>
+                            <span class="sk-cost">EN: ${cost}</span>
+                            <span class="sk-val">${sk.d ? sk.d[0]+'-'+sk.d[1] : (sk.v && Array.isArray(sk.v) ? sk.v[0]+'-'+sk.v[1] : (sk.v||''))}</span>
+                            <span class="sk-effect">${sk.e}</span>
                         `;
-                        tbody.appendChild(tr);
+                        b.onclick = () => act(p, idx);
+                        btnBox.appendChild(b);
                     });
-                }).catch(err => {
-                    tbody.innerHTML = `<tr><td colspan="6" style="color:#ff3333; text-align:center;">Error mapping global_users: ${err.message}</td></tr>`;
-                });
-            }).catch(err => {
-                tbody.innerHTML = `<tr><td colspan="6" style="color:#ff3333; text-align:center;">Error mapping secret_auth: ${err.message}</td></tr>`;
-            });
-        }
-
-        function bossTableAdjustAP(studentId, amount) {
-            const sid = 'student_' + studentId;
-            if (!allPlayersData[sid]) {
-                database.ref(`global_users/${studentId}`).once('value', (snap) => {
-                    let u = snap.val() || { ap: 0 };
-                    let oldAp = u.ap || 0;
-                    let newAp = Math.max(0, oldAp + amount);
-                    database.ref(`global_users/${studentId}/ap`).set(newAp).then(() => {
-                        loadGlobalUsersMonitor();
-                    });
-                    sendGlobalLog(`👑 Teacher modified permanent offline registry profile points for【${studentId}】: ${oldAp} AP ➔ ${newAp} AP!`);
-                });
-                return;
-            }
-            const currentAP = allPlayersData[sid].ap || 0;
-            const newAP = Math.max(0, currentAP + amount);
-            database.ref(`rooms/${currentRoom}/players/${sid}/ap`).set(newAP);
-            database.ref(`global_users/${studentId}/ap`).set(newAP).then(() => {
-                loadGlobalUsersMonitor();
-            });
-            sendGlobalLog(`👑 Teacher modified active room parameters for【${studentId}】: ${currentAP} AP ➔ ${newAP} AP!`);
-        }
-
-        function bossCardInlineAdjustAP(targetId, amount, event) {
-            if (event) event.stopPropagation();
-            if (myId !== 'teacher_boss' || !allPlayersData[targetId]) return;
-
-            const currentAP = allPlayersData[targetId].ap || 0;
-            const newAP = Math.max(0, currentAP + amount);
-            
-            database.ref(`rooms/${currentRoom}/players/${targetId}/ap`).set(newAP);
-            saveToGlobalUser(allPlayersData[targetId].userId, { ...allPlayersData[targetId], ap: newAP });
-            sendGlobalLog(`👑 Teacher clicked Card Instant Shortcut for【${allPlayersData[targetId].name}】: ${currentAP} AP ➔ ${newAP} AP!`);
-        }
-
-        function bossSaveUserData(targetUserId) {
-            const newPwd = document.getElementById(`input-pwd-${targetUserId}`).value.trim();
-            const newLv = parseInt(document.getElementById(`input-lv-${targetUserId}`).value);
-            if (!newPwd) return alert('Password cannot be left blank!');
-            if (isNaN(newLv) || newLv < 1 || newLv > 10000) return alert('Please enter a valid logical level parameter!');
-
-            database.ref(`secret_auth/${targetUserId}`).set(newPwd);
-            
-            const currentJob = allPlayersData['student_' + targetUserId] ? allPlayersData['student_' + targetUserId].job : 'Warrior';
-            const scaled = getScaledStats(currentJob, newLv);
-            
-            database.ref(`global_users/${targetUserId}`).update({
-                level: newLv,
-                exp: 0,
-                hp: scaled.hp,
-                en: 0
-            }).then(() => {
-                const sid = 'student_' + targetUserId;
-                if (allPlayersData[sid]) {
-                    const currentPlayerData = allPlayersData[sid];
-                    currentPlayerData.level = newLv;
-                    currentPlayerData.exp = 0;
-                    currentPlayerData.hp = scaled.hp;
-                    currentPlayerData.en = 0;
-                    database.ref(`rooms/${currentRoom}/players/${sid}`).set(currentPlayerData);
                 }
-                sendGlobalLog(`👑 Supreme Privilege: Teacher forced modification on profile【${targetUserId}】(MaxHP Synced / PWD Changed)!`);
-                alert(`Saved changes for student user registry: ${targetUserId}`);
-                loadGlobalUsersMonitor();
             });
         }
 
-        function bossResetUserLevel(targetUserId) {
-            if (confirm(`Are you sure you want to completely erase historical campaign progress for student【${targetUserId}】 back to initial Level 1 status?`)) {
-                database.ref(`global_users/${targetUserId}`).set({
-                    level: 1,
-                    exp: 0,
-                    hp: null,
-                    en: 0,
-                    ap: 0,
-                    job: 'Warrior',
-                    team: 'unaligned',
-                    lastTeamChange: 0
-                }).then(() => {
-                    const sid = 'student_' + targetUserId;
-                    if (allPlayersData[sid]) {
-                        database.ref(`rooms/${currentRoom}/players/${sid}`).remove();
-                    }
-                    sendGlobalLog(`👑 🛑【DATABASE WIPEOUT】Teacher hard-reset student metadata profile【${targetUserId}】 back to baseline Level 1.`);
-                    loadGlobalUsersMonitor();
-                });
-            }
+        function pop(t, m, c, hI = 0) {
+            const el = document.createElement('div');
+            el.className = 'dmg-float';
+            el.innerText = m;
+            el.style.color = c;
+            if(hI === 1) { el.style.fontSize = '3.5rem'; el.innerText = m + " 💥"; }
+            
+            const card = document.getElementById(`card-${t}`).getBoundingClientRect();
+            el.style.left = `${card.left + card.width/2 - 40 + r(-30, 30)}px`;
+            el.style.top = `${card.top + card.height/2 - 20 + r(-20, 20)}px`;
+            
+            document.getElementById('fx-layer').appendChild(el);
+            setTimeout(() => el.remove(), 800);
         }
 
-        function bossSubmitCustomMessage() {
-            if (myId !== 'teacher_boss' || !currentRoom) return;
-            const inputField = document.getElementById('boss-custom-chat-msg');
-            const msgText = inputField.value.trim();
-            if (!msgText) return;
+        const eventIntroductions = {
+            "時之沙漏": "【時之沙漏 / Hourglass of Time】\n時間倒流！雙方當前血量直接恢復/調整至各自最大生命值的 50%。\n(Time flows backward! Directly sets both players' current HP to 50% of their maximum HP.)",
+            "破滅之咒": "【破滅之咒 / Curse of Ruin】\n夜空中降下毀滅詛咒，使雙方同時失去當前生命值的 20%（無視防禦）。\n(A destructive curse descends, causing both players to simultaneously lose 20% of their current HP.)",
+            "神聖新星": "【神聖新星 / Holy Nova】\n新月綻放溫暖的光芒，雙方同時恢復各自最大生命值的 30%。\n(The new moon emits a warm glow, allowing both players to restore 30% of their maximum HP.)",
+            "狂暴之月": "【狂暴之月 / Frenzied Moon】\n激發骨子裡的嗜血狂暴，雙方的能量（EN）直接全部補滿達 10 點。\n(Ignites the bloodlust within, immediately filling both players' energy back to full.)",
+            "枯竭風暴": "【枯竭風暴 / Depletion Storm】\n元素寂滅的風暴席捲戰場，使雙方當前的能量（EN）全部歸零。\n(A storm of element annihilation sweeps the arena, draining both players' current energy to 0.)",
+            "命運天秤": "【命運天秤 / Scales of Fate】\n命運交織！當前生命值百分比較低者，將會與對手的生命值百分比直接對調。\n(The player with the lower HP percentage swaps their HP percentage with their opponent.)",
+            "極寒永夜": "【極寒永夜 / Eternal Frost Night】\n絕對零度永夜降臨，雙方同時獲得 2 層「深層凍結（Deep Frost）」狀態。\n(An absolute-zero polar night falls, granting both players 2 stacks of Deep Frost status.)",
+            "神明沉默": "【神明沉默 / Divine Silence】\n任何凡人不可稱聖，雙方身上所有的增益與減益狀態（護盾、反傷、標記、凍結等）全部清除。\n(Clears all buffs and debuffs from both players.)",
+            "烈焰風暴": "【烈焰風暴 / Blaze Storm】\n混亂的烈焰席捲戰場，對雙方同時造成 25 點真實傷害（無視防禦）。\n(Chaotic embers sweep the arena, dealing 25 pure damage to both players simultaneously.)"
+        };
 
-            sendGlobalLog(`👑【TEACHER ANNOUNCEMENT】Teacher Says: "${msgText}"`);
-            inputField.value = ""; 
-            inputField.focus();
+        // ---------------- 角力系統邏輯程式碼 ----------------
+        function openWrestlingMode() {
+            if(isOver) return;
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            wrestleScores = { boy: 0, girl: 0 };
+            wrestleActive = false;
+            document.getElementById('wrestle-timer').innerText = "準備就緒";
+            document.getElementById('wrestle-start-btn').style.display = 'inline-block';
+            document.getElementById('wrestle-press-boy').disabled = true;
+            document.getElementById('wrestle-press-girl').disabled = true;
+            updateWrestleBar();
+            document.getElementById('wrestle-overlay').style.display = 'flex';
         }
 
-        function bossForceLogoutUser() {
-            const dropdown = document.getElementById('target-dropdown');
-            const targetId = dropdown.value;
-            if (!targetId || targetId === 'teacher_boss' || !allPlayersData[targetId]) return;
-
-            const studentName = allPlayersData[targetId].name || allPlayersData[targetId].userId;
-
-            if (confirm(`Are you sure you want to forcibly KICK student【${studentName}】out of this room arena? (Historical metadata will be preserved securely)`)) {
-                sendGlobalLog(`👑🛑【ADMIN BANISH】Teacher invoked supreme authorization to KICK student【${studentName}】out of this arena session! [Status: Disconnected & Removed from room, historical profile data preserved]`);
-                
-                database.ref(`rooms/${currentRoom}/players/${targetId}`).update({
-                    online: false,
-                    forceLogout: true
-                }).then(() => {
-                    database.ref(`rooms/${currentRoom}/players/${targetId}`).remove().then(() => {
-                        if (dropdown.value === targetId) dropdown.value = "";
-                        syncTargetCardEffects();
-                    });
-                });
-            }
+        function closeWrestlingMode() {
+            clearInterval(wrestleTimerInterval);
+            document.getElementById('wrestle-overlay').style.display = 'none';
         }
 
-        function renderPlayers() {
-            const container = document.getElementById('players-container');
-            if (!container) return;
-            container.innerHTML = '';
+        function startWrestlingCountdown() {
+            document.getElementById('wrestle-start-btn').style.display = 'none';
+            let count = 3;
+            document.getElementById('wrestle-timer').innerText = count;
+            playSfx('en');
 
-            let sortedPlayers = Object.values(allPlayersData).filter(p => p && p.id && p.userId).sort((a, b) => {
-                if (a.id === 'teacher_boss') return -1;
-                if (b.id === 'teacher_boss') return 1;
-                let numA = parseInt(a.userId.replace(/[^0-9]/g, '')) || 999;
-                let numB = parseInt(b.userId.replace(/[^0-9]/g, '')) || 999;
-                return numA - numB;
-            });
-
-            if (sortedPlayers.length === 0) {
-                container.innerHTML = '<p style="color:#888; font-style:italic;">No online entities found in this room node...</p>';
-                return;
-            }
-
-            const isTeacherLogged = (myId === 'teacher_boss');
-
-            sortedPlayers.forEach(player => {
-                if (!player || !player.job) return; 
-                if (player.id !== 'teacher_boss' && player.forceLogout === true) return;
-                
-                const scaled = getScaledStats(player.job, player.level || 1);
-                const hpPercent = Math.min(100, Math.max(0, ((player.hp || 0) / (scaled.hp || 100)) * 100));
-                const enPercent = Math.min(100, Math.max(0, ((player.en || 0) / (scaled.en || 100)) * 100));
-                
-                const reqExp = (player.level || 1) * 100;
-                const expPercent = Math.min(100, Math.max(0, ((player.exp || 0) / reqExp) * 100));
-                const isDead = (player.hp || 0) <= 0;
-
-                const card = document.createElement('div');
-                card.id = `player-card-${player.id}`;
-                card.className = `card ${player.id === myId ? 'is-me' : ''}`;
-                if (isDead) card.style.opacity = '0.5';
-
-                card.onclick = () => {
-                    if (myId !== 'teacher_boss' && player.online === false) return; 
-                    const dropdown = document.getElementById('target-dropdown');
-                    if (dropdown && dropdown.querySelector(`option[value="${player.id}"]`)) {
-                        dropdown.value = player.id;
-                        syncTargetCardEffects();
-                    }
-                };
-
-                let teamBadgeHtml = '';
-                if (player.team && player.team !== 'unaligned' && player.id !== 'teacher_boss') {
-                    let color = 'var(--primary)';
-                    if (player.team === 'alpha') color = 'var(--teamA)';
-                    if (player.team === 'beta') color = 'var(--teamB)';
-                    if (player.team === 'gamma') color = 'var(--teamC)';
-                    teamBadgeHtml = `<span class="team-badge-ui" style="background:${color};">${player.team.toUpperCase()}</span>`;
+            let cdInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    document.getElementById('wrestle-timer').innerText = count;
+                    playSfx('en');
+                } else if (count === 0) {
+                    clearInterval(cdInterval);
+                    document.getElementById('wrestle-timer').innerText = "🔥 PRESS!!! 🔥";
+                    playSfx('shake');
+                    wrestleScores = { boy: 10, girl: 10 }; 
+                    updateWrestleBar();
+                    startWrestleMatch();
                 }
-
-                card.innerHTML = `
-                    <div class="card-header">
-                        <strong style="font-size:14px;">${teamBadgeHtml}${player.name || player.userId} ${isDead ? '💀' : ''} ${player.online === false ? '💤(AFK)' : ''}</strong>
-                        <span class="level-badge">Lv.${player.level || 1}</span>
-                        <span class="role-tag ${CLASS_CONFIGS[player.job] ? CLASS_CONFIGS[player.job].colorClass : 'bg-warrior'}">${player.job}</span>
-                    </div>
-                    <div class="bar-container">
-                        <div class="bar-label"><span>HP (${player.hp || 0}/${scaled.hp})</span></div>
-                        <div class="bar"><div class="fill fill-hp" style="width: ${hpPercent}%"></div></div>
-                    </div>
-                    <div class="bar-container">
-                        <div class="bar-label"><span>EN (${player.id === 'teacher_boss' ? '∞' : (player.en || 0) + '/' + scaled.en})</span></div>
-                        <div class="bar"><div class="fill fill-en" style="width: ${player.id === 'teacher_boss' ? 100 : enPercent}%"></div></div>
-                    </div>
-                    <div class="bar-container">
-                        <div class="bar-label" style="color:#2ecc71;"><span>EXP (${player.exp || 0}/${reqExp})</span></div>
-                        <div class="bar" style="height:6px;"><div class="fill fill-exp" style="width: ${expPercent}%"></div></div>
-                    </div>
-                    <div style="margin-top:5px; display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#aaa;">
-                        <span>DEF:${scaled.def} ATK:${scaled.patk}</span>
-                        <span class="ap-badge">${player.job === 'Dark Lord' ? 'AP: ∞' : 'AP: ' + (player.ap || 0)}</span>
-                    </div>
-                    <div class="card-inline-ap-box" id="card-ap-box-${player.id}" style="display: ${isTeacherLogged && player.id !== 'teacher_boss' ? 'flex' : 'none'};">
-                        <button class="inline-ap-btn" style="background:#c0392b;" onclick="bossCardInlineAdjustAP('${player.id}', -1, event)">-1 AP</button>
-                        <button class="inline-ap-btn" style="background:#27ae60;" onclick="bossCardInlineAdjustAP('${player.id}', 1, event)">+1 AP</button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
+            }, 800);
         }
 
-        function syncTargetCardEffects() {
-            const dropdown = document.getElementById('target-dropdown');
-            if (!dropdown) return;
-            const targetId = dropdown.value;
+        function startWrestleMatch() {
+            wrestleActive = true;
+            document.getElementById('wrestle-press-boy').disabled = false;
+            document.getElementById('wrestle-press-girl').disabled = false;
 
-            document.querySelectorAll('.card').forEach(c => c.classList.remove('is-targeted'));
-            const selectedCard = document.getElementById(`player-card-${targetId}`);
-            if (selectedCard) selectedCard.classList.add('is-targeted');
-
-            const quickPanel = document.getElementById('boss-quick-ap-panel');
-            if (quickPanel) {
-                if (myId === 'teacher_boss' && targetId && targetId !== 'teacher_boss') {
-                    quickPanel.style.display = 'block';
+            let timeLeft = 5.0;
+            wrestleTimerInterval = setInterval(() => {
+                timeLeft -= 0.1;
+                if (timeLeft <= 0) {
+                    clearInterval(wrestleTimerInterval);
+                    endWrestleMatch();
                 } else {
-                    quickPanel.style.display = 'none';
+                    document.getElementById('wrestle-timer').innerText = timeLeft.toFixed(1) + "s";
                 }
+            }, 100);
+        }
+
+        function wrestleTouch(e, player) {
+            if (!wrestleActive) return;
+            e.preventDefault(); 
+            wrestleHandler(player);
+        }
+
+        function wrestleClick(player) {
+            if (!wrestleActive) return;
+            wrestleHandler(player);
+        }
+
+        function wrestleHandler(player) {
+            playSfx('hit');
+            if (player === 'boy') {
+                wrestleScores.boy += 1;
+            } else {
+                wrestleScores.girl += 1;
             }
+            updateWrestleBar();
         }
 
-        function bossQuickAdjustAP(amount) {
-            const dropdown = document.getElementById('target-dropdown');
-            if (!dropdown) return;
-            const targetId = dropdown.value;
-            if (!targetId || targetId === 'teacher_boss' || !allPlayersData[targetId]) return;
-
-            const currentAP = allPlayersData[targetId].ap || 0;
-            const newAP = Math.max(0, currentAP + amount);
-
-            database.ref(`rooms/${currentRoom}/players/${targetId}/ap`).set(newAP);
-            database.ref(`global_users/${allPlayersData[targetId].userId}/ap`).set(newAP);
-            sendGlobalLog(`👑 Teacher triggered active micro override for【${allPlayersData[targetId].name}】: ${currentAP} AP ➔ ${newAP} AP!`);
-        }
-
-        function renderSkills() {
-            const skillsContainer = document.getElementById('skills-container');
-            if (!skillsContainer) return;
-            skillsContainer.innerHTML = '';
-
-            const currentMe = allPlayersData[myId];
-            if (!currentMe) return;
-
-            const job = currentMe.job;
-            const mySkills = [...(SKILL_DATABASE['General'] || []), ...(SKILL_DATABASE[job] || [])];
-
-            mySkills.forEach(skill => {
-                const btn = document.createElement('button');
-                btn.className = 'btn';
-                if (skill.type === 'boss_stage_aoe' || skill.type === 'boss_aoe_pct_strike' || (skill.name && skill.name.includes('【ULTIMATE】'))) {
-                    btn.className += ' btn-ult';
-                }
-
-                const isBoss = job === 'Dark Lord';
-                const hasEnoughAp = isBoss || currentMe.ap >= skill.apCost;
-                const hasEnoughEn = isBoss || currentMe.en >= skill.enCost;
-                const isDead = currentMe.hp <= 0;
-
-                if (!hasEnoughAp || !hasEnoughEn || isDead) {
-                    btn.disabled = true;
-                }
-
-                btn.onclick = () => {
-                    const latestMe = allPlayersData[myId];
-                    if (!latestMe) return;
-                    if (!isBoss && latestMe.ap < skill.apCost) {
-                        sendGlobalLog(`[⚠️WARNING] Student【${latestMe.name}】has depleted AP reserves! Command intercepted!`);
-                        return;
-                    }
-                    executeBattleAction(latestMe, skill);
-                };
-
-                btn.innerHTML = `
-                    <div class="btn-header">
-                        <span>${skill.name}</span>
-                        <span style="font-size:11px; background:rgba(0,0,0,0.4); padding:1px 5px; border-radius:4px;">
-                            ${isBoss ? 'Cost: 0' : `AP:${skill.apCost} EN:${skill.enCost}`}
-                        </span>
-                    </div>
-                    <div class="skill-desc">${skill.desc}</div>
-                `;
-                skillsContainer.appendChild(btn);
-            });
-        }
-
-        function populateTargets() {
-            const dropdown = document.getElementById('target-dropdown');
-            if (!dropdown) return;
-            const currentSel = dropdown.value;
-            dropdown.innerHTML = '';
-
-            let sortedPlayers = Object.values(allPlayersData).filter(p => p && p.id).sort((a, b) => {
-                if (a.id === 'teacher_boss') return -1;
-                if (b.id === 'teacher_boss') return 1;
-                let numA = parseInt(a.userId ? a.userId.replace(/[^0-9]/g, '') : '999') || 999;
-                let numB = parseInt(b.userId ? b.userId.replace(/[^0-9]/g, '') : '999') || 999;
-                return numA - numB;
-            });
-
-            sortedPlayers.forEach(p => {
-                const isDead = (p.hp || 0) <= 0;
-                if (p.id !== 'teacher_boss' && p.forceLogout === true) return;
-
-                if (myId !== 'teacher_boss') {
-                    if (p.online === false || isDead) return;
-                }
-
-                const teamString = p.team && p.team !== 'unaligned' && p.id !== 'teacher_boss' ? `[${p.team.toUpperCase()}] ` : '';
-
-                const opt = document.createElement('option');
-                opt.value = p.id;
-                opt.innerText = `${p.id === myId ? '[Self] ' : ''}${teamString}${p.name || p.userId} (Lv.${p.level || 1}) - HP:${p.hp || 0} ${isDead ? '[☠️DEFEATED]' : ''} ${p.online === false ? '[AFK]' : ''}`;
-                dropdown.appendChild(opt);
-            });
-
-            dropdown.value = currentSel ? currentSel : (dropdown.firstChild ? dropdown.firstChild.value : "");
-            syncTargetCardEffects();
-        }
-
-        function calculateDamageWithCrit(baseDmg, job) {
-            const cfg = CRIT_CONFIGS[job] || { chance: 0.05, multiplier: 1.5 };
-            const isCrit = Math.random() < cfg.chance;
-            const finalDmg = isCrit ? Math.floor(baseDmg * cfg.multiplier) : baseDmg;
-            return { dmg: finalDmg, isCrit: isCrit };
-        }
-
-        function rewardExperiencePoints(player, type) {
-            if (player.id === 'teacher_boss') return ""; 
-            
-            const reqExp = player.level * 100;
-            let earned = 0;
-            let note = "";
-
-            if (type === 'hit') {
-                earned = Math.floor(reqExp * (Math.random() * 0.04 + 0.01));
-                note = ` (+${earned} EXP generated)`;
-            } else if (type === 'kill') {
-                earned = Math.floor(reqExp / 3);
-                note = ` 🌟⭐【FATAL BONUS】Earned +${earned} EXP for delivering the execution blow!`;
-            }
-
-            player.exp = (player.exp || 0) + earned;
-
-            if (player.exp >= reqExp) {
-                player.level += 1;
-                player.exp = player.exp - reqExp;
-                
-                const newScaled = getScaledStats(player.job, player.level);
-                player.hp = newScaled.hp;
-                player.en = 0; 
-                note += ` 👑⭐LEVEL UP!!【${player.name}】reached Level ${player.level}! Health fully restored!`;
-            }
-
-            return note;
-        }
-
-        function executeBattleAction(me, skill) {
-            const isBoss = me.job === 'Dark Lord';
-            const dropdown = document.getElementById('target-dropdown');
-            const targetId = dropdown ? dropdown.value : null;
-            const target = allPlayersData[targetId];
-
-            if (!target && skill.type !== 'charge' && skill.type !== 'boss_stage_aoe' && skill.type !== 'boss_aoe_pct_strike') {
-                return alert('Please select an active target first!');
-            }
-
-            const attackTypes = ['atk_p', 'atk_m', 'atk_p_pierce', 'ult_berserk', 'debuff_ap', 'boss_insta_kill', 'archer_multi', 'archer_ult', 'archer_drain_en', 'mage_drain', 'mage_ult', 'warrior_ult', 'boss_pct_strike', 'boss_aoe_pct_strike'];
-            if (target && target.id === me.id && attackTypes.includes(skill.type)) {
-                return alert('🚫 Action Intercepted: Destructive skills cannot be self-inflicted!');
-            }
-
-            if (!isBoss && target && target.online === false && attackTypes.includes(skill.type)) {
-                alert(`🚫 Operation Shielded: Entity【${target.name}】is currently safeguarded via offline AFK buffers!`);
+        function updateWrestleBar() {
+            let total = wrestleScores.boy + wrestleScores.girl;
+            if (total === 0) {
+                document.getElementById('wrestle-bar-boy').style.width = '50%';
+                document.getElementById('wrestle-bar-girl').style.width = '50%';
                 return;
             }
+            let boyPct = (wrestleScores.boy / total) * 100;
+            let girlPct = 100 - boyPct;
+            document.getElementById('wrestle-bar-boy').style.width = boyPct + '%';
+            document.getElementById('wrestle-bar-girl').style.width = girlPct + '%';
+        }
 
-            if (!isBoss) {
-                me.ap = Math.max(0, me.ap - skill.apCost);
-                me.en = Math.max(0, me.en - skill.enCost);
+        function endWrestleMatch() {
+            wrestleActive = false;
+            document.getElementById('wrestle-press-boy').disabled = true;
+            document.getElementById('wrestle-press-girl').disabled = true;
+            playSfx('shake');
+
+            let winnerText = "";
+            if (wrestleScores.boy > wrestleScores.girl) {
+                winnerText = "🎉 BOY WINS THE WRESTLING! 🎉";
+            } else if (wrestleScores.girl > wrestleScores.boy) {
+                winnerText = "🎉 GIRL WINS THE WRESTLING! 🎉";
+            } else {
+                winnerText = "🤝 IT'S A TIE DRAG! 🤝";
             }
 
-            const myScaled = getScaledStats(me.job, me.level);
-            let targetScaled = target ? getScaledStats(target.job, target.level) : null;
+            document.getElementById('wrestle-timer').innerText = "戰鬥結束!";
+            document.getElementById('wrestle-win-title').innerText = winnerText;
+            
+            const continueBtn = document.getElementById('wrestle-continue-btn');
+            continueBtn.disabled = true; 
+            
+            let lockTime = 1.5; 
+            continueBtn.innerText = `繼續戰鬥 / CONTINUE (${lockTime.toFixed(1)}s)`;
+            
+            document.getElementById('wrestle-win-overlay').style.display = 'flex';
 
-            let logText = "";
-            let isDmgDealt = false;
-            let expRewardMsg = "";
-
-            if (skill.type === 'boss_pct_strike') {
-                let pctDmg = Math.floor(targetScaled.hp * 0.10);
-                if (pctDmg < 1) pctDmg = 1;
-                target.hp = Math.max(0, target.hp - pctDmg);
-                
-                if (target.hp <= 0) {
-                    target.level = 1;
-                    target.exp = 0;
-                    target.en = 0;
-                }
-
-                logText = `👑⚔️【PERCENTAGE JUDGEMENT】Dark Lord activated [${skill.name}] on【${target.name}】! Authority erosion inflicts -10% MAX HP damage (-${pctDmg} HP)!`;
-                isDmgDealt = true;
-            }
-            else if (skill.type === 'boss_aoe_pct_strike') {
-                logText = `👑💥【CLASS-WIDE TEST BLAST】Dark Lord unleashed sudden Pop Quiz Flash Bomb! Shockwaves spread across the room, draining 10% Max HP from all living students!\n`;
-                Object.values(allPlayersData).forEach(p => {
-                    if (p && p.id !== 'teacher_boss' && p.hp > 0) {
-                        let pScaled = getScaledStats(p.job, p.level || 1);
-                        let aoePctDmg = Math.floor(pScaled.hp * 0.10);
-                        if (aoePctDmg < 1) aoePctDmg = 1;
-                        
-                        p.hp = Math.max(0, p.hp - aoePctDmg);
-                        logText += ` ➔【${p.name}】loses ${aoePctDmg} HP points! (${p.hp} HP remaining)\n`;
-                        
-                        if (p.hp <= 0) {
-                            p.level = 1;
-                            p.exp = 0;
-                            p.en = 0;
-                            logText += `  💀【${p.name}】collapsed under mental academic pressure! Level hard-reset back to Lv.1!\n`;
-                        }
-                        database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
-                        saveToGlobalUser(p.userId, p);
-                    }
-                });
-            }
-            else if (skill.type === 'boss_insta_kill') {
-                target.hp = 0;
-                target.level = 1;
-                target.exp = 0;
-                target.en = 0;
-                logText = `👑☠️【CRITICAL ERASURE】Dark Lord invoked absolute command line. Entity【${target.name}】obliterated to zero health instantly! Level reset to 1!`;
-                isDmgDealt = true;
-            } 
-            else if (skill.type === 'boss_stage_aoe') {
-                bossAoeCount++;
-                if (bossAoeCount === 1) {
-                    logText = `👑⚡【CATACLYSM PHASE 1】Dark Lord initiated massive academic test constraints! Dark thunder rolled, all students lose 50% of current active health!\n`;
-                    Object.values(allPlayersData).forEach(p => {
-                        if (p && p.id !== 'teacher_boss' && p.hp > 0) {
-                            let dmg = Math.floor(p.hp * 0.5);
-                            p.hp = Math.max(1, p.hp - dmg);
-                            logText += ` ➔【${p.name}】takes ${dmg} mental stress disruption damage!\n`;
-                            database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
-                        }
-                    });
+            let lockInterval = setInterval(() => {
+                lockTime -= 0.1;
+                if (lockTime <= 0) {
+                    clearInterval(lockInterval);
+                    continueBtn.disabled = false; 
+                    continueBtn.innerText = "繼續戰鬥 / CONTINUE";
                 } else {
-                    logText = `👑💥【CATACLYSM PHASE 2: WIPE OUT】Pop-quizzes flood the arena! All living students suffer absolute instant total wipeout!\n`;
-                    Object.values(allPlayersData).forEach(p => {
-                        if (p && p.id !== 'teacher_boss' && p.hp > 0) {
-                            p.hp = 0;
-                            p.level = 1;
-                            p.exp = 0;
-                            p.en = 0;
-                            logText += ` ➔【${p.name}】reduced to dust! Level reset to 1!\n`;
-                            database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
-                            saveToGlobalUser(p.userId, p);
-                        }
-                    });
+                    continueBtn.innerText = `繼續戰鬥 / CONTINUE (${lockTime.toFixed(1)}s)`;
                 }
-            } 
-            else if (skill.type === 'charge') {
-                me.en = Math.min(myScaled.en, me.en + skill.value);
-                logText = `⚡【${me.name}】focused under [${skill.name}], recovering EN pool elements by +${skill.value} units.`;
-            } 
-            else {
-                expRewardMsg = rewardExperiencePoints(me, 'hit');
-
-                if (skill.type === 'atk_p') {
-                    let rawDmg = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
-                    let result = calculateDamageWithCrit(rawDmg, me.job);
-                    target.hp = Math.max(0, target.hp - result.dmg);
-                    if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + 10);
-                    
-                    logText = `${result.isCrit ? '💥💥【CRITICAL HITS!!】' : '⚔️'}【${me.name}】strikes【${target.name}】with [${skill.name}], dealing ${result.dmg} Physical Damage!`;
-                    isDmgDealt = true;
-                } 
-                else if (skill.type === 'atk_p_pierce') {
-                    let piercedDef = Math.floor(targetScaled.def * 0.5);
-                    let rawDmg = Math.max(1, (myScaled.patk + skill.value) - piercedDef);
-                    let result = calculateDamageWithCrit(rawDmg, me.job);
-                    target.hp = Math.max(0, target.hp - result.dmg);
-                    if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + 10);
-                    
-                    logText = `${result.isCrit ? '💥💥【ARMOR CRIT DEVASTATION!!】' : '🛡️⚔️'}【${me.name}】executes [${skill.name}] on【${target.name}術, ignoring 50% DEF to hammer ${result.dmg} pierce damage!`;
-                    isDmgDealt = true;
-                }
-                else if (skill.type === 'warrior_ult') {
-                    let rawDmg = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
-                    let result = calculateDamageWithCrit(rawDmg, me.job);
-                    target.hp = Math.max(0, target.hp - result.dmg);
-                    if (target.id !== 'teacher_boss') {
-                        target.en = Math.min(targetScaled.en, target.en + 30);
-                    }
-                    logText = `${result.isCrit ? '💥💥【CRITICAL BASTION CRUSH!!】' : '🛡️🔥'}【${me.name}】ignited [${skill.name}]! Crushes【${target.name}】for ${result.dmg} Heavy Physical Damage, and sparks target spirit granting them +30 EN replenishment!`;
-                    isDmgDealt = true;
-                }
-                else if (skill.type === 'atk_m') {
-                    let rawDmg = Math.max(1, (myScaled.matk + skill.value) - Math.floor(targetScaled.def * 0.5));
-                    let result = calculateDamageWithCrit(rawDmg, me.job);
-                    target.hp = Math.max(0, target.hp - result.dmg);
-                    if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + 15);
-                    
-                    logText = `${result.isCrit ? '💥🔮【MANA CRITICAL EXPLOSION!!】' : '🔮'}【${me.name}】casts [${skill.name}] onto【${target.name}】, bursting ${result.dmg} Magical Damage!`;
-                    isDmgDealt = true;
-                } 
-                else if (skill.type === 'mage_drain') {
-                    let rawDmg = Math.max(1, Math.floor(myScaled.matk * 0.5));
-                    let result = calculateDamageWithCrit(rawDmg, me.job);
-                    target.hp = Math.max(0, target.hp - result.dmg);
-                    
-                    let targetOldEn = target.en || 0;
-                    let drainAmount = Math.min(targetOldEn, 20);
-                    target.en = Math.max(0, targetOldEn - drainAmount);
-                    me.en = Math.min(myScaled.en, me.en + skill.value);
-                    
-                    logText = `🔮🌀【${me.name}】channeled [${skill.name}] on【${target.name}術, dealing ${result.dmg} magic stress and siphoned ${drainAmount} EN to feed own reserve by +${skill.value} EN!`;
-                    isDmgDealt = true;
-                }
-                else if (skill.type === 'mage_transfer') {
-                    target.en = Math.min(targetScaled.en, target.en + skill.value);
-                    logText = `🔮⏳【${me.name}】invoked [${skill.name}], transferring surplus neural elements to inject +${skill.value} EN directly into【${target.name}】!`;
-                }
-                else if (skill.type === 'mage_ult') {
-                    let rawDmg = Math.max(1, (myScaled.matk + skill.value) - Math.floor(targetScaled.def * 0.3));
-                    let result = calculateDamageWithCrit(rawDmg, me.job);
-                    target.hp = Math.max(0, target.hp - result.dmg);
-                    if (target.id !== 'teacher_boss') {
-                        target.en = Math.max(0, (target.en || 0) - 10);
-                    }
-                    logText = `${result.isCrit ? '💥🔥【APOCALYPTIC CRIT COMBUSTION!!】' : '🔥☄️'}【${me.name}】chants Ultimate [${skill.name}]! Meteor incinerates【${target.name}】for ${result.dmg} cosmic magical damage, while instantly freezing and evaporating 10 points of their EN status!`;
-                    isDmgDealt = true;
-                }
-                else if (skill.type === 'archer_multi' || skill.type === 'archer_ult') {
-                    let totalDmg = 0;
-                    let fontCrit = 0;
-                    let hitCount = skill.hits;
-                    
-                    for (let i = 0; i < hitCount; i++) {
-                        let singleRaw = Math.max(1, (myScaled.patk + skill.value) - targetScaled.def);
-                        let res = calculateDamageWithCrit(singleRaw, me.job);
-                        totalDmg += res.dmg;
-                        if (res.isCrit) fontCrit++;
-                    }
-                    
-                    target.hp = Math.max(0, target.hp - totalDmg);
-                    if (target.id !== 'teacher_boss') target.en = Math.min(targetScaled.en, target.en + (hitCount * 4));
-                    
-                    if (skill.type === 'archer_ult') {
-                        logText = `🏹⛈️【${me.name}】triggers Ultimate Volley [${skill.name}]! Torrential arrows rain upon【${target.name}】for ${hitCount} rapid impacts, stacking a total of ${totalDmg} Physical Damage ${fontCrit > 0 ? `(including ${fontCrit} CRITICAL triggers!!)` : ''}`;
-                    } else {
-                        logText = `🏹【${me.name}】launches [${skill.name}] at【${target.name}】, firing a swift ${hitCount}-shot stream dealing ${totalDmg} total points ${fontCrit > 0 ? `(with ${fontCrit} Crit hits)` : ''}`;
-                    }
-                    isDmgDealt = true;
-                }
-                else if (skill.type === 'archer_drain_en') {
-                    let targetOldEn = target.en || 0;
-                    let burnedEn = Math.min(targetOldEn, skill.value);
-                    target.en = Math.max(0, targetOldEn - burnedEn);
-                    
-                    let rawDmg = Math.max(1, (myScaled.patk + 12) - targetScaled.def);
-                    let result = calculateDamageWithCrit(rawDmg, me.job);
-                    target.hp = Math.max(0, target.hp - result.dmg);
-                    
-                    logText = `🏹🧪【${me.name}】shot [${skill.name}] onto【${target.name}】! Toxic corrosion strikes for ${result.dmg} damage, while molecularly vaporizing -${burnedEn} EN from target elements!`;
-                    isDmgDealt = true;
-                } 
-                else if (skill.type === 'heal') {
-                    const wasDead = target.hp <= 0;
-                    if (wasDead) {
-                        alert("🚫 Intervention Denied: Student healing spells lack parameters to resurrect deceased squad members!");
-                        return;
-                    } else {
-                        target.hp = Math.min(targetScaled.hp, target.hp + skill.value);
-                        logText = `💖【${me.name}】applied [${skill.name}] upon【${target.name}】, restoring +${skill.value} Health Points.`;
-                    }
-                } 
-                else if (skill.type === 'boss_capped_heal') {
-                    const wasDead = target.hp <= 0;
-                    const oldHp = target.hp;
-                    target.hp = targetScaled.hp; 
-                    
-                    if (wasDead) {
-                        logText = `😇👑【SOVEREIGN RESURRECTION】Dark Lord blessed the fallen student【${target.name}】with maximum light elements, breaking death codes to fully revive entity back to 100% HP (${target.hp}/${targetScaled.hp})!`;
-                    } else {
-                        logText = `💖😇【HOLY CAP RESTORATION】Dark Lord invoked [Praise of Light], fully cleansing and restoring【${target.name}】health pool back to baseline limit limit: ${oldHp} HP ➔ 100% Full HP (${target.hp}/${targetScaled.hp}) without overflowing!`;
-                    }
-                }
-
-                if (isDmgDealt && target.id !== 'teacher_boss' && target.hp <= 0) {
-                    target.level = 1;
-                    target.exp = 0;
-                    target.en = 0;
-                    
-                    logText += ` 💀【${target.name}】succumbed to massive trauma and collapsed in battle! Level reset to 1!`;
-                    let killBonusMsg = rewardExperiencePoints(me, 'kill');
-                    expRewardMsg += killBonusMsg; 
-                }
-            }
-
-            if (expRewardMsg) {
-                logText += expRewardMsg;
-            }
-
-            database.ref(`rooms/${currentRoom}/players/${me.id}`).set(me);
-            if (me.id !== 'teacher_boss') saveToGlobalUser(me.userId, me);
-
-            if (target && target.id !== me.id && skill.type !== 'boss_aoe_pct_strike') {
-                database.ref(`rooms/${currentRoom}/players/${target.id}`).set(target);
-                if (target.id !== 'teacher_boss') saveToGlobalUser(target.userId, target);
-            }
-
-            sendGlobalLog(logText);
+            }, 100);
         }
 
-        function sendGlobalLog(text) {
-            if (!currentRoom) return;
-            database.ref(`rooms/${currentRoom}/logs`).push(`[${new Date().toLocaleTimeString()}] ${text}`);
+        function closeWrestleWinOverlay() {
+            document.getElementById('wrestle-win-overlay').style.display = 'none';
+            closeWrestlingMode();
         }
+        // ---------------------------------------------------
 
-        function bossDistributeAP() {
-            Object.values(allPlayersData).forEach(p => {
-                if (p && p.hp > 0 && p.job !== 'Dark Lord') {
-                    const newAp = (p.ap || 0) + 2;
-                    database.ref(`rooms/${currentRoom}/players/${p.id}/ap`).set(newAp);
-                    saveToGlobalUser(p.userId, { ...p, ap: newAp });
-                }
-            });
-            sendGlobalLog(`📢 Dark Lord distributed +2 AP to all active students!`);
-        }
-
-        function bossGrantCustomAP() {
-            const inputVal = parseInt(document.getElementById('boss-custom-ap-input').value);
-            if (isNaN(inputVal) || inputVal <= 0 || inputVal > 99) {
-                return alert("Please input a valid logical number between 1 and 99!");
-            }
-            Object.values(allPlayersData).forEach(p => {
-                if (p && p.hp > 0 && p.job !== 'Dark Lord') {
-                    const newAp = (p.ap || 0) + inputVal;
-                    database.ref(`rooms/${currentRoom}/players/${p.id}/ap`).set(newAp);
-                    saveToGlobalUser(p.userId, { ...p, ap: newAp });
-                }
-            });
-            sendGlobalLog(`👑📢【BATCH AP INJECTION】Dark Lord granted +${inputVal} AP to all alive students in this arena!`);
-        }
-
-        function bossWipeAllAPToZero() {
-            if (confirm("🚨 WARNING: Are you sure you want to forcibly clear ALL students Action Points (AP) down to 0?")) {
-                Object.values(allPlayersData).forEach(p => {
-                    if (p && p.job !== 'Dark Lord') {
-                        database.ref(`rooms/${currentRoom}/players/${p.id}/ap`).set(0);
-                        saveToGlobalUser(p.userId, { ...p, ap: 0 });
-                    }
-                });
-                sendGlobalLog(`👑🛑【CLASSROOM SILENCE】Dark Lord cleared ALL student action points (AP) down to 0! Absolute order enforced.`);
-            }
-        }
-
-        function bossClearAllLogsOnly() {
-            if (!currentRoom) return alert("Please connect to a room first!");
-            if (confirm("Are you sure you want to completely clear the combat feed logs?")) {
-                database.ref(`rooms/${currentRoom}/logs`).remove().then(() => {
-                    alert("Combat feed logs successfully cleared!");
-                });
-            }
-        }
-
-        function bossResetRoom() {
-            if(confirm("Are you sure you want to restore HP & EN to 100% and completely CLEAR all combat feed logs? (This operation will ALSO REVIVE all deceased student entities to 100% full health!)")) {
-                bossAoeCount = 0; 
-                Object.values(allPlayersData).forEach(p => {
-                    if (!p) return;
-                    
-                    const scaled = getScaledStats(p.job, p.level || 1);
-                    
-                    p.hp = scaled.hp; 
-                    p.en = (p.id === 'teacher_boss') ? 9999 : 0;
-                    p.forceLogout = false;
-
-                    database.ref(`rooms/${currentRoom}/players/${p.id}`).set(p);
-                    if (p.id !== 'teacher_boss') saveToGlobalUser(p.userId, p);
-                });
-                
-                database.ref(`rooms/${currentRoom}/logs`).remove().then(() => {
-                    sendGlobalLog(`🔄 👑【SUPREME REVIVAL SYSTEM】Dark Lord reset the room! ALL student entities have been fully REVIVED and restored back to 100% double Max HP status! Battle log refreshed.`);
-                });
-            }
-        }
+        initSelection();
     </script>
 </body>
 </html>
